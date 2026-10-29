@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel --filter @ifts2/api --filter @ifts2/web dev",
     "build": "pnpm -r --filter @ifts2/shared --filter @ifts2/api --filter @ifts2/web build",
-    "lint": "eslint . && prettier --check .",
+    "lint": "eslint . && prettier --check . && node scripts/check-no-hardcoded-styles.mjs && node scripts/generate-tokens.mjs --check",
     "format": "prettier --write .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r --workspace-concurrency=1 test",
@@ -21,7 +21,10 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force --skip-seed && tsx prisma/seed.ts",
     "db:generate": "prisma generate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "tokens": "node scripts/generate-tokens.mjs",
+    "contrast": "node scripts/contrast.mjs",
+    "lint:styles": "node scripts/check-no-hardcoded-styles.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

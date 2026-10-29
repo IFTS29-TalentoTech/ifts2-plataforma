@@ -28,7 +28,7 @@ const envSchema = z
       .min(1, 'Falta APP_ENCRYPTION_KEY (32 bytes en base64).')
       .refine((v) => Buffer.from(v, 'base64').length === 32, {
         message:
-          'APP_ENCRYPTION_KEY debe ser de 32 bytes en base64. Generá una con: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"',
+          "APP_ENCRYPTION_KEY debe ser de 32 bytes en base64. Generá una con: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
       }),
     REVALIDATE_SECRET: z.string().optional(),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
@@ -80,10 +80,18 @@ const envSchema = z
       );
     }
     if (e.MAILER_PROVIDER === 'smtp') {
-      need(e.SMTP_URL, 'SMTP_URL', 'MAILER_PROVIDER=smtp exige SMTP_URL (ej. smtp://usuario:clave@host:587).');
+      need(
+        e.SMTP_URL,
+        'SMTP_URL',
+        'MAILER_PROVIDER=smtp exige SMTP_URL (ej. smtp://usuario:clave@host:587).',
+      );
     }
     if (e.INSTAGRAM_PROVIDER === 'graph') {
-      need(e.INSTAGRAM_APP_ID, 'INSTAGRAM_APP_ID', 'INSTAGRAM_PROVIDER=graph exige INSTAGRAM_APP_ID.');
+      need(
+        e.INSTAGRAM_APP_ID,
+        'INSTAGRAM_APP_ID',
+        'INSTAGRAM_PROVIDER=graph exige INSTAGRAM_APP_ID.',
+      );
       need(
         e.INSTAGRAM_APP_SECRET,
         'INSTAGRAM_APP_SECRET',
@@ -188,7 +196,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       provider: e.INSTAGRAM_PROVIDER,
       appId: e.INSTAGRAM_APP_ID || undefined,
       appSecret: e.INSTAGRAM_APP_SECRET || undefined,
-      redirectUri: e.INSTAGRAM_REDIRECT_URI || `${apiOrigin}/api/v1/integrations/instagram/callback`,
+      redirectUri:
+        e.INSTAGRAM_REDIRECT_URI || `${apiOrigin}/api/v1/integrations/instagram/callback`,
     },
   };
 }

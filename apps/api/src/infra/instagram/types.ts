@@ -23,7 +23,9 @@ export interface InstagramClient {
 
 /** Se lanza cuando faltan credenciales o la cuenta no está conectada. La API lo traduce a 502/422 claro. */
 export class InstagramNotConfiguredError extends Error {
-  constructor(message = 'Instagram no está configurado: faltan credenciales o conectar la cuenta.') {
+  constructor(
+    message = 'Instagram no está configurado: faltan credenciales o conectar la cuenta.',
+  ) {
     super(message);
     this.name = 'InstagramNotConfiguredError';
   }

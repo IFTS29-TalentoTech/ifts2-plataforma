@@ -41,7 +41,13 @@ describe('can(role, action)', () => {
     expect(can(undefined, 'dashboard:read')).toBe(false);
   });
   it('solo ADMIN gestiona configuración, integraciones, usuarios y ve auditoría', () => {
-    for (const a of ['settings:manage', 'integrations:manage', 'users:manage', 'audit:read', 'terms:setPublic'] as const) {
+    for (const a of [
+      'settings:manage',
+      'integrations:manage',
+      'users:manage',
+      'audit:read',
+      'terms:setPublic',
+    ] as const) {
       expect(can('BEDELIA', a)).toBe(false);
       expect(can('EDITOR', a)).toBe(false);
     }
@@ -50,13 +56,22 @@ describe('can(role, action)', () => {
 
 describe('esquemas zod: mensajes claros', () => {
   it('aviso: título vacío y fin anterior al inicio', () => {
-    const r = noticeCreateInput.safeParse({ title: '  ', body: 'x', visibleFrom: '2026-11-10', visibleUntil: '2026-11-01' });
+    const r = noticeCreateInput.safeParse({
+      title: '  ',
+      body: 'x',
+      visibleFrom: '2026-11-10',
+      visibleUntil: '2026-11-01',
+    });
     expect(r.success).toBe(false);
     expect(msgs(r)).toContain('El título es obligatorio.');
     expect(msgs(r)).toContain('La fecha de fin debe ser posterior a la fecha de inicio.');
   });
   it('aviso: acepta fechas como día y las lleva a Buenos Aires', () => {
-    const r = noticeCreateInput.parse({ title: 'Aviso', body: 'Texto', visibleUntil: '2026-11-25' });
+    const r = noticeCreateInput.parse({
+      title: 'Aviso',
+      body: 'Texto',
+      visibleUntil: '2026-11-25',
+    });
     expect(r.visibleUntil?.toISOString()).toBe('2026-11-26T02:59:59.999Z');
     expect(r.audience).toBe('ALL');
   });
@@ -67,14 +82,20 @@ describe('esquemas zod: mensajes claros', () => {
     expect(msgs(r).some((m) => m.includes('El rol'))).toBe(true);
   });
   it('usuario: normaliza el correo a minúsculas', () => {
-    expect(userCreateInput.parse({ name: 'Ana', email: 'ANA@Bue.edu.ar', role: 'EDITOR' }).email).toBe('ana@bue.edu.ar');
+    expect(
+      userCreateInput.parse({ name: 'Ana', email: 'ANA@Bue.edu.ar', role: 'EDITOR' }).email,
+    ).toBe('ana@bue.edu.ar');
   });
   it('login: campos obligatorios', () => {
     const r = loginInput.safeParse({});
-    expect(msgs(r)).toEqual(expect.arrayContaining(['El correo es obligatorio.', 'La contraseña es obligatoria.']));
+    expect(msgs(r)).toEqual(
+      expect.arrayContaining(['El correo es obligatorio.', 'La contraseña es obligatoria.']),
+    );
   });
   it('ciclo: año obligatorio y período válido', () => {
-    expect(msgs(termCreateInput.safeParse({ kind: 'SECOND' }))).toContain('El año lectivo es obligatorio.');
+    expect(msgs(termCreateInput.safeParse({ kind: 'SECOND' }))).toContain(
+      'El año lectivo es obligatorio.',
+    );
     expect(termCreateInput.safeParse({ year: 2026, kind: 'SECOND' }).success).toBe(true);
   });
   it('llamado: fin anterior al inicio', () => {
@@ -99,14 +120,24 @@ describe('esquemas zod: mensajes claros', () => {
   it('moderación: exige confirmar consentimiento', () => {
     const r = socialApproveInput.safeParse({ section: 'HOME', consentConfirmed: false });
     expect(msgs(r)[0]).toMatch(/consentimiento/);
-    expect(socialApproveInput.safeParse({ section: 'HOME', consentConfirmed: true }).success).toBe(true);
+    expect(socialApproveInput.safeParse({ section: 'HOME', consentConfirmed: true }).success).toBe(
+      true,
+    );
   });
   it('contacto: exige consentimiento', () => {
-    const r = contactInput.safeParse({ name: 'A', email: 'a@b.com', subject: 's', message: 'm', consent: false });
+    const r = contactInput.safeParse({
+      name: 'A',
+      email: 'a@b.com',
+      subject: 's',
+      message: 'm',
+      consent: false,
+    });
     expect(msgs(r)[0]).toMatch(/aviso de uso de datos/);
   });
   it('ajustes: hashtag se normaliza con # y rechaza claves desconocidas', () => {
-    expect(settingsUpdateInput.parse({ instagram_hashtag: 'ifts2web' }).instagram_hashtag).toBe('#ifts2web');
+    expect(settingsUpdateInput.parse({ instagram_hashtag: 'ifts2web' }).instagram_hashtag).toBe(
+      '#ifts2web',
+    );
     expect(settingsUpdateInput.safeParse({ inventada: 'x' }).success).toBe(false);
     expect(settingsUpdateInput.safeParse({}).success).toBe(false);
   });

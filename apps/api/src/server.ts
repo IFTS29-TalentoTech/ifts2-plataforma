@@ -1,3 +1,8 @@
+/**
+ * Punto de entrada de la API. Valida el entorno ANTES de abrir el puerto: si la configuración es
+ * inválida (variable faltante, proveedor mal elegido) la API no arranca y explica qué falta, en vez de
+ * fallar más tarde con un error confuso.
+ */
 import { createApp, getContext } from './app';
 import { ConfigError, loadConfig } from './config';
 

@@ -1,0 +1,10 @@
+# Verificacion de produccion (API dist + web next start) - 2026-10-29
+## GET /health
+{"status":"ok","api":"ok","db":"ok","integrations":{"storage":"local","mailer":"console","instagram":"fake"},"demoMode":true,"time":"2026-10-29T23:34:43.070Z"}
+## GET / (web)
+200
+## Login ADMIN real
+204
+{"id":"35c9d590-bcde-4e19-b6c6-6f9ff4f9fd0b","email":"admin@ifts2.local","name":"Administración","role":"ADMIN","mustChangePassword":false,"permissions":["dashboard:read","publications:manage","publications:delete","social:moderate","social:delete","notices:manage","notices:delete","schedules:manage","schedules:delete","examCalls:manage","examCalls:delete","documents:manage","documents:delete","terms:manage","terms:setPublic","settings:manage","integrations:manage","content:manage","content:delete","links:manage","links:delete","users:manage","contact:read","contact:delete","audit:read","categories:manage"]}
+## GET /integrations/instagram (ADMIN)
+{"status":"demo","statusLabel":"Sin configurar (modo demostración)","demoMode":true,"mode":"demo","source":"panel","appIdMasked":null,"appSecretMasked":null,"hasAccessToken":false,"accessTokenMasked":null,"username":null,"connectedAt":null,"tokenExpiresAt":null,"lastSyncAt":null,"lastSyncOk":null,"lastError":null,"hashtag":"#ifts2web","redirectUri":"http://localhost:4000/api/v1/integrations/insta

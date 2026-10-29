@@ -1,3 +1,7 @@
+/**
+ * Validación de entrada con los esquemas zod de @ifts2/shared (ADR-12). Un error de zod llega al
+ * manejador de errores, que lo convierte en un 400 con `errors` por campo y mensajes en español.
+ */
 import type { RequestHandler } from 'express';
 import type { ZodTypeAny, z } from 'zod';
 
@@ -27,7 +31,10 @@ export function validate(schemas: Schemas): RequestHandler {
 }
 
 /** Tipado cómodo en los controladores: `const body = valid<NoticeCreateInput>(req, 'body')`. */
-export function valid<T>(req: { valid: { body?: unknown; query?: unknown; params?: unknown } }, part: 'body' | 'query' | 'params'): T {
+export function valid<T>(
+  req: { valid: { body?: unknown; query?: unknown; params?: unknown } },
+  part: 'body' | 'query' | 'params',
+): T {
   return req.valid[part] as T;
 }
 

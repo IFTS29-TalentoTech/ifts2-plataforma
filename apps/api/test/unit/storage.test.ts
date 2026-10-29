@@ -4,10 +4,19 @@ import path from 'node:path';
 import sharp from 'sharp';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AppError } from '../../src/infra/errors';
-import { InMemoryStorage, LocalDiskStorage, sanitizeFilename, sniffMime, storeUpload } from '../../src/infra/storage';
+import {
+  InMemoryStorage,
+  LocalDiskStorage,
+  sanitizeFilename,
+  sniffMime,
+  storeUpload,
+} from '../../src/infra/storage';
 
 const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(100, 0x20)]);
-const png = () => sharp({ create: { width: 3000, height: 2000, channels: 3, background: '#8D775F' } }).png().toBuffer();
+const png = () =>
+  sharp({ create: { width: 3000, height: 2000, channels: 3, background: '#8D775F' } })
+    .png()
+    .toBuffer();
 
 const thrown = async (p: Promise<unknown>) => {
   try {
@@ -23,7 +32,9 @@ describe('sniffMime (firma del archivo)', () => {
     expect(sniffMime(pdf)).toBe('application/pdf');
     expect(sniffMime(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0]))).toBe('image/jpeg');
     expect(sniffMime(await png())).toBe('image/png');
-    const webp = await sharp({ create: { width: 4, height: 4, channels: 3, background: '#fff' } }).webp().toBuffer();
+    const webp = await sharp({ create: { width: 4, height: 4, channels: 3, background: '#fff' } })
+      .webp()
+      .toBuffer();
     expect(sniffMime(webp)).toBe('image/webp');
   });
   it('rechaza ejecutables y texto', () => {
@@ -35,7 +46,10 @@ describe('sniffMime (firma del archivo)', () => {
 describe('storeUpload', () => {
   it('guarda un PDF con clave aleatoria (no el nombre original)', async () => {
     const storage = new InMemoryStorage();
-    const f = await storeUpload(storage, { buffer: pdf, originalName: '../../Cronograma mesas.pdf' });
+    const f = await storeUpload(storage, {
+      buffer: pdf,
+      originalName: '../../Cronograma mesas.pdf',
+    });
     expect(f.mimeType).toBe('application/pdf');
     expect(f.key).toMatch(/^files\/[0-9a-f-]{36}\.pdf$/);
     expect(f.filename).toBe('Cronograma mesas.pdf');
@@ -53,19 +67,28 @@ describe('storeUpload', () => {
   });
 
   it('rechaza un tipo no permitido aunque el nombre diga .pdf (415)', async () => {
-    const e = await thrown(storeUpload(new InMemoryStorage(), { buffer: Buffer.from('MZ-ejecutable'), originalName: 'virus.pdf' }));
+    const e = await thrown(
+      storeUpload(new InMemoryStorage(), {
+        buffer: Buffer.from('MZ-ejecutable'),
+        originalName: 'virus.pdf',
+      }),
+    );
     expect(e.status).toBe(415);
   });
 
   it('rechaza un PDF de más de 10 MB (413)', async () => {
     const big = Buffer.concat([Buffer.from('%PDF-'), Buffer.alloc(10 * 1024 * 1024 + 1)]);
-    const e = await thrown(storeUpload(new InMemoryStorage(), { buffer: big, originalName: 'a.pdf' }));
+    const e = await thrown(
+      storeUpload(new InMemoryStorage(), { buffer: big, originalName: 'a.pdf' }),
+    );
     expect(e.status).toBe(413);
   });
 
   it('rechaza una imagen de más de 5 MB (413)', async () => {
     const big = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(5 * 1024 * 1024)]);
-    const e = await thrown(storeUpload(new InMemoryStorage(), { buffer: big, originalName: 'a.jpg' }));
+    const e = await thrown(
+      storeUpload(new InMemoryStorage(), { buffer: big, originalName: 'a.jpg' }),
+    );
     expect(e.status).toBe(413);
   });
 });

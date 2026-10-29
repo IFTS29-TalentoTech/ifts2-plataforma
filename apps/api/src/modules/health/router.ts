@@ -25,7 +25,10 @@ router.get('/', async (req, res) => {
     integrations = { storage: req.ctx.storage.kind, mailer: mail.mailer.kind, instagram: ig.kind };
   }
   const demoMode =
-    integrations.mailer === 'console' || integrations.mailer === 'fake' || integrations.instagram === 'fake' || integrations.storage === 'memory';
+    integrations.mailer === 'console' ||
+    integrations.mailer === 'fake' ||
+    integrations.instagram === 'fake' ||
+    integrations.storage === 'memory';
 
   res.status(db === 'ok' ? 200 : 503).json({
     status: db === 'ok' ? 'ok' : 'degraded',

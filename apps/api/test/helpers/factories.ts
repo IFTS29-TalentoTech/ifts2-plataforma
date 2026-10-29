@@ -7,7 +7,14 @@ let seq = 0;
 const next = () => ++seq;
 
 export async function createUser(
-  over: Partial<{ email: string; name: string; role: Role; password: string; active: boolean; mustChangePassword: boolean }> = {},
+  over: Partial<{
+    email: string;
+    name: string;
+    role: Role;
+    password: string;
+    active: boolean;
+    mustChangePassword: boolean;
+  }> = {},
 ) {
   const n = next();
   const password = over.password ?? TEST_PASSWORD;
@@ -25,17 +32,37 @@ export async function createUser(
 }
 
 export function createCategory(over: Partial<{ name: string; kind: string }> = {}) {
-  return testPrisma.category.create({ data: { name: over.name ?? `Categoría ${next()}`, kind: over.kind ?? 'NOTICE' } });
+  return testPrisma.category.create({
+    data: { name: over.name ?? `Categoría ${next()}`, kind: over.kind ?? 'NOTICE' },
+  });
 }
 
-export function createTerm(over: Partial<{ year: number; kind: 'FIRST' | 'SECOND' | 'EXTRAORDINARY'; publicCurrent: boolean }> = {}) {
+export function createTerm(
+  over: Partial<{
+    year: number;
+    kind: 'FIRST' | 'SECOND' | 'EXTRAORDINARY';
+    publicCurrent: boolean;
+  }> = {},
+) {
   return testPrisma.academicTerm.create({
-    data: { year: over.year ?? 2026, kind: over.kind ?? 'SECOND', publicCurrent: over.publicCurrent ?? false },
+    data: {
+      year: over.year ?? 2026,
+      kind: over.kind ?? 'SECOND',
+      publicCurrent: over.publicCurrent ?? false,
+    },
   });
 }
 
 export async function createNotice(
-  over: Partial<{ title: string; body: string; status: 'ACTIVE' | 'PAUSED'; visibleFrom: Date; visibleUntil: Date | null; urgent: boolean; authorId: string }> = {},
+  over: Partial<{
+    title: string;
+    body: string;
+    status: 'ACTIVE' | 'PAUSED';
+    visibleFrom: Date;
+    visibleUntil: Date | null;
+    urgent: boolean;
+    authorId: string;
+  }> = {},
 ) {
   const authorId = over.authorId ?? (await createUser({ role: 'BEDELIA' })).user.id;
   return testPrisma.notice.create({
@@ -52,7 +79,12 @@ export async function createNotice(
 }
 
 export async function createPublication(
-  over: Partial<{ title: string; status: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'PAUSED'; section: 'HOME' | 'NEWS' | 'BOTH'; authorId: string }> = {},
+  over: Partial<{
+    title: string;
+    status: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'PAUSED';
+    section: 'HOME' | 'NEWS' | 'BOTH';
+    authorId: string;
+  }> = {},
 ) {
   const authorId = over.authorId ?? (await createUser({ role: 'EDITOR' })).user.id;
   return testPrisma.publication.create({

@@ -55,7 +55,11 @@ export class IntegrationStore {
   }
 
   /** Actualiza combinando con lo guardado. */
-  async patch<N extends IntegrationName>(name: N, patch: Partial<StoredConfigs[N]>, userId?: string | null) {
+  async patch<N extends IntegrationName>(
+    name: N,
+    patch: Partial<StoredConfigs[N]>,
+    userId?: string | null,
+  ) {
     const current = (await this.get(name)) ?? ({} as StoredConfigs[N]);
     const next = { ...current, ...patch } as StoredConfigs[N];
     await this.set(name, next, userId);

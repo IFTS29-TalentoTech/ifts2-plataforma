@@ -46,7 +46,13 @@ export class SmtpMailer implements Mailer {
     this.transport = nodemailer.createTransport(smtpUrl);
   }
   async send(m: MailMessage) {
-    await this.transport.sendMail({ from: this.from, to: m.to, subject: m.subject, text: m.text, replyTo: m.replyTo });
+    await this.transport.sendMail({
+      from: this.from,
+      to: m.to,
+      subject: m.subject,
+      text: m.text,
+      replyTo: m.replyTo,
+    });
   }
 }
 
@@ -69,7 +75,11 @@ export async function createMailer(
   const stored = await store.get('mail');
   const contactTo = stored?.contactToEmail ?? config.mailer.contactToEmail ?? null;
   if (stored?.smtpUrl) {
-    return { mailer: new SmtpMailer(stored.smtpUrl, contactTo ?? 'no-reply@localhost'), contactTo, source: 'panel' };
+    return {
+      mailer: new SmtpMailer(stored.smtpUrl, contactTo ?? 'no-reply@localhost'),
+      contactTo,
+      source: 'panel',
+    };
   }
   if (config.mailer.provider === 'smtp' && config.mailer.smtpUrl) {
     return {

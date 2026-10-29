@@ -41,7 +41,12 @@ export class S3Storage implements StorageProvider {
 
   async put({ key, body, contentType }: PutInput) {
     await this.client.send(
-      new PutObjectCommand({ Bucket: this.opts.bucket, Key: key, Body: body, ContentType: contentType }),
+      new PutObjectCommand({
+        Bucket: this.opts.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+      }),
     );
   }
 
@@ -58,10 +63,15 @@ export class S3Storage implements StorageProvider {
 
   async get(key: string) {
     try {
-      const res = await this.client.send(new GetObjectCommand({ Bucket: this.opts.bucket, Key: key }));
+      const res = await this.client.send(
+        new GetObjectCommand({ Bucket: this.opts.bucket, Key: key }),
+      );
       const bytes = await res.Body?.transformToByteArray();
       if (!bytes) return null;
-      return { body: Buffer.from(bytes), contentType: res.ContentType ?? 'application/octet-stream' };
+      return {
+        body: Buffer.from(bytes),
+        contentType: res.ContentType ?? 'application/octet-stream',
+      };
     } catch {
       return null;
     }

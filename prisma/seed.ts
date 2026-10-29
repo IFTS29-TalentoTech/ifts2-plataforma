@@ -24,7 +24,8 @@ const mode = (process.env.SEED_MODE ?? 'demo').toLowerCase();
 
 const DAY = 86_400_000;
 /** Fin del día en Buenos Aires (UTC-3) para `yyyy-mm-dd`. */
-const endOfDayBA = (d: string) => new Date(new Date(`${d}T00:00:00Z`).getTime() + 3 * 3600_000 + DAY - 1);
+const endOfDayBA = (d: string) =>
+  new Date(new Date(`${d}T00:00:00Z`).getTime() + 3 * 3600_000 + DAY - 1);
 const startOfDayBA = (d: string) => new Date(new Date(`${d}T00:00:00Z`).getTime() + 3 * 3600_000);
 const log = (m: string) => console.log(`[seed:${mode}] ${m}`);
 
@@ -34,7 +35,9 @@ async function seedAdmin() {
   const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
   if (!email || !password) {
-    throw new Error('Faltan SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD para crear el administrador inicial.');
+    throw new Error(
+      'Faltan SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD para crear el administrador inicial.',
+    );
   }
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -138,7 +141,11 @@ async function seedDemo(adminId: string) {
 
   // Categorías
   const cat = async (name: string, kind: string) =>
-    prisma.category.upsert({ where: { name_kind: { name, kind } }, create: { name, kind }, update: {} });
+    prisma.category.upsert({
+      where: { name_kind: { name, kind } },
+      create: { name, kind },
+      update: {},
+    });
   const [cEvento, cAviso, cInst, cPracticas] = await Promise.all([
     cat('Evento', 'PUBLICATION'),
     cat('Aviso', 'PUBLICATION'),
@@ -156,55 +163,132 @@ async function seedDemo(adminId: string) {
   const term = (year: number, kind: 'FIRST' | 'SECOND', startsOn: string, endsOn: string) =>
     prisma.academicTerm.upsert({
       where: { year_kind: { year, kind } },
-      create: { year, kind, startsOn: startOfDayBA(startsOn), endsOn: endOfDayBA(endsOn), publicCurrent: false },
+      create: {
+        year,
+        kind,
+        startsOn: startOfDayBA(startsOn),
+        endsOn: endOfDayBA(endsOn),
+        publicCurrent: false,
+      },
       update: {},
     });
   const first = await term(2026, 'FIRST', '2026-03-09', '2026-07-31');
   const second = await term(2026, 'SECOND', '2026-08-03', '2026-12-18');
   await prisma.$transaction([
-    prisma.academicTerm.updateMany({ where: { publicCurrent: true, NOT: { id: second.id } }, data: { publicCurrent: false } }),
+    prisma.academicTerm.updateMany({
+      where: { publicCurrent: true, NOT: { id: second.id } },
+      data: { publicCurrent: false },
+    }),
     prisma.academicTerm.update({ where: { id: second.id }, data: { publicCurrent: true } }),
   ]);
 
   // Documentos
   const docCronograma = await demoDocument(
-    { key: 'seed/cronograma-mesas-diciembre-2026.pdf', title: 'Cronograma de mesas — Turno extraordinario de Diciembre 2026', kind: 'EXAM_CALENDAR', category: 'Mesas Examen', cycleYear: 2026, termLabel: '2.° Cuat.' },
+    {
+      key: 'seed/cronograma-mesas-diciembre-2026.pdf',
+      title: 'Cronograma de mesas — Turno extraordinario de Diciembre 2026',
+      kind: 'EXAM_CALENDAR',
+      category: 'Mesas Examen',
+      cycleYear: 2026,
+      termLabel: '2.° Cuat.',
+    },
     bedelia.id,
   );
   const docHorariosAB = await demoDocument(
-    { key: 'seed/horarios-2026-2-comision-ab.pdf', title: 'Horarios 2.° cuatrimestre 2026 — Comisión A y B', kind: 'SCHEDULE', category: 'Cursada', cycleYear: 2026, termLabel: '2.° Cuat.' },
+    {
+      key: 'seed/horarios-2026-2-comision-ab.pdf',
+      title: 'Horarios 2.° cuatrimestre 2026 — Comisión A y B',
+      kind: 'SCHEDULE',
+      category: 'Cursada',
+      cycleYear: 2026,
+      termLabel: '2.° Cuat.',
+    },
     bedelia.id,
   );
   const docHorariosUnica = await demoDocument(
-    { key: 'seed/horarios-2026-2-comision-unica.pdf', title: 'Horarios 2.° cuatrimestre 2026 — Comisión Única', kind: 'SCHEDULE', category: 'Cursada', cycleYear: 2026, termLabel: '2.° Cuat.' },
+    {
+      key: 'seed/horarios-2026-2-comision-unica.pdf',
+      title: 'Horarios 2.° cuatrimestre 2026 — Comisión Única',
+      kind: 'SCHEDULE',
+      category: 'Cursada',
+      cycleYear: 2026,
+      termLabel: '2.° Cuat.',
+    },
     bedelia.id,
   );
   const docHorarios1 = await demoDocument(
-    { key: 'seed/horarios-2026-1-comision-ab.pdf', title: 'Horarios 1.° cuatrimestre 2026 — Comisión A y B', kind: 'SCHEDULE', category: 'Cursada', cycleYear: 2026, termLabel: '1.° Cuat.', archived: true },
+    {
+      key: 'seed/horarios-2026-1-comision-ab.pdf',
+      title: 'Horarios 1.° cuatrimestre 2026 — Comisión A y B',
+      kind: 'SCHEDULE',
+      category: 'Cursada',
+      cycleYear: 2026,
+      termLabel: '1.° Cuat.',
+      archived: true,
+    },
     bedelia.id,
   );
   await demoDocument(
-    { key: 'seed/calendario-mesas-diciembre-2025.pdf', title: 'Calendario de mesas de examen — Diciembre 2025', kind: 'EXAM_CALENDAR', category: 'Mesas Examen', cycleYear: 2025, termLabel: '2.° Cuat.', archived: true },
+    {
+      key: 'seed/calendario-mesas-diciembre-2025.pdf',
+      title: 'Calendario de mesas de examen — Diciembre 2025',
+      kind: 'EXAM_CALENDAR',
+      category: 'Mesas Examen',
+      cycleYear: 2025,
+      termLabel: '2.° Cuat.',
+      archived: true,
+    },
     bedelia.id,
   );
   await demoDocument(
-    { key: 'seed/horarios-2025-1.pdf', title: 'Horarios 1.° cuatrimestre 2025', kind: 'SCHEDULE', category: 'Cursada', cycleYear: 2025, termLabel: '1.° Cuat.', archived: true },
+    {
+      key: 'seed/horarios-2025-1.pdf',
+      title: 'Horarios 1.° cuatrimestre 2025',
+      kind: 'SCHEDULE',
+      category: 'Cursada',
+      cycleYear: 2025,
+      termLabel: '1.° Cuat.',
+      archived: true,
+    },
     bedelia.id,
   );
   await demoDocument(
-    { key: 'seed/calendario-mesas-diciembre-2024.pdf', title: 'Calendario de mesas de examen — Diciembre 2024', kind: 'EXAM_CALENDAR', category: 'Mesas Examen', cycleYear: 2024, termLabel: '2.° Cuat.', archived: true },
+    {
+      key: 'seed/calendario-mesas-diciembre-2024.pdf',
+      title: 'Calendario de mesas de examen — Diciembre 2024',
+      kind: 'EXAM_CALENDAR',
+      category: 'Mesas Examen',
+      cycleYear: 2024,
+      termLabel: '2.° Cuat.',
+      archived: true,
+    },
     bedelia.id,
   );
   await demoDocument(
-    { key: 'seed/resolucion-megc-1202-07.pdf', title: 'Marco normativo y plan de carrera (Res. MEGC 1202/07)', kind: 'RESOLUTION', category: 'Normativa', cycleYear: 2024, resolutionCode: 'MEGC 1202/07', archived: true },
+    {
+      key: 'seed/resolucion-megc-1202-07.pdf',
+      title: 'Marco normativo y plan de carrera (Res. MEGC 1202/07)',
+      kind: 'RESOLUTION',
+      category: 'Normativa',
+      cycleYear: 2024,
+      resolutionCode: 'MEGC 1202/07',
+      archived: true,
+    },
     bedelia.id,
   );
 
   // Horarios por comisión
-  const schedule = async (termId: string, commissionName: string, documentId: string | null, published: boolean) => {
+  const schedule = async (
+    termId: string,
+    commissionName: string,
+    documentId: string | null,
+    published: boolean,
+  ) => {
     const found = await prisma.schedule.findFirst({ where: { termId, commissionName } });
     if (found) return found;
-    return prisma.schedule.create({ data: { termId, commissionName, documentId, published, updatedBy: bedelia.id } });
+    return prisma.schedule.create({
+      data: { termId, commissionName, documentId, published, updatedBy: bedelia.id },
+    });
   };
   await schedule(second.id, 'Comisión A y B', docHorariosAB.id, true);
   await schedule(second.id, 'Comisión Única', docHorariosUnica.id, true);
@@ -227,7 +311,10 @@ async function seedDemo(adminId: string) {
   };
   if (call) await prisma.examCall.update({ where: { id: call.id }, data: callData });
   else await prisma.examCall.create({ data: callData });
-  await prisma.siteSetting.update({ where: { key: 'exam_enrollment_open' }, data: { value: 'true' } });
+  await prisma.siteSetting.update({
+    where: { key: 'exam_enrollment_open' },
+    data: { value: 'true' },
+  });
 
   // Avisos: vigente (hasta el 25/11/2026), urgente (vence en 6 días) y vencido
   const notice = async (n: {
@@ -241,7 +328,14 @@ async function seedDemo(adminId: string) {
     visibleUntil: Date;
     attachmentId?: string;
   }) => {
-    const data = { audience: 'STUDENTS' as const, urgent: false, highlighted: false, status: 'ACTIVE' as const, authorId: bedelia.id, ...n };
+    const data = {
+      audience: 'STUDENTS' as const,
+      urgent: false,
+      highlighted: false,
+      status: 'ACTIVE' as const,
+      authorId: bedelia.id,
+      ...n,
+    };
     const found = await prisma.notice.findFirst({ where: { title: n.title } });
     if (found) await prisma.notice.update({ where: { id: found.id }, data });
     else await prisma.notice.create({ data });
@@ -276,7 +370,13 @@ async function seedDemo(adminId: string) {
   for (const m of FAKE_MEDIA) {
     await prisma.socialPost.upsert({
       where: { externalId: m.id },
-      create: { externalId: m.id, permalink: m.permalink, caption: m.caption, mediaUrl: m.mediaUrl, postedAt: new Date(m.timestamp) },
+      create: {
+        externalId: m.id,
+        permalink: m.permalink,
+        caption: m.caption,
+        mediaUrl: m.mediaUrl,
+        postedAt: new Date(m.timestamp),
+      },
       update: {},
     });
   }
@@ -291,14 +391,45 @@ async function seedDemo(adminId: string) {
     const found = await prisma.publication.findFirst({ where: { title: p.title } });
     if (found) return;
     await prisma.publication.create({
-      data: { kind: 'NEWS', section: 'BOTH', status: 'PUBLISHED', visibleFrom: new Date(now - 10 * DAY), authorId: editor.id, ...p },
+      data: {
+        kind: 'NEWS',
+        section: 'BOTH',
+        status: 'PUBLISHED',
+        visibleFrom: new Date(now - 10 * DAY),
+        authorId: editor.id,
+        ...p,
+      },
     });
   };
-  await pub({ title: 'Jornada gastronómica', summary: 'Actividades de las prácticas profesionalizantes. Imagen pendiente de autorización.', kind: 'EVENT', categoryId: cEvento.id });
-  await pub({ title: 'Avisos académicos', summary: 'Consultá las fechas y los comunicados del cuatrimestre.', categoryId: cAviso.id, section: 'HOME' });
-  await pub({ title: 'Comunidad IFTS', summary: 'Conocé las experiencias de nuestros estudiantes.', categoryId: cInst.id });
-  await pub({ title: 'Mateada Patria 2025', summary: 'Ejemplo histórico: la celebración del 25 de mayo con toda la comunidad.', categoryId: cInst.id, section: 'NEWS' });
-  await pub({ title: 'Práctica Profesional II: nueva edición', summary: 'Borrador de demostración sin publicar.', categoryId: cPracticas.id, status: 'DRAFT' });
+  await pub({
+    title: 'Jornada gastronómica',
+    summary: 'Actividades de las prácticas profesionalizantes. Imagen pendiente de autorización.',
+    kind: 'EVENT',
+    categoryId: cEvento.id,
+  });
+  await pub({
+    title: 'Avisos académicos',
+    summary: 'Consultá las fechas y los comunicados del cuatrimestre.',
+    categoryId: cAviso.id,
+    section: 'HOME',
+  });
+  await pub({
+    title: 'Comunidad IFTS',
+    summary: 'Conocé las experiencias de nuestros estudiantes.',
+    categoryId: cInst.id,
+  });
+  await pub({
+    title: 'Mateada Patria 2025',
+    summary: 'Ejemplo histórico: la celebración del 25 de mayo con toda la comunidad.',
+    categoryId: cInst.id,
+    section: 'NEWS',
+  });
+  await pub({
+    title: 'Práctica Profesional II: nueva edición',
+    summary: 'Borrador de demostración sin publicar.',
+    categoryId: cPracticas.id,
+    status: 'DRAFT',
+  });
 
   // Contenido de páginas estancas
   for (const s of CONTENT) {
@@ -312,7 +443,13 @@ async function seedDemo(adminId: string) {
   // Un mensaje de contacto de ejemplo
   if ((await prisma.contactMessage.count()) === 0) {
     await prisma.contactMessage.create({
-      data: { name: 'Persona de Ejemplo', email: 'ejemplo@example.com', subject: 'Consulta de ingreso', message: 'Mensaje de demostración.', consent: true },
+      data: {
+        name: 'Persona de Ejemplo',
+        email: 'ejemplo@example.com',
+        subject: 'Consulta de ingreso',
+        message: 'Mensaje de demostración.',
+        consent: true,
+      },
     });
   }
 
@@ -321,14 +458,22 @@ async function seedDemo(adminId: string) {
   if (key.length === 32) {
     await prisma.integrationConfig.upsert({
       where: { key: 'instagram' },
-      create: { key: 'instagram', valueEnc: encryptJson({ mode: 'demo' }, key), updatedBy: adminId },
+      create: {
+        key: 'instagram',
+        valueEnc: encryptJson({ mode: 'demo' }, key),
+        updatedBy: adminId,
+      },
       update: {},
     });
   } else {
-    log('APP_ENCRYPTION_KEY no válida: se omite IntegrationConfig (la API usa modo demostración igual)');
+    log(
+      'APP_ENCRYPTION_KEY no válida: se omite IntegrationConfig (la API usa modo demostración igual)',
+    );
   }
 
-  await prisma.auditLog.create({ data: { userId: adminId, action: 'seed.demo', entity: 'System', detail: { mode: 'demo' } } });
+  await prisma.auditLog.create({
+    data: { userId: adminId, action: 'seed.demo', entity: 'System', detail: { mode: 'demo' } },
+  });
   log('datos de demostración listos');
 }
 

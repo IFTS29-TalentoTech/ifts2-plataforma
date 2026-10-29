@@ -3,7 +3,8 @@ import type { ConnectionTest, InstagramClient, InstagramMedia } from './types';
 export const FAKE_MEDIA: InstagramMedia[] = [
   {
     id: 'fake-ig-001',
-    caption: 'Jornada gastronómica en sede Lugano. Actividades de las prácticas profesionalizantes. #ifts2web',
+    caption:
+      'Jornada gastronómica en sede Lugano. Actividades de las prácticas profesionalizantes. #ifts2web',
     mediaType: 'IMAGE',
     mediaUrl: 'https://example.invalid/fake/jornada-gastronomica.jpg',
     permalink: 'https://www.instagram.com/p/fake-ig-001/',
@@ -11,7 +12,8 @@ export const FAKE_MEDIA: InstagramMedia[] = [
   },
   {
     id: 'fake-ig-002',
-    caption: 'Mateada Patria 2025: compartimos la celebración del 25 de mayo con toda la comunidad. #ifts2web',
+    caption:
+      'Mateada Patria 2025: compartimos la celebración del 25 de mayo con toda la comunidad. #ifts2web',
     mediaType: 'IMAGE',
     mediaUrl: 'https://example.invalid/fake/mateada-patria.jpg',
     permalink: 'https://www.instagram.com/p/fake-ig-002/',
@@ -19,7 +21,8 @@ export const FAKE_MEDIA: InstagramMedia[] = [
   },
   {
     id: 'fake-ig-003',
-    caption: 'Feliz Día del Trabajador Gastronómico. Un saludo institucional a toda la comunidad. #ifts2web',
+    caption:
+      'Feliz Día del Trabajador Gastronómico. Un saludo institucional a toda la comunidad. #ifts2web',
     mediaType: 'IMAGE',
     mediaUrl: 'https://example.invalid/fake/dia-del-trabajador.jpg',
     permalink: 'https://www.instagram.com/p/fake-ig-003/',

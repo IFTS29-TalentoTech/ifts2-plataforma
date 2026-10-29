@@ -1,3 +1,12 @@
+/**
+ * Fábrica de la aplicación Express (la usan server.ts y Supertest).
+ *
+ * - `buildContext` arma el AppContext (req.ctx): prisma, storage, integraciones y limitadores. Los
+ *   módulos solo hablan con servicios a través de req.ctx, así las pruebas los reemplazan por dobles.
+ * - Orden de middlewares (importa): ctx -> helmet -> CORS (solo APP_ORIGIN, con cookies) -> JSON (1 MB)
+ *   -> cookies -> log -> verificación de Origin (CSRF, ADR-06) -> attachAuth (sesión) -> módulos -> 404 -> errores.
+ * - Los módulos se descubren solos (routes.ts): agregar uno no requiere editar este archivo.
+ */
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { type Express } from 'express';
@@ -42,10 +51,15 @@ export function buildContext(opts: CreateAppOptions = {}): AppContext {
     integrations,
     storage: opts.storage ?? createStorage(config),
     limiters: createLimiters(config),
-    getInstagramClient: async () => opts.instagramClient ?? createInstagramClient(config, integrations),
+    getInstagramClient: async () =>
+      opts.instagramClient ?? createInstagramClient(config, integrations),
     getMailer: async () => {
       if (opts.mailer) {
-        return { mailer: opts.mailer, contactTo: opts.contactTo ?? config.mailer.contactToEmail ?? null, source: 'default' as const };
+        return {
+          mailer: opts.mailer,
+          contactTo: opts.contactTo ?? config.mailer.contactToEmail ?? null,
+          source: 'default' as const,
+        };
       }
       return createMailer(config, integrations, logger);
     },
@@ -72,7 +86,10 @@ export async function createApp(opts: CreateAppOptions = {}): Promise<Express> {
   app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () =>
-      ctx.logger.info({ method: req.method, path: req.path, status: res.statusCode, ms: Date.now() - start }, 'request'),
+      ctx.logger.info(
+        { method: req.method, path: req.path, status: res.statusCode, ms: Date.now() - start },
+        'request',
+      ),
     );
     next();
   });

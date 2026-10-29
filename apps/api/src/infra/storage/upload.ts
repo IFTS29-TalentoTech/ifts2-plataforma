@@ -8,7 +8,8 @@ export type AllowedMime = (typeof FILE_LIMITS.allowedMime)[number];
 
 /** Detecta el tipo real por la firma del archivo (magic bytes); ignora lo que declare el cliente. */
 export function sniffMime(buf: Buffer): AllowedMime | null {
-  if (buf.length >= 5 && buf.subarray(0, 5).toString('latin1') === '%PDF-') return 'application/pdf';
+  if (buf.length >= 5 && buf.subarray(0, 5).toString('latin1') === '%PDF-')
+    return 'application/pdf';
   if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
   if (
     buf.length >= 8 &&

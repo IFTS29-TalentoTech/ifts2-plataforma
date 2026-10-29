@@ -25,7 +25,8 @@ export class LocalDiskStorage implements StorageProvider {
   /** Resuelve la clave a una ruta dentro de `root`; rechaza intentos de salir del directorio. */
   private resolve(key: string): string {
     const full = path.resolve(this.root, key);
-    if (!full.startsWith(this.root + path.sep)) throw new Error('Clave de almacenamiento no válida.');
+    if (!full.startsWith(this.root + path.sep))
+      throw new Error('Clave de almacenamiento no válida.');
     return full;
   }
 

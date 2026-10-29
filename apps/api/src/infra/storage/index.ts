@@ -29,6 +29,11 @@ export function createStorage(config: AppConfig): StorageProvider {
       );
     case 'local':
     default:
-      return new LocalDiskStorage(s.localDir, s.signingSecret, config.apiOrigin, s.signedUrlTtlSeconds);
+      return new LocalDiskStorage(
+        s.localDir,
+        s.signingSecret,
+        config.apiOrigin,
+        s.signedUrlTtlSeconds,
+      );
   }
 }

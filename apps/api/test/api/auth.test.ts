@@ -28,7 +28,9 @@ describe('POST /auth/login', () => {
     const hours = (session.expiresAt.getTime() - Date.now()) / 3_600_000;
     expect(hours).toBeGreaterThan(7.9);
     expect(hours).toBeLessThanOrEqual(8);
-    expect((await testPrisma.user.findUniqueOrThrow({ where: { id: user.id } })).lastLoginAt).not.toBeNull();
+    expect(
+      (await testPrisma.user.findUniqueOrThrow({ where: { id: user.id } })).lastLoginAt,
+    ).not.toBeNull();
     expect(await testPrisma.auditLog.count({ where: { action: 'auth.login' } })).toBe(1);
   });
 
@@ -78,7 +80,8 @@ describe('POST /auth/login', () => {
 
   it('un login exitoso no consume el límite', async () => {
     const { user } = await createUser();
-    for (let i = 0; i < 7; i++) expect((await loginWith(t.app, user.email, TEST_PASSWORD)).status).toBe(204);
+    for (let i = 0; i < 7; i++)
+      expect((await loginWith(t.app, user.email, TEST_PASSWORD)).status).toBe(204);
   });
 });
 
@@ -87,7 +90,12 @@ describe('GET /auth/me', () => {
     const { cookie, user } = await loginAs(t.app, 'BEDELIA');
     const res = await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie);
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: user.id, email: user.email, role: 'BEDELIA', mustChangePassword: false });
+    expect(res.body).toMatchObject({
+      id: user.id,
+      email: user.email,
+      role: 'BEDELIA',
+      mustChangePassword: false,
+    });
     expect(res.body.permissions).toContain('notices:manage');
     expect(res.body.permissions).not.toContain('users:manage');
     expect(res.body.passwordHash).toBeUndefined();
@@ -97,12 +105,17 @@ describe('GET /auth/me', () => {
     expect(res.status).toBe(401);
   });
   it('401 con una cookie inventada', async () => {
-    const res = await request(t.app).get('/api/v1/auth/me').set('Cookie', 'ifts2_session=' + 'x'.repeat(43));
+    const res = await request(t.app)
+      .get('/api/v1/auth/me')
+      .set('Cookie', 'ifts2_session=' + 'x'.repeat(43));
     expect(res.status).toBe(401);
   });
   it('401 si la sesión venció', async () => {
     const { cookie, user } = await loginAs(t.app, 'EDITOR');
-    await testPrisma.session.updateMany({ where: { userId: user.id }, data: { expiresAt: new Date(Date.now() - 1000) } });
+    await testPrisma.session.updateMany({
+      where: { userId: user.id },
+      data: { expiresAt: new Date(Date.now() - 1000) },
+    });
     expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie)).status).toBe(401);
   });
 });
@@ -110,7 +123,9 @@ describe('GET /auth/me', () => {
 describe('POST /auth/logout', () => {
   it('cierra la sesión: la cookie deja de servir', async () => {
     const { cookie, user } = await loginAs(t.app, 'EDITOR');
-    expect((await request(t.app).post('/api/v1/auth/logout').set('Cookie', cookie)).status).toBe(204);
+    expect((await request(t.app).post('/api/v1/auth/logout').set('Cookie', cookie)).status).toBe(
+      204,
+    );
     expect(await testPrisma.session.count({ where: { userId: user.id } })).toBe(0);
     expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie)).status).toBe(401);
   });
@@ -128,21 +143,34 @@ describe('POST /auth/change-password', () => {
       .set('Cookie', cookie)
       .send({ current: TEST_PASSWORD, next: 'Nueva-clave-2026' });
     expect(res.status).toBe(204);
-    expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', cookieFrom(other))).status).toBe(401);
+    expect(
+      (await request(t.app).get('/api/v1/auth/me').set('Cookie', cookieFrom(other))).status,
+    ).toBe(401);
     expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie)).status).toBe(200);
     expect((await loginWith(t.app, user.email, 'Nueva-clave-2026')).status).toBe(204);
     expect((await loginWith(t.app, user.email, TEST_PASSWORD)).status).toBe(401);
   });
   it('400 si la actual es incorrecta o la nueva es débil/igual', async () => {
     const { cookie } = await loginAs(t.app, 'EDITOR');
-    const post = (b: object) => request(t.app).post('/api/v1/auth/change-password').set('Cookie', cookie).send(b);
-    expect((await post({ current: 'mala', next: 'Nueva-clave-2026' })).body.errors.current).toBeDefined();
-    expect((await post({ current: TEST_PASSWORD, next: 'corta1' })).body.errors.next[0]).toMatch(/al menos 10/);
-    expect((await post({ current: TEST_PASSWORD, next: 'sololetrasaqui' })).body.errors.next[0]).toMatch(/letras y números/);
-    expect((await post({ current: TEST_PASSWORD, next: TEST_PASSWORD })).body.errors.next[0]).toMatch(/distinta/);
+    const post = (b: object) =>
+      request(t.app).post('/api/v1/auth/change-password').set('Cookie', cookie).send(b);
+    expect(
+      (await post({ current: 'mala', next: 'Nueva-clave-2026' })).body.errors.current,
+    ).toBeDefined();
+    expect((await post({ current: TEST_PASSWORD, next: 'corta1' })).body.errors.next[0]).toMatch(
+      /al menos 10/,
+    );
+    expect(
+      (await post({ current: TEST_PASSWORD, next: 'sololetrasaqui' })).body.errors.next[0],
+    ).toMatch(/letras y números/);
+    expect(
+      (await post({ current: TEST_PASSWORD, next: TEST_PASSWORD })).body.errors.next[0],
+    ).toMatch(/distinta/);
   });
   it('401 sin sesión', async () => {
-    const res = await request(t.app).post('/api/v1/auth/change-password').send({ current: 'a', next: 'Nueva-clave-2026' });
+    const res = await request(t.app)
+      .post('/api/v1/auth/change-password')
+      .send({ current: 'a', next: 'Nueva-clave-2026' });
     expect(res.status).toBe(401);
   });
 });
@@ -153,8 +181,14 @@ describe('cambio de clave obligatorio', () => {
     const blocked = await request(t.app).get('/api/v1/users').set('Cookie', cookie);
     expect(blocked.status).toBe(403);
     expect(blocked.body.reason).toBe('password-change-required');
-    expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie)).body.mustChangePassword).toBe(true);
-    await request(t.app).post('/api/v1/auth/change-password').set('Cookie', cookie).send({ current: TEST_PASSWORD, next: 'Nueva-clave-2026' }).expect(204);
+    expect(
+      (await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie)).body.mustChangePassword,
+    ).toBe(true);
+    await request(t.app)
+      .post('/api/v1/auth/change-password')
+      .set('Cookie', cookie)
+      .send({ current: TEST_PASSWORD, next: 'Nueva-clave-2026' })
+      .expect(204);
     expect((await request(t.app).get('/api/v1/users').set('Cookie', cookie)).status).toBe(200);
   });
 });
@@ -162,9 +196,15 @@ describe('cambio de clave obligatorio', () => {
 describe('CSRF: verificación de Origin', () => {
   it('rechaza métodos mutantes con un Origin ajeno (403) y acepta el del frontend', async () => {
     const { user } = await createUser();
-    const bad = await request(t.app).post('/api/v1/auth/login').set('Origin', 'https://evil.example').send({ email: user.email, password: TEST_PASSWORD });
+    const bad = await request(t.app)
+      .post('/api/v1/auth/login')
+      .set('Origin', 'https://evil.example')
+      .send({ email: user.email, password: TEST_PASSWORD });
     expect(bad.status).toBe(403);
-    const good = await request(t.app).post('/api/v1/auth/login').set('Origin', 'http://localhost:3000').send({ email: user.email, password: TEST_PASSWORD });
+    const good = await request(t.app)
+      .post('/api/v1/auth/login')
+      .set('Origin', 'http://localhost:3000')
+      .send({ email: user.email, password: TEST_PASSWORD });
     expect(good.status).toBe(204);
   });
 });
@@ -176,7 +216,10 @@ describe('formato de errores', () => {
     expect(res.body).toMatchObject({ status: 404, code: 'not-found', title: 'No encontrado' });
   });
   it('JSON inválido da 400 claro', async () => {
-    const res = await request(t.app).post('/api/v1/auth/login').set('Content-Type', 'application/json').send('{no-json');
+    const res = await request(t.app)
+      .post('/api/v1/auth/login')
+      .set('Content-Type', 'application/json')
+      .send('{no-json');
     expect(res.status).toBe(400);
   });
 });

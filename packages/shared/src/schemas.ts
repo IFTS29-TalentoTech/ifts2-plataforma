@@ -25,7 +25,10 @@ import { endOfDayBA, startOfDayBA } from './time';
 
 export const text = (label: string, max = 200) =>
   z
-    .string({ required_error: `${label} es obligatorio.`, invalid_type_error: `${label} no es válido.` })
+    .string({
+      required_error: `${label} es obligatorio.`,
+      invalid_type_error: `${label} no es válido.`,
+    })
     .trim()
     .min(1, `${label} es obligatorio.`)
     .max(max, `${label} no puede superar los ${max} caracteres.`);
@@ -44,13 +47,14 @@ const enumOf = <T extends readonly [string, ...string[]]>(label: string, values:
   });
 
 const uuid = (label: string) =>
-  z
-    .string({ required_error: `${label} es obligatorio.` })
-    .uuid(`${label} no es válido.`);
+  z.string({ required_error: `${label} es obligatorio.` }).uuid(`${label} no es válido.`);
 
 export const email = (label = 'El correo') =>
   z
-    .string({ required_error: `${label} es obligatorio.`, invalid_type_error: `${label} no es válido.` })
+    .string({
+      required_error: `${label} es obligatorio.`,
+      invalid_type_error: `${label} no es válido.`,
+    })
     .trim()
     .toLowerCase()
     .min(1, `${label} es obligatorio.`)
@@ -86,7 +90,10 @@ const optionalDate = (label: string, edge: 'start' | 'end' = 'start') =>
 
 export const url = (label: string) =>
   z
-    .string({ required_error: `${label} es obligatoria.`, invalid_type_error: `${label} no es válida.` })
+    .string({
+      required_error: `${label} es obligatoria.`,
+      invalid_type_error: `${label} no es válida.`,
+    })
     .trim()
     .min(1, `${label} es obligatoria.`)
     .max(2000, `${label} es demasiado larga.`)
@@ -147,7 +154,9 @@ export type LoginInput = z.infer<typeof loginInput>;
 
 export const changePasswordInput = z
   .object({
-    current: z.string({ required_error: 'Ingresá tu contraseña actual.' }).min(1, 'Ingresá tu contraseña actual.'),
+    current: z
+      .string({ required_error: 'Ingresá tu contraseña actual.' })
+      .min(1, 'Ingresá tu contraseña actual.'),
     next: password('La nueva contraseña'),
   })
   .refine((v) => v.current !== v.next, {
@@ -327,7 +336,10 @@ export const noticeResumeInput = z
 export const termCreateInput = z
   .object({
     year: z
-      .number({ required_error: 'El año lectivo es obligatorio.', invalid_type_error: 'El año lectivo debe ser un número.' })
+      .number({
+        required_error: 'El año lectivo es obligatorio.',
+        invalid_type_error: 'El año lectivo debe ser un número.',
+      })
       .int('El año lectivo debe ser un número entero.')
       .min(2000, 'El año lectivo no es válido.')
       .max(2100, 'El año lectivo no es válido.'),
@@ -443,7 +455,10 @@ export const settingsUpdateInput = z
     instagram_hashtag: z
       .string()
       .trim()
-      .regex(/^#?[\p{L}\p{N}_]{2,50}$/u, 'El hashtag debe tener entre 2 y 50 letras, números o guiones bajos.')
+      .regex(
+        /^#?[\p{L}\p{N}_]{2,50}$/u,
+        'El hashtag debe tener entre 2 y 50 letras, números o guiones bajos.',
+      )
       .transform((v) => (v.startsWith('#') ? v : `#${v}`)),
     exam_enrollment_open: z.boolean(),
     tagline: text('La frase institucional', 300),
@@ -477,7 +492,9 @@ export const contentPageParam = enumOf('La página', CONTENT_PAGES);
 
 export const contentSectionInput = z.object({
   title: text('El título de la sección', 160),
-  body: z.string({ required_error: 'El texto es obligatorio.' }).max(50000, 'El texto es demasiado largo.'),
+  body: z
+    .string({ required_error: 'El texto es obligatorio.' })
+    .max(50000, 'El texto es demasiado largo.'),
   order: z.number().int().min(0).max(1000).default(0),
   visible: z.boolean().default(true),
 });
@@ -509,7 +526,10 @@ export const instagramConfigInput = z
     hashtag: z
       .string()
       .trim()
-      .regex(/^#?[\p{L}\p{N}_]{2,50}$/u, 'El hashtag debe tener entre 2 y 50 letras, números o guiones bajos.')
+      .regex(
+        /^#?[\p{L}\p{N}_]{2,50}$/u,
+        'El hashtag debe tener entre 2 y 50 letras, números o guiones bajos.',
+      )
       .transform((v) => (v.startsWith('#') ? v : `#${v}`))
       .optional(),
     /** Alternativa a OAuth: pegar un token de acceso de larga duración. */

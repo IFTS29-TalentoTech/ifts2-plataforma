@@ -22,7 +22,10 @@ export function createLimiters(config: AppConfig): Limiters {
       windowMs: config.loginLimit.windowMs,
       limit: config.loginLimit.max,
       skipSuccessfulRequests: true,
-      keyGenerator: (req) => `email:${String(req.body?.email ?? '').toLowerCase().trim()}`,
+      keyGenerator: (req) =>
+        `email:${String(req.body?.email ?? '')
+          .toLowerCase()
+          .trim()}`,
       validate: { keyGeneratorIpFallback: false },
     }),
     contact: rateLimit({ ...base, windowMs: 60 * 60_000, limit: 5 }),

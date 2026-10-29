@@ -1,0 +1,53 @@
+/* ARCHIVO GENERADO por `pnpm tokens` desde docs/specs/design-tokens.json. No editar a mano. */
+/* Único lugar con colores hex y nombres de fuente de la web. */
+
+:root {
+  /* Colores (Figma) */
+  --color-primary: #8D775F;
+  --color-base: #F6F6F3;
+  --color-accent: #6F5142;
+  --color-accent-2: #E0DFD5;
+  --color-accent-3: #291711;
+  --color-font: #6E7271;
+  --color-success-text: #556B3F;
+  --color-success-back: #E8EDE4;
+  --color-warning-text: #B77A3A;
+  --color-warning-back: #F7E9D6;
+  --color-danger-text: #7A3A32;
+  --color-danger-back: #F3DCDC;
+  /* Colores derivados: ajustes de contraste AA */
+  --color-surface: #FFFFFF;
+  --color-primary-strong: #806C56;
+  --color-font-strong: #5F6261;
+  --color-warning-text-strong: #8D5E2D;
+  --color-danger-solid: #7A3A32;
+  --color-focus-ring: #291711;
+  /* Fuentes: next/font asigna --font-sans-loaded / --font-display-loaded (src/app/fonts.ts) */
+  --font-sans: var(--font-sans-loaded), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-display-loaded), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Radios, sombras y espaciados */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(41, 23, 17, 0.05), 0 4px 16px rgba(41, 23, 17, 0.06);
+  --shadow-popover: 0 8px 30px rgba(41, 23, 17, 0.16);
+  --shadow-focus: 0 0 0 3px rgba(111, 81, 66, 0.35);
+  --space-gutter: 16px;
+  --space-gutter-lg: 32px;
+  --space-section: 64px;
+  --space-container: 1200px;
+  --space-panel-sidebar: 240px;
+}
+
+[data-theme='alt'] {
+  --color-primary: #4F7A5A;
+  --color-base: #F4F7F2;
+  --color-accent: #2F5A3C;
+  --color-accent-2: #DDE8DA;
+  --color-accent-3: #14281B;
+  --color-primary-strong: #3F6B4B;
+  --color-font-strong: #4A5750;
+  --color-focus-ring: #14281B;
+}

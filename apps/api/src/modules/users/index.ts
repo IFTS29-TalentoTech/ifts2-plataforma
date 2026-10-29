@@ -35,7 +35,10 @@ const select = {
 
 const DUP_EMAIL = { email: ['Ya existe un usuario con ese correo.'] };
 
-async function countOtherActiveAdmins(db: Prisma.TransactionClient | import('@prisma/client').PrismaClient, exceptId: string) {
+async function countOtherActiveAdmins(
+  db: Prisma.TransactionClient | import('@prisma/client').PrismaClient,
+  exceptId: string,
+) {
   return db.user.count({ where: { role: 'ADMIN', active: true, NOT: { id: exceptId } } });
 }
 
@@ -45,7 +48,12 @@ router.get('/', validate({ query: userListQuery }), async (req, res) => {
     ...(q.role ? { role: q.role } : {}),
     ...(q.active !== undefined ? { active: q.active } : {}),
     ...(q.q
-      ? { OR: [{ name: { contains: q.q, mode: 'insensitive' } }, { email: { contains: q.q, mode: 'insensitive' } }] }
+      ? {
+          OR: [
+            { name: { contains: q.q, mode: 'insensitive' } },
+            { email: { contains: q.q, mode: 'insensitive' } },
+          ],
+        }
       : {}),
   };
   const [total, items] = await Promise.all([
@@ -82,7 +90,11 @@ router.post('/', validate({ body: userCreateInput }), async (req, res) => {
         },
         select,
       });
-      await audit.fromReq(req, { action: 'user.create', entity: 'User', entityId: u.id, detail: { role: u.role } }, tx);
+      await audit.fromReq(
+        req,
+        { action: 'user.create', entity: 'User', entityId: u.id, detail: { role: u.role } },
+        tx,
+      );
       return u;
     });
     res.status(201).json({ user, ...(temporaryPassword ? { temporaryPassword } : {}) });
@@ -108,17 +120,25 @@ router.patch('/:id', validate({ params: idParam, body: userUpdateInput }), async
   }
   if (body.role && body.role !== 'ADMIN' && current.role === 'ADMIN' && current.active) {
     if ((await countOtherActiveAdmins(prisma, id)) === 0) {
-      throw errors.unprocessable('No podés sacarle el rol de administrador al último administrador activo.');
+      throw errors.unprocessable(
+        'No podés sacarle el rol de administrador al último administrador activo.',
+      );
     }
   }
   const user = await prisma.$transaction(async (tx) => {
     const u = await tx.user.update({ where: { id }, data: body, select });
     await audit.fromReq(
       req,
-      { action: 'user.update', entity: 'User', entityId: id, detail: { fields: Object.keys(body) } },
+      {
+        action: 'user.update',
+        entity: 'User',
+        entityId: id,
+        detail: { fields: Object.keys(body) },
+      },
       tx,
     );
-    if (body.role && body.role !== current.role) await tx.session.deleteMany({ where: { userId: id } });
+    if (body.role && body.role !== current.role)
+      await tx.session.deleteMany({ where: { userId: id } });
     return u;
   });
   res.json(user);
@@ -129,8 +149,13 @@ router.post('/:id/deactivate', validate({ params: idParam }), async (req, res) =
   const { prisma } = req.ctx;
   const current = await prisma.user.findUnique({ where: { id } });
   if (!current) throw errors.notFound('No encontramos al usuario.');
-  if (id === req.auth!.user.id) throw errors.unprocessable('No podés desactivar tu propio usuario.');
-  if (current.role === 'ADMIN' && current.active && (await countOtherActiveAdmins(prisma, id)) === 0) {
+  if (id === req.auth!.user.id)
+    throw errors.unprocessable('No podés desactivar tu propio usuario.');
+  if (
+    current.role === 'ADMIN' &&
+    current.active &&
+    (await countOtherActiveAdmins(prisma, id)) === 0
+  ) {
     throw errors.unprocessable('No podés desactivar al último administrador activo.');
   }
   const user = await prisma.$transaction(async (tx) => {
@@ -145,7 +170,8 @@ router.post('/:id/deactivate', validate({ params: idParam }), async (req, res) =
 router.post('/:id/activate', validate({ params: idParam }), async (req, res) => {
   const { id } = req.valid.params as { id: string };
   const { prisma } = req.ctx;
-  if (!(await prisma.user.findUnique({ where: { id } }))) throw errors.notFound('No encontramos al usuario.');
+  if (!(await prisma.user.findUnique({ where: { id } })))
+    throw errors.notFound('No encontramos al usuario.');
   const user = await prisma.$transaction(async (tx) => {
     const u = await tx.user.update({ where: { id }, data: { active: true }, select });
     await audit.fromReq(req, { action: 'user.activate', entity: 'User', entityId: id }, tx);
@@ -158,7 +184,8 @@ router.post('/:id/activate', validate({ params: idParam }), async (req, res) => 
 router.post('/:id/reset-password', validate({ params: idParam }), async (req, res) => {
   const { id } = req.valid.params as { id: string };
   const { prisma } = req.ctx;
-  if (!(await prisma.user.findUnique({ where: { id } }))) throw errors.notFound('No encontramos al usuario.');
+  if (!(await prisma.user.findUnique({ where: { id } })))
+    throw errors.notFound('No encontramos al usuario.');
   const temporaryPassword = generateTempPassword();
   const passwordHash = await hashPassword(temporaryPassword);
   await prisma.$transaction(async (tx) => {

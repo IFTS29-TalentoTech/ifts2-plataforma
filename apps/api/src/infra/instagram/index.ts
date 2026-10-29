@@ -31,7 +31,11 @@ export async function createInstagramClient(
     }
     return new FakeInstagramClient();
   }
-  if (config.instagram.provider === 'graph' && config.instagram.appId && config.instagram.appSecret) {
+  if (
+    config.instagram.provider === 'graph' &&
+    config.instagram.appId &&
+    config.instagram.appSecret
+  ) {
     return new GraphInstagramClient({
       appId: config.instagram.appId,
       appSecret: config.instagram.appSecret,

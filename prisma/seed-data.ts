@@ -43,7 +43,8 @@ export const LINKS: LinkSeed[] = [
   {
     title: 'SIU Guaraní — Acceso alumnos',
     url: PLACEHOLDER_URL,
-    description: 'Gestión diaria de alumnos y primera inscripción a la Tecnicatura. [URL a confirmar con el cliente]',
+    description:
+      'Gestión diaria de alumnos y primera inscripción a la Tecnicatura. [URL a confirmar con el cliente]',
     group: 'academico',
     order: 2,
     visible: false,

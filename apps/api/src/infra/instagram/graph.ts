@@ -72,7 +72,9 @@ export class GraphInstagramClient implements InstagramClient {
   async testConnection(): Promise<ConnectionTest> {
     try {
       const token = this.requireToken();
-      const res = await this.fetchFn(`${GRAPH}/me?fields=username&access_token=${encodeURIComponent(token)}`);
+      const res = await this.fetchFn(
+        `${GRAPH}/me?fields=username&access_token=${encodeURIComponent(token)}`,
+      );
       if (!res.ok) return { ok: false, error: `La API de Instagram respondió ${res.status}.` };
       const json = (await res.json()) as { username?: string };
       return { ok: true, username: json.username };
@@ -83,7 +85,11 @@ export class GraphInstagramClient implements InstagramClient {
 }
 
 /** URL de autorización OAuth que abre el botón "Conectar con Instagram". */
-export function buildAuthorizationUrl(p: { appId: string; redirectUri: string; state: string }): string {
+export function buildAuthorizationUrl(p: {
+  appId: string;
+  redirectUri: string;
+  state: string;
+}): string {
   const q = new URLSearchParams({
     client_id: p.appId,
     redirect_uri: p.redirectUri,

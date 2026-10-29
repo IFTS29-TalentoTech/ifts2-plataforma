@@ -16,7 +16,13 @@ export async function attachAuth(req: Request, _res: Response, next: NextFunctio
   const u = session.user;
   req.auth = {
     sessionId: session.id,
-    user: { id: u.id, email: u.email, name: u.name, role: u.role, mustChangePassword: u.mustChangePassword },
+    user: {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      mustChangePassword: u.mustChangePassword,
+    },
   };
   next();
 }

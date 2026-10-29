@@ -32,13 +32,17 @@ export async function instagramView(ctx: AppContext) {
 
   let status: InstagramStatus;
   if (mode === 'demo' || !appId || !hasSecret) status = 'demo';
-  else if (stored?.lastError || (hasToken && expiresAt && expiresAt.getTime() <= now)) status = 'error';
+  else if (stored?.lastError || (hasToken && expiresAt && expiresAt.getTime() <= now))
+    status = 'error';
   else if (!hasToken) status = 'credentials_saved';
   else if (expiresAt && expiresAt.getTime() - now < EXPIRING_DAYS * 86_400_000) status = 'expiring';
   else status = 'connected';
 
   const lastError =
-    stored?.lastError ?? (expiresAt && expiresAt.getTime() <= now ? 'El token de acceso venció. Volvé a conectar la cuenta.' : null);
+    stored?.lastError ??
+    (expiresAt && expiresAt.getTime() <= now
+      ? 'El token de acceso venció. Volvé a conectar la cuenta.'
+      : null);
 
   return {
     status,

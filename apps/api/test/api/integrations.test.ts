@@ -16,7 +16,8 @@ beforeEach(async () => {
   cookie = (await loginAs(t.app, 'ADMIN')).cookie;
 });
 
-const put = (body: object, c = cookie) => request(t.app).put('/api/v1/integrations/instagram').set('Cookie', c).send(body);
+const put = (body: object, c = cookie) =>
+  request(t.app).put('/api/v1/integrations/instagram').set('Cookie', c).send(body);
 const get = (c = cookie) => request(t.app).get('/api/v1/integrations/instagram').set('Cookie', c);
 
 describe('permisos', () => {
@@ -29,13 +30,31 @@ describe('permisos', () => {
       const { cookie: c } = await loginAs(t.app, role);
       const base = '/api/v1/integrations';
       expect((await request(t.app).get(`${base}/instagram`).set('Cookie', c)).status).toBe(403);
-      expect((await request(t.app).put(`${base}/instagram`).set('Cookie', c).send({ mode: 'demo' })).status).toBe(403);
-      expect((await request(t.app).get(`${base}/instagram/connect`).set('Cookie', c)).status).toBe(403);
-      expect((await request(t.app).get(`${base}/instagram/callback`).set('Cookie', c)).status).toBe(403);
-      expect((await request(t.app).post(`${base}/instagram/test`).set('Cookie', c)).status).toBe(403);
-      expect((await request(t.app).post(`${base}/instagram/disconnect`).set('Cookie', c)).status).toBe(403);
+      expect(
+        (await request(t.app).put(`${base}/instagram`).set('Cookie', c).send({ mode: 'demo' }))
+          .status,
+      ).toBe(403);
+      expect((await request(t.app).get(`${base}/instagram/connect`).set('Cookie', c)).status).toBe(
+        403,
+      );
+      expect((await request(t.app).get(`${base}/instagram/callback`).set('Cookie', c)).status).toBe(
+        403,
+      );
+      expect((await request(t.app).post(`${base}/instagram/test`).set('Cookie', c)).status).toBe(
+        403,
+      );
+      expect(
+        (await request(t.app).post(`${base}/instagram/disconnect`).set('Cookie', c)).status,
+      ).toBe(403);
       expect((await request(t.app).get(`${base}/mail`).set('Cookie', c)).status).toBe(403);
-      expect((await request(t.app).put(`${base}/mail`).set('Cookie', c).send({ contactToEmail: 'a@b.com' })).status).toBe(403);
+      expect(
+        (
+          await request(t.app)
+            .put(`${base}/mail`)
+            .set('Cookie', c)
+            .send({ contactToEmail: 'a@b.com' })
+        ).status,
+      ).toBe(403);
     });
   }
 });
@@ -67,12 +86,17 @@ describe('Instagram: estado y guía', () => {
     await t.ctx.integrations.patch('instagram', { tokenExpiresAt: soon });
     expect((await get()).body.status).toBe('expiring');
 
-    await t.ctx.integrations.patch('instagram', { tokenExpiresAt: new Date(Date.now() + 40 * 86_400_000).toISOString(), lastError: 'Token rechazado' });
+    await t.ctx.integrations.patch('instagram', {
+      tokenExpiresAt: new Date(Date.now() + 40 * 86_400_000).toISOString(),
+      lastError: 'Token rechazado',
+    });
     const err = await get();
     expect(err.body.status).toBe('error');
     expect(err.body.lastError).toBe('Token rechazado');
 
-    const off = await request(t.app).post('/api/v1/integrations/instagram/disconnect').set('Cookie', cookie);
+    const off = await request(t.app)
+      .post('/api/v1/integrations/instagram/disconnect')
+      .set('Cookie', cookie);
     expect(off.status).toBe(200);
     expect(off.body).toMatchObject({ status: 'demo', demoMode: true, hasAccessToken: false });
   });
@@ -80,9 +104,19 @@ describe('Instagram: estado y guía', () => {
 
 describe('Instagram: los secretos nunca salen', () => {
   it('ninguna respuesta contiene App Secret ni token en claro; en base están cifrados', async () => {
-    const a = await put({ mode: 'real', appId: '1234567890', appSecret: SECRET, accessToken: TOKEN, hashtag: 'ifts2web' });
+    const a = await put({
+      mode: 'real',
+      appId: '1234567890',
+      appSecret: SECRET,
+      accessToken: TOKEN,
+      hashtag: 'ifts2web',
+    });
     expect(a.status).toBe(200);
-    const responses = [a, await get(), await request(t.app).post('/api/v1/integrations/instagram/test').set('Cookie', cookie)];
+    const responses = [
+      a,
+      await get(),
+      await request(t.app).post('/api/v1/integrations/instagram/test').set('Cookie', cookie),
+    ];
     for (const r of responses) {
       const raw = JSON.stringify(r.body);
       expect(raw).not.toContain(SECRET);
@@ -93,7 +127,9 @@ describe('Instagram: los secretos nunca salen', () => {
     expect(a.body.accessTokenMasked).toBe('••••9876');
     expect(a.body.appSecretMasked).toBe('••••••••');
 
-    const row = await testPrisma.integrationConfig.findUniqueOrThrow({ where: { key: 'instagram' } });
+    const row = await testPrisma.integrationConfig.findUniqueOrThrow({
+      where: { key: 'instagram' },
+    });
     expect(row.valueEnc).not.toContain(SECRET);
     expect(row.valueEnc).not.toContain(TOKEN);
     expect(row.valueEnc.startsWith('v1.')).toBe(true);
@@ -107,25 +143,45 @@ describe('Instagram: los secretos nunca salen', () => {
 
 describe('Instagram: persistencia y resolución del cliente', () => {
   it('lo guardado persiste (nueva instancia de la app) y el hashtag va a SiteSetting', async () => {
-    await put({ mode: 'real', appId: '1234567890', appSecret: SECRET, hashtag: '#ifts2web' }).expect(200);
+    await put({
+      mode: 'real',
+      appId: '1234567890',
+      appSecret: SECRET,
+      hashtag: '#ifts2web',
+    }).expect(200);
     const t2 = await createTestApp({ useRealIntegrationResolution: true });
     const res = await request(t2.app).get('/api/v1/integrations/instagram').set('Cookie', cookie);
-    expect(res.body).toMatchObject({ status: 'credentials_saved', hashtag: '#ifts2web', appIdMasked: '••••7890' });
+    expect(res.body).toMatchObject({
+      status: 'credentials_saved',
+      hashtag: '#ifts2web',
+      appIdMasked: '••••7890',
+    });
   });
 
   it('el cliente se resuelve desde la base antes que desde el entorno y sin cachear', async () => {
     // Entorno: Graph con otras credenciales; base: modo demostración explícito => gana la base
-    const envConfig = loadConfig({ ...process.env, INSTAGRAM_PROVIDER: 'graph', INSTAGRAM_APP_ID: 'env-app', INSTAGRAM_APP_SECRET: 'env-secret' });
+    const envConfig = loadConfig({
+      ...process.env,
+      INSTAGRAM_PROVIDER: 'graph',
+      INSTAGRAM_APP_ID: 'env-app',
+      INSTAGRAM_APP_SECRET: 'env-secret',
+    });
     const t2 = await createTestApp({ useRealIntegrationResolution: true, config: envConfig });
     expect((await t2.ctx.getInstagramClient()).kind).toBe('graph'); // sin base: el entorno es el valor por defecto
     await t2.ctx.integrations.set('instagram', { mode: 'demo' });
     expect((await t2.ctx.getInstagramClient()).kind).toBe('fake'); // la base manda
-    await t2.ctx.integrations.set('instagram', { mode: 'real', appId: 'panel-app', appSecret: 'panel-secret' });
+    await t2.ctx.integrations.set('instagram', {
+      mode: 'real',
+      appId: 'panel-app',
+      appSecret: 'panel-secret',
+    });
     expect((await t2.ctx.getInstagramClient()).kind).toBe('graph'); // cambios del panel aplican de inmediato
   });
 
   it('cambiar el App ID descarta el token anterior', async () => {
-    await put({ mode: 'real', appId: '1111111111', appSecret: SECRET, accessToken: TOKEN }).expect(200);
+    await put({ mode: 'real', appId: '1111111111', appSecret: SECRET, accessToken: TOKEN }).expect(
+      200,
+    );
     const res = await put({ appId: '2222222222' });
     expect(res.body).toMatchObject({ hasAccessToken: false, status: 'credentials_saved' });
   });
@@ -145,33 +201,47 @@ describe('Instagram: validaciones y flujo de conexión', () => {
   });
 
   it('connect: 422 sin credenciales; con credenciales devuelve la URL de autorización con state firmado', async () => {
-    const no = await request(t.app).get('/api/v1/integrations/instagram/connect').set('Cookie', cookie);
+    const no = await request(t.app)
+      .get('/api/v1/integrations/instagram/connect')
+      .set('Cookie', cookie);
     expect(no.status).toBe(422);
     await put({ mode: 'real', appId: '1234567890', appSecret: SECRET }).expect(200);
-    const ok = await request(t.app).get('/api/v1/integrations/instagram/connect').set('Cookie', cookie);
+    const ok = await request(t.app)
+      .get('/api/v1/integrations/instagram/connect')
+      .set('Cookie', cookie);
     expect(ok.status).toBe(200);
     const u = new URL(ok.body.url);
     expect(u.searchParams.get('client_id')).toBe('1234567890');
-    expect(u.searchParams.get('redirect_uri')).toBe('http://localhost:4000/api/v1/integrations/instagram/callback');
+    expect(u.searchParams.get('redirect_uri')).toBe(
+      'http://localhost:4000/api/v1/integrations/instagram/callback',
+    );
     expect(u.searchParams.get('state')).toBeTruthy();
     expect(ok.body.url).not.toContain(SECRET);
   });
 
   it('callback: con state inválido o cancelado vuelve al panel con error y lo registra', async () => {
     await put({ mode: 'real', appId: '1234567890', appSecret: SECRET }).expect(200);
-    const bad = await request(t.app).get('/api/v1/integrations/instagram/callback?code=abc&state=falso').set('Cookie', cookie);
+    const bad = await request(t.app)
+      .get('/api/v1/integrations/instagram/callback?code=abc&state=falso')
+      .set('Cookie', cookie);
     expect(bad.status).toBe(302);
     expect(bad.headers.location).toBe('http://localhost:3000/panel/configuracion?instagram=error');
     expect((await get()).body.status).toBe('error');
-    const denied = await request(t.app).get('/api/v1/integrations/instagram/callback?error=access_denied').set('Cookie', cookie);
+    const denied = await request(t.app)
+      .get('/api/v1/integrations/instagram/callback?error=access_denied')
+      .set('Cookie', cookie);
     expect(denied.headers.location).toContain('instagram=error');
   });
 
   it('test: en modo demostración responde ok/demo; en real sin token informa el motivo', async () => {
-    const demo = await request(t.app).post('/api/v1/integrations/instagram/test').set('Cookie', cookie);
+    const demo = await request(t.app)
+      .post('/api/v1/integrations/instagram/test')
+      .set('Cookie', cookie);
     expect(demo.body).toMatchObject({ ok: true, demo: true });
     await put({ mode: 'real', appId: '1234567890', appSecret: SECRET }).expect(200);
-    const real = await request(t.app).post('/api/v1/integrations/instagram/test').set('Cookie', cookie);
+    const real = await request(t.app)
+      .post('/api/v1/integrations/instagram/test')
+      .set('Cookie', cookie);
     expect(real.status).toBe(200);
     expect(real.body.ok).toBe(false);
     expect(real.body.error).toMatch(/falta conectar/);
@@ -183,20 +253,34 @@ describe('Correo configurable desde el panel', () => {
     const before = await request(t.app).get('/api/v1/integrations/mail').set('Cookie', cookie);
     expect(before.body).toMatchObject({ provider: 'console', demoMode: true });
     const smtp = 'smtp://usuario:clave-super-secreta@smtp.example.com:587';
-    const res = await request(t.app).put('/api/v1/integrations/mail').set('Cookie', cookie).send({ contactToEmail: 'contacto@ifts2.local', smtpUrl: smtp });
+    const res = await request(t.app)
+      .put('/api/v1/integrations/mail')
+      .set('Cookie', cookie)
+      .send({ contactToEmail: 'contacto@ifts2.local', smtpUrl: smtp });
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ provider: 'smtp', contactToEmail: 'contacto@ifts2.local', source: 'panel', demoMode: false });
+    expect(res.body).toMatchObject({
+      provider: 'smtp',
+      contactToEmail: 'contacto@ifts2.local',
+      source: 'panel',
+      demoMode: false,
+    });
     expect(JSON.stringify(res.body)).not.toContain('clave-super-secreta');
     expect(res.body.smtpMasked).toBe('smtp://••••@smtp.example.com:587');
     const row = await testPrisma.integrationConfig.findUniqueOrThrow({ where: { key: 'mail' } });
     expect(row.valueEnc).not.toContain('clave-super-secreta');
     // quitar SMTP vuelve a consola
-    const off = await request(t.app).put('/api/v1/integrations/mail').set('Cookie', cookie).send({ smtpUrl: null });
+    const off = await request(t.app)
+      .put('/api/v1/integrations/mail')
+      .set('Cookie', cookie)
+      .send({ smtpUrl: null });
     expect(off.body.provider).toBe('console');
     expect(off.body.contactToEmail).toBe('contacto@ifts2.local');
   });
   it('400 con mensajes claros', async () => {
-    const res = await request(t.app).put('/api/v1/integrations/mail').set('Cookie', cookie).send({ contactToEmail: 'mal', smtpUrl: 'http://x' });
+    const res = await request(t.app)
+      .put('/api/v1/integrations/mail')
+      .set('Cookie', cookie)
+      .send({ contactToEmail: 'mal', smtpUrl: 'http://x' });
     expect(res.status).toBe(400);
     expect(res.body.errors.contactToEmail[0]).toMatch(/formato válido/);
     expect(res.body.errors.smtpUrl[0]).toMatch(/smtp:\/\//);

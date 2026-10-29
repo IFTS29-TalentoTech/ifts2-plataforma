@@ -22,9 +22,25 @@ describe('GET /audit', () => {
 
   it('ADMIN lista registros, filtra por entidad y pagina', async () => {
     const { cookie, user } = await loginAs(t.app, 'ADMIN');
-    await audit.log(testPrisma, { userId: user.id, action: 'notice.create', entity: 'Notice', entityId: 'n1', detail: { title: 'x' } });
-    await audit.log(testPrisma, { userId: user.id, action: 'notice.delete', entity: 'Notice', entityId: 'n1' });
-    await audit.log(testPrisma, { userId: user.id, action: 'document.archive', entity: 'Document', entityId: 'd1' });
+    await audit.log(testPrisma, {
+      userId: user.id,
+      action: 'notice.create',
+      entity: 'Notice',
+      entityId: 'n1',
+      detail: { title: 'x' },
+    });
+    await audit.log(testPrisma, {
+      userId: user.id,
+      action: 'notice.delete',
+      entity: 'Notice',
+      entityId: 'n1',
+    });
+    await audit.log(testPrisma, {
+      userId: user.id,
+      action: 'document.archive',
+      entity: 'Document',
+      entityId: 'd1',
+    });
 
     const all = await request(t.app).get('/api/v1/audit?pageSize=2').set('Cookie', cookie);
     expect(all.status).toBe(200);
@@ -32,8 +48,13 @@ describe('GET /audit', () => {
     expect(all.body.total).toBeGreaterThanOrEqual(4); // incluye el login del admin
     const notices = await request(t.app).get('/api/v1/audit?entity=Notice').set('Cookie', cookie);
     expect(notices.body.total).toBe(2);
-    expect(notices.body.items[0]).toMatchObject({ entity: 'Notice', user: { id: user.id, role: 'ADMIN' } });
-    expect((await request(t.app).get('/api/v1/audit?pageSize=500').set('Cookie', cookie)).status).toBe(400);
+    expect(notices.body.items[0]).toMatchObject({
+      entity: 'Notice',
+      user: { id: user.id, role: 'ADMIN' },
+    });
+    expect(
+      (await request(t.app).get('/api/v1/audit?pageSize=500').set('Cookie', cookie)).status,
+    ).toBe(400);
   });
 
   it('audit.fromReq toma el usuario de la sesión', async () => {

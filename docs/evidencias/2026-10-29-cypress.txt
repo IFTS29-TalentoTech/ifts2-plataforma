@@ -1,0 +1,22 @@
+# Cypress smoke + ui-kit (build de produccion, ENABLE_UI_KIT=true) - 2026-10-29
+  Running:  smoke.cy.ts                                                                     (1 of 2)
+      √ recorre las rutas públicas sin errores y sin violaciones de accesibilidad (5761ms)
+      √ el menú público separa Ingreso e Inscripciones y tiene Administración (489ms)
+      √ /panel sin sesión redirige al login (813ms)
+      √ recorre las rutas públicas sin errores y sin violaciones de accesibilidad (5589ms)
+      √ el menú público separa Ingreso e Inscripciones y tiene Administración (240ms)
+      √ /panel sin sesión redirige al login (359ms)
+  6 passing (14s)
+  │ Tests:        6                                                                                │
+  Running:  ui-kit.cy.ts                                                                    (2 of 2)
+      √ no tiene violaciones de accesibilidad serias (2823ms)
+      √ el diálogo de confirmación atrapa el foco, cierra con Escape y devuelve el foco (846ms)
+      √ el diálogo imperativo (useConfirm) resuelve con el botón elegido (415ms)
+      √ no tiene violaciones de accesibilidad serias (1867ms)
+      √ el diálogo de confirmación atrapa el foco, cierra con Escape y devuelve el foco (778ms)
+      √ el diálogo imperativo (useConfirm) resuelve con el botón elegido (361ms)
+  6 passing (7s)
+  │ Tests:        6                                                                                │
+  │ ✔  smoke.cy.ts                              00:13        6        6        -        -        - │
+  │ ✔  ui-kit.cy.ts                             00:07        6        6        -        -        - │
+    ✔  All specs passed!                        00:21       12       12        -        -        -  

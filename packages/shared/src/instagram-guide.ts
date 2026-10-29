@@ -10,7 +10,12 @@ export interface SetupStep {
 
 export const INSTAGRAM_REQUIRED_SCOPES = ['instagram_business_basic'] as const;
 
-export const INSTAGRAM_SETUP_GUIDE: { title: string; intro: string; steps: SetupStep[]; manualTokenNote: string } = {
+export const INSTAGRAM_SETUP_GUIDE: {
+  title: string;
+  intro: string;
+  steps: SetupStep[];
+  manualTokenNote: string;
+} = {
   title: 'Cómo obtener las credenciales de Instagram',
   intro:
     'Para mostrar publicaciones de Instagram en el sitio, el instituto necesita una app propia en Meta for Developers. Solo se publica lo que un usuario del panel aprueba.',

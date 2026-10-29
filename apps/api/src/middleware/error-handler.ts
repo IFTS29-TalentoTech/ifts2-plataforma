@@ -33,13 +33,30 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
       err.code === 'LIMIT_FILE_SIZE'
         ? errors.tooLarge('El archivo pesa demasiado.')
         : errors.validation('No pudimos leer el archivo enviado.');
-  } else if (err && typeof err === 'object' && 'type' in err && (err as { type: string }).type === 'entity.too.large') {
+  } else if (
+    err &&
+    typeof err === 'object' &&
+    'type' in err &&
+    (err as { type: string }).type === 'entity.too.large'
+  ) {
     problem = errors.tooLarge('El contenido enviado es demasiado grande.');
-  } else if (err && typeof err === 'object' && 'type' in err && (err as { type: string }).type === 'entity.parse.failed') {
+  } else if (
+    err &&
+    typeof err === 'object' &&
+    'type' in err &&
+    (err as { type: string }).type === 'entity.parse.failed'
+  ) {
     problem = errors.validation('El cuerpo de la petición no es un JSON válido.');
   } else {
-    req.ctx?.logger.error({ err: { message: (err as Error)?.message, stack: (err as Error)?.stack }, path: req.path }, 'error no controlado');
-    problem = new AppError('internal', 'Error interno', 'Ocurrió un error inesperado. Intentá de nuevo en unos minutos.');
+    req.ctx?.logger.error(
+      { err: { message: (err as Error)?.message, stack: (err as Error)?.stack }, path: req.path },
+      'error no controlado',
+    );
+    problem = new AppError(
+      'internal',
+      'Error interno',
+      'Ocurrió un error inesperado. Intentá de nuevo en unos minutos.',
+    );
   }
 
   res.status(problem.status).type(PROBLEM).json(problem.toProblem());

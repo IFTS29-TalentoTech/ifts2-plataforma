@@ -1,0 +1,85 @@
+# pnpm build - 2026-10-29
+$ pnpm -r --filter @ifts2/shared --filter @ifts2/api --filter @ifts2/web build
+Scope: 3 of 4 workspace projects
+apps/web build$ next build
+apps/api build$ tsup
+apps/api build: [34mCLI[39m Building entry: src/server.ts, src/modules/audit/index.ts, src/modules/auth/index.ts, src/modules/files/index.ts, src/modules/health/index.ts, src/modules/integrations/index.ts, src/modules/users/index.ts
+apps/api build: [34mCLI[39m Using tsconfig: tsconfig.json
+apps/api build: [34mCLI[39m tsup v9.0.0
+apps/api build: [34mCLI[39m Using tsup config: C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\api\tsup.config.ts
+apps/api build: [34mCLI[39m Target: node20
+apps/api build: [34mCLI[39m Cleaning output folder
+apps/api build: [34mESM[39m Build start
+apps/api build: [32mESM[39m [1mdist\server.js                         [22m[32m16.00 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-ZJFY3G7F.js                 [22m[32m1.01 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\auth\index.js             [22m[32m3.94 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\health\index.js           [22m[32m204.00 B[39m
+apps/api build: [32mESM[39m [1mdist\modules\audit\index.js            [22m[32m1.46 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-UFACLHV6.js                 [22m[32m5.49 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-W6EU7EJP.js                 [22m[32m5.80 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\users\index.js            [22m[32m6.55 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\integrations\index.js     [22m[32m11.60 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-SGF2JFB6.js                 [22m[32m591.00 B[39m
+apps/api build: [32mESM[39m [1mdist\chunk-RBSDAQ7W.js                 [22m[32m290.00 B[39m
+apps/api build: [32mESM[39m [1mdist\modules\files\index.js            [22m[32m1.02 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-2JR2PUKT.js                 [22m[32m629.00 B[39m
+apps/api build: [32mESM[39m [1mdist\chunk-T7H7WDEN.js                 [22m[32m1.01 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-FPYUJ6P4.js                 [22m[32m23.76 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-FKOBWBGT.js                 [22m[32m1.65 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\health\index.js.map       [22m[32m222.00 B[39m
+apps/api build: [32mESM[39m [1mdist\server.js.map                     [22m[32m35.55 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\audit\index.js.map        [22m[32m2.73 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-ZJFY3G7F.js.map             [22m[32m2.08 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\users\index.js.map        [22m[32m12.60 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-W6EU7EJP.js.map             [22m[32m13.09 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\integrations\index.js.map [22m[32m21.39 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\auth\index.js.map         [22m[32m7.76 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-UFACLHV6.js.map             [22m[32m14.62 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-T7H7WDEN.js.map             [22m[32m2.17 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-SGF2JFB6.js.map             [22m[32m1.70 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-RBSDAQ7W.js.map             [22m[32m678.00 B[39m
+apps/api build: [32mESM[39m [1mdist\chunk-2JR2PUKT.js.map             [22m[32m1.66 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-FKOBWBGT.js.map             [22m[32m4.03 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-FPYUJ6P4.js.map             [22m[32m50.94 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\files\index.js.map        [22m[32m1.90 KB[39m
+apps/api build: [32mESM[39m ⚡️ Build success in 141ms
+apps/api build: Done
+apps/web build:    ▲ Next.js 15.5.28
+apps/web build:    Creating an optimized production build ...
+apps/web build:  ✓ Compiled successfully in 15.6s
+apps/web build:    Skipping linting
+apps/web build:    Checking validity of types ...
+apps/web build:    Collecting page data ...
+apps/web build:    Generating static pages (0/12) ...
+apps/web build:    Generating static pages (3/12) 
+apps/web build:    Generating static pages (6/12) 
+apps/web build:    Generating static pages (9/12) 
+apps/web build:  ✓ Generating static pages (12/12)
+apps/web build:    Finalizing page optimization ...
+apps/web build:    Collecting build traces ...
+apps/web build: Route (app)                                 Size  First Load JS  Revalidate  Expire
+apps/web build: ┌ ○ /                                      162 B         102 kB          1m      1y
+apps/web build: ├ ○ /_not-found                            162 B         102 kB          1m      1y
+apps/web build: ├ ○ /estudiantes                           162 B         102 kB          1m      1y
+apps/web build: ├ ○ /ingreso                               162 B         102 kB          1m      1y
+apps/web build: ├ ○ /inscripciones                         162 B         102 kB          1m      1y
+apps/web build: ├ ○ /institucional                         162 B         102 kB          1m      1y
+apps/web build: ├ ○ /la-carrera                            162 B         102 kB          1m      1y
+apps/web build: ├ ○ /novedades                             162 B         102 kB          1m      1y
+apps/web build: ├ ƒ /novedades/[id]                        162 B         102 kB
+apps/web build: ├ ƒ /panel                                 162 B         102 kB
+apps/web build: ├ ƒ /panel/archivo                         162 B         102 kB
+apps/web build: ├ ƒ /panel/avisos                          162 B         102 kB
+apps/web build: ├ ƒ /panel/configuracion                   162 B         102 kB
+apps/web build: ├ ƒ /panel/horarios                        162 B         102 kB
+apps/web build: ├ ○ /panel/login                           162 B         102 kB          1m      1y
+apps/web build: ├ ƒ /panel/publicaciones                   162 B         102 kB
+apps/web build: └ ○ /ui-kit                              27.4 kB         160 kB          1m      1y
+apps/web build: + First Load JS shared by all             102 kB
+apps/web build:   ├ chunks/738-67b157c7fdc71769.js       45.9 kB
+apps/web build:   ├ chunks/782312f7-97e032a584f42320.js  54.2 kB
+apps/web build:   └ other shared chunks (total)          1.94 kB
+apps/web build: ƒ Middleware                             34.1 kB
+apps/web build: ○  (Static)   prerendered as static content
+apps/web build: ƒ  (Dynamic)  server-rendered on demand
+apps/web build: Done

@@ -16,7 +16,8 @@ router.get('/*key', async (req, res) => {
   const key = Array.isArray(parts) ? parts.join('/') : String(parts);
   const exp = Number(req.query.exp);
   const sig = typeof req.query.sig === 'string' ? req.query.sig : '';
-  if (!storage.verify(key, exp, sig)) throw errors.forbidden('El enlace al archivo venció o no es válido.');
+  if (!storage.verify(key, exp, sig))
+    throw errors.forbidden('El enlace al archivo venció o no es válido.');
   const file = await storage.get(key);
   if (!file) throw errors.notFound('No encontramos el archivo.');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');

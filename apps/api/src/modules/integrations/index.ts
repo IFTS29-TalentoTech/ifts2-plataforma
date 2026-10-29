@@ -1,10 +1,19 @@
 import { Router } from 'express';
-import { instagramConfigInput, mailConfigInput, type InstagramConfigInput, type MailConfigInput } from '@ifts2/shared';
+import {
+  instagramConfigInput,
+  mailConfigInput,
+  type InstagramConfigInput,
+  type MailConfigInput,
+} from '@ifts2/shared';
 import { z } from 'zod';
 import type { InstagramStoredConfig } from '../../infra/integration-store';
 import { maskSecret } from '../../infra/crypto';
 import { errors } from '../../infra/errors';
-import { buildAuthorizationUrl, exchangeCodeForToken, GraphInstagramClient } from '../../infra/instagram';
+import {
+  buildAuthorizationUrl,
+  exchangeCodeForToken,
+  GraphInstagramClient,
+} from '../../infra/instagram';
 import { requirePermission } from '../../middleware/auth';
 import { valid, validate } from '../../middleware/validate';
 import { audit } from '../audit/audit.service';
@@ -149,11 +158,20 @@ router.get('/instagram/callback', validate({ query: callbackQuery }), async (req
       },
       req.auth!.user.id,
     );
-    await audit.fromReq(req, { action: 'integration.instagram.connect', entity: 'IntegrationConfig', entityId: 'instagram' });
+    await audit.fromReq(req, {
+      action: 'integration.instagram.connect',
+      entity: 'IntegrationConfig',
+      entityId: 'instagram',
+    });
     return back('connected');
   } catch (e) {
-    req.ctx.logger.warn({ message: (e as Error).message }, 'falló el canje del código de Instagram');
-    return fail('No pudimos completar la conexión con Instagram. Revisá las credenciales e intentá de nuevo.');
+    req.ctx.logger.warn(
+      { message: (e as Error).message },
+      'falló el canje del código de Instagram',
+    );
+    return fail(
+      'No pudimos completar la conexión con Instagram. Revisá las credenciales e intentá de nuevo.',
+    );
   }
 });
 
@@ -164,7 +182,10 @@ router.post('/instagram/test', async (req, res) => {
   if (stored && client.kind === 'graph') {
     await req.ctx.integrations.patch(
       'instagram',
-      { lastError: result.ok ? null : (result.error ?? 'Error desconocido'), ...(result.username ? { username: result.username } : {}) },
+      {
+        lastError: result.ok ? null : (result.error ?? 'Error desconocido'),
+        ...(result.username ? { username: result.username } : {}),
+      },
       req.auth!.user.id,
     );
   }
@@ -174,13 +195,22 @@ router.post('/instagram/test', async (req, res) => {
     entityId: 'instagram',
     detail: { ok: result.ok, client: client.kind },
   });
-  res.json({ ok: result.ok, demo: client.kind === 'fake', username: result.username ?? null, error: result.error ?? null });
+  res.json({
+    ok: result.ok,
+    demo: client.kind === 'fake',
+    username: result.username ?? null,
+    error: result.error ?? null,
+  });
 });
 
 /** Borra credenciales y token y vuelve al modo demostración (aunque el entorno tenga valores por defecto). */
 router.post('/instagram/disconnect', async (req, res) => {
   await req.ctx.integrations.set('instagram', { mode: 'demo' }, req.auth!.user.id);
-  await audit.fromReq(req, { action: 'integration.instagram.disconnect', entity: 'IntegrationConfig', entityId: 'instagram' });
+  await audit.fromReq(req, {
+    action: 'integration.instagram.disconnect',
+    entity: 'IntegrationConfig',
+    entityId: 'instagram',
+  });
   res.json(await instagramView(req.ctx));
 });
 

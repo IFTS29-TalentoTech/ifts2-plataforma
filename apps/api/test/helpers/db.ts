@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 
 /** Cliente compartido de la base de prueba. */
-export const testPrisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
+export const testPrisma = new PrismaClient({
+  datasources: { db: { url: process.env.DATABASE_URL! } },
+});
 
 /** Vacía todas las tablas (excepto las migraciones). Llamar en `beforeEach`. */
 export async function resetDb() {

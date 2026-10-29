@@ -31,13 +31,16 @@ export const errors = {
     new AppError('validation', 'Hay datos incorrectos', detail, fieldErrors),
   unauthorized: (detail = 'Iniciá sesión para continuar.') =>
     new AppError('unauthorized', 'No autenticado', detail),
-  forbidden: (detail = 'No tenés permiso para realizar esta acción.', extra?: Record<string, unknown>) =>
-    new AppError('forbidden', 'Sin permiso', detail, undefined, extra),
+  forbidden: (
+    detail = 'No tenés permiso para realizar esta acción.',
+    extra?: Record<string, unknown>,
+  ) => new AppError('forbidden', 'Sin permiso', detail, undefined, extra),
   notFound: (detail = 'No encontramos lo que buscabas.') =>
     new AppError('not-found', 'No encontrado', detail),
   conflict: (detail: string, fieldErrors?: Record<string, string[]>) =>
     new AppError('conflict', 'Conflicto', detail, fieldErrors),
-  tooLarge: (detail: string) => new AppError('payload-too-large', 'Archivo demasiado grande', detail),
+  tooLarge: (detail: string) =>
+    new AppError('payload-too-large', 'Archivo demasiado grande', detail),
   unsupported: (detail: string) =>
     new AppError('unsupported-media-type', 'Tipo de archivo no permitido', detail),
   unprocessable: (detail: string, fieldErrors?: Record<string, string[]>) =>

@@ -9,3 +9,4 @@ docs/specs
 uploads
 prisma/migrations
 cypress/screenshots
+apps/web/src/styles/tokens.css

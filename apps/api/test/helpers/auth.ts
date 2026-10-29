@@ -24,9 +24,14 @@ export function cookieFrom(res: { headers: Record<string, unknown> }): string {
 }
 
 /** Crea un usuario con ese rol, inicia sesión y devuelve la cookie. */
-export async function loginAs(app: Express, role: Role, over: Parameters<typeof createUser>[0] = {}): Promise<LoggedIn> {
+export async function loginAs(
+  app: Express,
+  role: Role,
+  over: Parameters<typeof createUser>[0] = {},
+): Promise<LoggedIn> {
   const { user, password } = await createUser({ role, ...over });
   const res = await loginWith(app, user.email, password ?? TEST_PASSWORD);
-  if (res.status !== 204) throw new Error(`loginAs(${role}) falló con ${res.status}: ${JSON.stringify(res.body)}`);
+  if (res.status !== 204)
+    throw new Error(`loginAs(${role}) falló con ${res.status}: ${JSON.stringify(res.body)}`);
   return { cookie: cookieFrom(res), user, password };
 }

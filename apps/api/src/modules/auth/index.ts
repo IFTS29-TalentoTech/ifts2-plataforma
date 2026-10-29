@@ -1,5 +1,11 @@
 import { Router, type CookieOptions, type Request, type Response } from 'express';
-import { changePasswordInput, loginInput, permissionsFor, type ChangePasswordInput, type LoginInput } from '@ifts2/shared';
+import {
+  changePasswordInput,
+  loginInput,
+  permissionsFor,
+  type ChangePasswordInput,
+  type LoginInput,
+} from '@ifts2/shared';
 import { randomToken, sha256 } from '../../infra/crypto';
 import { errors } from '../../infra/errors';
 import { dummyHash, hashPassword, verifyPassword } from '../../lib/password';
@@ -21,7 +27,10 @@ function cookieOptions(req: Request, maxAgeMs: number): CookieOptions {
 }
 
 function clearSessionCookie(req: Request, res: Response) {
-  res.clearCookie(req.ctx.config.session.cookieName, { ...cookieOptions(req, 0), maxAge: undefined });
+  res.clearCookie(req.ctx.config.session.cookieName, {
+    ...cookieOptions(req, 0),
+    maxAge: undefined,
+  });
 }
 
 /** POST /auth/login: 204 + cookie de sesión; 401 con mensaje genérico; 429 tras 5 intentos fallidos. */
@@ -55,10 +64,17 @@ router.post(
         },
       });
       await tx.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
-      await audit.log(tx, { userId: user.id, action: 'auth.login', entity: 'User', entityId: user.id });
+      await audit.log(tx, {
+        userId: user.id,
+        action: 'auth.login',
+        entity: 'User',
+        entityId: user.id,
+      });
     });
     // Limpieza oportunista de sesiones vencidas (no es borrado de contenido).
-    void prisma.session.deleteMany({ where: { expiresAt: { lt: new Date() } } }).catch(() => undefined);
+    void prisma.session
+      .deleteMany({ where: { expiresAt: { lt: new Date() } } })
+      .catch(() => undefined);
 
     res.cookie(config.session.cookieName, token, cookieOptions(req, ttlMs));
     res.status(204).end();
@@ -104,9 +120,17 @@ router.post(
     }
     const passwordHash = await hashPassword(next);
     await prisma.$transaction(async (tx) => {
-      await tx.user.update({ where: { id: user.id }, data: { passwordHash, mustChangePassword: false } });
+      await tx.user.update({
+        where: { id: user.id },
+        data: { passwordHash, mustChangePassword: false },
+      });
       await tx.session.deleteMany({ where: { userId: user.id, NOT: { id: me.sessionId } } });
-      await audit.log(tx, { userId: user.id, action: 'auth.change-password', entity: 'User', entityId: user.id });
+      await audit.log(tx, {
+        userId: user.id,
+        action: 'auth.change-password',
+        entity: 'User',
+        entityId: user.id,
+      });
     });
     res.status(204).end();
   },
