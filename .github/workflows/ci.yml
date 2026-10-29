@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ifts2
+          POSTGRES_PASSWORD: ifts2
+          POSTGRES_DB: ifts2_test
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U ifts2 -d ifts2_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Valores de prueba, sin secretos reales
+      DATABASE_URL: postgresql://ifts2:ifts2@localhost:5433/ifts2_test
+      TEST_DATABASE_URL: postgresql://ifts2:ifts2@localhost:5433/ifts2_test
+      APP_ORIGIN: http://localhost:3000
+      API_ORIGIN: http://localhost:4000
+      APP_ENCRYPTION_KEY: ZGV2LW9ubHktZXhhbXBsZS1rZXktMzItYnl0ZXMhISE=
+      STORAGE_PROVIDER: memory
+      MAILER_PROVIDER: console
+      INSTAGRAM_PROVIDER: fake
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  # Cypress (smoke + accesibilidad) contra la web compilada. Sin secretos.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: verify
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ifts2
+          POSTGRES_PASSWORD: ifts2
+          POSTGRES_DB: ifts2
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U ifts2 -d ifts2"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ifts2:ifts2@localhost:5433/ifts2
+      APP_ORIGIN: http://localhost:3000
+      API_ORIGIN: http://localhost:4000
+      APP_ENCRYPTION_KEY: ZGV2LW9ubHktZXhhbXBsZS1rZXktMzItYnl0ZXMhISE=
+      SEED_MODE: demo
+      SEED_ADMIN_EMAIL: admin@ifts2.local
+      SEED_ADMIN_PASSWORD: Cambiame-123!
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate && pnpm db:seed
+      - run: pnpm build
+      - name: Levantar API y web
+        run: |
+          pnpm --filter @ifts2/api start &
+          ENABLE_UI_KIT=true pnpm --filter @ifts2/web start &
+          npx --yes wait-on http://localhost:4000/health http://localhost:3000
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: apps/web/cypress/screenshots

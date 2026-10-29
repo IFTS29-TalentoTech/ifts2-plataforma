@@ -112,3 +112,19 @@ Tres roles (matriz en `04-api.md`). El Figma define "Rectoría / Dirección: acc
 ## ADR-19 · Observabilidad
 
 Logs estructurados con `pino` (sin datos personales), endpoint `/health` (API y base), tabla `AuditLog` para auditoría funcional y, opcionalmente, un servicio gratuito de captura de errores.
+
+## ADR-20 · Integraciones configurables (Instagram, correo, almacenamiento)
+
+Instagram y correo (destino de contacto y SMTP) los configura el cliente desde el panel y se guardan cifrados (AES-256-GCM) en `IntegrationConfig`; las variables de entorno son solo valores por defecto; sin configuración real se opera en modo demostración. El almacenamiento se elige por entorno (`STORAGE_PROVIDER=local|memory|s3`). Detalle y endpoints en `docs/decisiones/ADR-020-integraciones-configurables.md` (complementa ADR-08, 09 y 16).
+
+## ADR-21 · Theming por variables CSS
+
+Colores y tipografías solo desde variables CSS generadas desde `design-tokens.json` (`pnpm tokens`); Tailwind las consume; hay chequeo de lint contra hex hardcodeados. La fuente es Plus Jakarta Sans (cambia el punto de Inter de ADR-11). Ajustes de contraste AA documentados. Ver `docs/decisiones/ADR-021-theming-por-variables-css.md`.
+
+## ADR-22 · Producto genérico
+
+Nada institucional en el código: los datos de la institución viven en `SiteSetting`/`ContentSection`. Ver `docs/decisiones/ADR-022-producto-generico.md`.
+
+## ADR-23 · Decisiones de la fundación técnica
+
+Paquete shared como código fuente, API ESM con autodescubrimiento, contexto inyectado, proxy de la web hacia la API, índice único parcial del ciclo público, etc. Ver `docs/decisiones/ADR-023-fundacion-tecnica.md`.

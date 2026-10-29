@@ -39,3 +39,16 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 2. **Datos de ejemplo del Figma** (correo y teléfono) no coinciden con los reales.
 3. **Etapa 2 entregada** describe la paleta verde y un panel con "Institucional, Contacto, Galería y Plantel" como pendientes de diseño; el Figma vigente sí diseñó Institucional, Archivo, Configuración y Login, y reemplazó la paleta. Esta carpeta se basa en el Figma vigente.
 4. **Nombres de rol:** la Etapa 2 habla de Administrador y Editor; el Figma habla de Rectoría / Dirección y Bedelía Académica. ADR-18 propone tres roles que cubren ambos.
+
+## Agregadas por el agente de fundación
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+|---|---|---|---|
+| Q22 | Nombres finales del menú: se implementó **Ingreso** (aspirantes, `/ingreso`) e **Inscripciones** (alumnos, `/inscripciones`) separados, más el botón **Administración** | Confirmar con el cliente (relacionada con Q20) | Navegación |
+| Q23 | Tipografía: el JSON de tokens decía Inter pero las capturas del Figma lucen Plus Jakarta Sans | Se usa Plus Jakarta Sans (un solo archivo para cambiarla) | Diseño |
+| Q24 | Contraste: el color `primary` del Figma no alcanza AA para botones con texto blanco (4,25:1) ni para texto sobre fondo base (3,93:1) | Se usan tokens derivados `primary-strong`, `font-strong`, `warning-text-strong` (ADR-021); validar con el cliente | Diseño / RNF07 |
+| Q25 | Hashtag de Instagram: Q1 propone `#ifts2web` pero 08-contenido dice "definir con el cliente" | La semilla `prod` no lo carga; la semilla demo usa `#ifts2web`; se configura desde el panel | RF04 |
+| Q26 | El cliente debe crear y administrar su app de Meta (App ID/Secret, redirección, permisos) | La pantalla de Configuración guía el paso a paso (`setupSteps`); falta definir quién del instituto lo hace | ADR-09 |
+| Q27 | Los roles (Rectoría / Dirección, Bedelía Académica, Comunicación) están escritos como etiquetas de producto en `ROLE_LABELS`; para otra institución habría que llevarlos a configuración | Se deja así en el MVP | ADR-22 |
+| Q28 | El cierre de sesión por inactividad no está definido | Sesión de 8 h fijas (14 días con "recordar"), sin renovación deslizante | RNF06 |
+| Q29 | El rate limit está en memoria: con más de una instancia de la API los contadores no se comparten | Aceptado para una instancia; DevOps decide un store compartido si se escala | ADR-15 |

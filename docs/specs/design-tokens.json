@@ -1,5 +1,6 @@
 {
   "_fuente": "Figma IFTS N°2 — MVP visual y panel de administración (fileKey aRnoXCbNpkCFkHPH0En5B5). Color styles leídos con get_variable_defs el 18/10/2026.",
+  "_uso": "FUENTE ÚNICA de colores, fuentes, radios, sombras y espaciados. `pnpm tokens` regenera apps/web/src/styles/tokens.css desde este archivo. Ningún componente escribe hex ni nombres de fuente: usa las variables CSS / clases de Tailwind.",
   "color": {
     "primary": "#8D775F",
     "base": "#F6F6F3",
@@ -14,6 +15,38 @@
     "danger-text": "#7A3A32",
     "danger-back": "#F3DCDC"
   },
-  "tipografia": { "familia": "Inter", "carga": "next/font/google" },
-  "_pendiente": "La escala tipográfica, radios, sombras y espaciados no se leyeron como variables: tomarlos del Figma (get_design_context) o inferirlos y documentarlos. Verificar todos los pares texto/fondo contra WCAG 2.2 AA (por ejemplo primary sobre base puede no alcanzar 4.5:1 para texto chico)."
+  "colorDerivados": {
+    "_nota": "Ajustes de contraste WCAG 2.2 AA sobre los colores del Figma (ver docs/avance.md). Se usan SOLO donde el original no alcanza 4.5:1.",
+    "surface": "#FFFFFF",
+    "primary-strong": "#806C56",
+    "font-strong": "#5F6261",
+    "warning-text-strong": "#8D5E2D",
+    "danger-solid": "#7A3A32",
+    "focus-ring": "#291711"
+  },
+  "fuentes": {
+    "sans": { "google": "Plus_Jakarta_Sans", "fallback": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
+    "display": { "google": "Plus_Jakarta_Sans", "fallback": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" }
+  },
+  "radio": { "sm": "6px", "md": "10px", "lg": "14px", "xl": "20px", "pill": "999px" },
+  "sombra": {
+    "card": "0 1px 2px rgba(41, 23, 17, 0.05), 0 4px 16px rgba(41, 23, 17, 0.06)",
+    "popover": "0 8px 30px rgba(41, 23, 17, 0.16)",
+    "focus": "0 0 0 3px rgba(111, 81, 66, 0.35)"
+  },
+  "espaciado": { "gutter": "16px", "gutter-lg": "32px", "section": "64px", "container": "1200px", "panel-sidebar": "240px" },
+  "temas": {
+    "alt": {
+      "_nota": "Tema de ejemplo para demostrar que la paleta se cambia sin tocar componentes: <html data-theme=\"alt\">. Es la paleta verde anterior que el cliente rechazó; no es oficial.",
+      "color": {
+        "primary": "#4F7A5A",
+        "base": "#F4F7F2",
+        "accent": "#2F5A3C",
+        "accent-2": "#DDE8DA",
+        "accent-3": "#14281B"
+      },
+      "colorDerivados": { "primary-strong": "#3F6B4B", "font-strong": "#4A5750", "focus-ring": "#14281B" }
+    }
+  },
+  "_pendiente": "Verificar con el cliente la escala tipográfica definitiva (las capturas muestran Plus Jakarta Sans); radios y sombras fueron inferidos de las capturas."
 }

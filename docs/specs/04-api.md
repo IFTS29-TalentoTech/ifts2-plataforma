@@ -80,3 +80,28 @@ Base: `/api/v1`. JSON UTF-8. Fechas ISO 8601 en UTC. Autenticación por cookie d
 **Eliminación (CRUD completo):** `DELETE /publications/:id`, `/social/posts/:id` (solo descartadas), `/notices/:id`, `/schedules/:id`, `/exam-calls/:id`, `/documents/:id` (solo archivados), `/links/:id`, `/content/:page/:slug` (solo secciones no estáticas), `/contact-messages/:id`. Los usuarios no se eliminan: se desactivan (`POST /users/:id/deactivate`), para conservar la auditoría. Respuesta 204; 409 si está vigente o referenciado.
 
 **Códigos de estado:** 200/201/204; 400 validación; 401 sin sesión; 403 sin permiso; 404; 409 conflicto de estado; 413 archivo grande; 415 tipo no permitido; 422 regla de negocio; 429 límite de frecuencia; 502 falla de integración externa (con el sitio funcionando).
+
+## Integraciones (solo ADMIN, con AuditLog; nunca devuelven secretos)
+
+La configuración la carga el cliente desde el panel y se guarda cifrada (ADR-20). Los `GET` devuelven máscaras (`••••1234`), el estado, la dirección de redirección que debe registrar en su app de Meta, los permisos requeridos y la guía paso a paso (`setupSteps`).
+
+| Método y ruta | Descripción |
+|---|---|
+| `GET /integrations/instagram` | `{ status: demo / credentials_saved / connected / expiring / error, statusLabel, demoMode, mode, source, appIdMasked, appSecretMasked, hasAccessToken, accessTokenMasked, username, connectedAt, tokenExpiresAt, lastSyncAt, lastSyncOk, lastError, hashtag, redirectUri, scopes, setupSteps }` |
+| `PUT /integrations/instagram` | `{ mode?: 'demo' o 'real', appId?, appSecret?, hashtag?, accessToken? }` (el secreto omitido se conserva; 422 si pide modo real sin App ID y Secret) |
+| `GET /integrations/instagram/connect` | `{ url }` de autorización OAuth (botón "Conectar con Instagram"); 422 si faltan credenciales |
+| `GET /integrations/instagram/callback` | Destino de Meta: guarda el token cifrado y redirige a `/panel/configuracion?instagram=connected` o `error` |
+| `POST /integrations/instagram/test` | "Probar conexión": `{ ok, demo, username, error }` |
+| `POST /integrations/instagram/disconnect` | Borra credenciales y token; vuelve a modo demostración |
+| `GET/PUT /integrations/mail` | `{ contactToEmail?, smtpUrl? (null quita el SMTP) }`; devuelve proveedor activo, origen y SMTP enmascarado |
+| `POST /integrations/mail/test` | Envía un correo de prueba al destino de contacto (502 si falla) |
+
+**Salud:** `GET /health` (y `/api/v1/health`) -> `{ status, api, db, integrations: { storage, mailer, instagram }, demoMode }`.
+
+**Archivos locales:** `GET /files/<clave>?exp=&sig=` sirve archivos del almacenamiento local con URL firmada de corta duración (con `s3` las firma el proveedor).
+
+**Usuarios (implementado):** `GET /users?page&pageSize&role&active&q`, `POST /users` (clave opcional; si falta se genera una temporal que se muestra una sola vez), `GET/PATCH /users/:id`, `POST /users/:id/deactivate`, `/activate` y `/reset-password`. No existe `DELETE`. No se puede desactivar a uno mismo ni al último administrador activo (422). Correo duplicado: 409 con `errors.email`.
+
+**Autenticación (implementado):** `GET /auth/me` devuelve además `mustChangePassword` y `permissions`; con `mustChangePassword` toda otra ruta responde 403 con `reason: "password-change-required"`.
+
+**Configuración pública (contrato para el agente de `/public/*`):** `GET /public/settings` debe devolver un objeto plano con las claves de `SETTING_KEYS` (`institution_name`, `institution_short`, `institution_subtitle`, `footer_text`, `address`, `phone`, `email_*`, `instagram_url`, `facebook_url`, `tagline`...), que la web usa para cabecera y pie (ADR-22).
