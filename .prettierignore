@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+coverage
+pnpm-lock.yaml
+docs/design
+docs/evidencias
+docs/specs
+uploads
+prisma/migrations
+cypress/screenshots

@@ -13,3 +13,6 @@ cypress/videos/
 cypress/screenshots/
 .DS_Store
 __pycache__/
+*.tsbuildinfo
+next-env.d.ts
+.vitest-cache/
