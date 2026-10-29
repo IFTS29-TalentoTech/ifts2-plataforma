@@ -1,0 +1,255 @@
+// Modelo de datos del MVP — IFTS N°2. PostgreSQL + Prisma.
+// Reglas: (1) nada se borra: se archiva o se pausa; (2) la vigencia se calcula al consultar;
+// (3) todo cambio de contenido genera una fila en AuditLog.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN    // Rectoría / Dirección: acceso total
+  BEDELIA  // Bedelía Académica: horarios, mesas, avisos y cartelera
+  EDITOR   // Comunicación: publicaciones, redes y novedades
+}
+
+enum PublicationKind { NEWS EVENT }
+enum PublicationStatus { DRAFT SCHEDULED PUBLISHED PAUSED }
+enum PublicationOrigin { MANUAL INSTAGRAM }
+enum PublicationSection { HOME NEWS BOTH }
+enum SocialStatus { DETECTED LINKED DISCARDED }
+enum NoticeStatus { ACTIVE PAUSED }
+enum NoticeAudience { ALL STUDENTS ASPIRANTS GRADUATES }
+enum DocumentKind { SCHEDULE EXAM_CALENDAR RESOLUTION PLAN NOTICE_ATTACHMENT OTHER }
+enum DocumentStatus { ACTIVE ARCHIVED }
+enum TermKind { FIRST SECOND EXTRAORDINARY }
+enum MessageStatus { NEW READ ANSWERED }
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         Role
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+  sessions     Session[]
+  audit        AuditLog[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tokenHash String   @unique // hash del token de la cookie; nunca el token en claro
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+  @@index([userId])
+}
+
+model Category {
+  id           String        @id @default(uuid())
+  name         String
+  kind         String        // 'PUBLICATION' | 'NOTICE' | 'GALLERY'
+  publications Publication[]
+  notices      Notice[]
+  @@unique([name, kind])
+}
+
+model SocialPost {
+  id          String       @id @default(uuid())
+  platform    String       @default("INSTAGRAM")
+  externalId  String       @unique // id del medio en Instagram: evita duplicados
+  permalink   String
+  caption     String
+  mediaUrl    String       // temporal: se copia a nuestro almacenamiento al aprobar
+  postedAt    DateTime
+  status      SocialStatus @default(DETECTED)
+  detectedAt  DateTime     @default(now())
+  moderatedBy String?
+  moderatedAt DateTime?
+  publication Publication?
+}
+
+model Publication {
+  id           String             @id @default(uuid())
+  kind         PublicationKind    @default(NEWS)
+  title        String
+  summary      String
+  body         String             @default("")
+  coverUrl     String?
+  categoryId   String?
+  category     Category?          @relation(fields: [categoryId], references: [id])
+  section      PublicationSection @default(BOTH)
+  status       PublicationStatus  @default(DRAFT)
+  origin       PublicationOrigin  @default(MANUAL)
+  socialPostId String?            @unique
+  socialPost   SocialPost?        @relation(fields: [socialPostId], references: [id])
+  visibleFrom  DateTime?
+  visibleUntil DateTime?
+  eventStart   DateTime?
+  eventEnd     DateTime?
+  location     String?
+  authorId     String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  @@index([status, visibleFrom, visibleUntil])
+}
+
+// Avisos académicos / cartelera oficial
+model Notice {
+  id           String         @id @default(uuid())
+  title        String
+  body         String
+  categoryId   String?
+  category     Category?      @relation(fields: [categoryId], references: [id])
+  audience     NoticeAudience @default(ALL)
+  urgent       Boolean        @default(false)
+  highlighted  Boolean        @default(false) // destacar evento próximo (reunión 06/10)
+  status       NoticeStatus   @default(ACTIVE)
+  visibleFrom  DateTime       @default(now())
+  visibleUntil DateTime?
+  attachmentId String?
+  attachment   Document?      @relation(fields: [attachmentId], references: [id])
+  authorId     String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  @@index([status, visibleFrom, visibleUntil])
+}
+
+// Repositorio documental (archivo histórico) y adjuntos
+model Document {
+  id             String         @id @default(uuid())
+  title          String
+  filename       String
+  kind           DocumentKind   @default(OTHER)
+  category       String?        // etiqueta mostrada en la tabla (ej. "Mesas Examen", "Cursada")
+  cycleYear      Int?           // ciclo lectivo
+  termLabel      String?        // ej. "2.° Cuat."
+  resolutionCode String?
+  storageKey     String         @unique
+  mimeType       String
+  sizeBytes      Int
+  status         DocumentStatus @default(ACTIVE)
+  archivedAt     DateTime?
+  restoredAt     DateTime?
+  uploadedBy     String
+  createdAt      DateTime       @default(now())
+  notices        Notice[]
+  schedules      Schedule[]
+  examCalls      ExamCall[]
+  @@index([cycleYear, status])
+}
+
+model AcademicTerm {
+  id            String     @id @default(uuid())
+  year          Int
+  kind          TermKind
+  startsOn      DateTime?
+  endsOn        DateTime?
+  publicCurrent Boolean    @default(false) // ciclo que muestra el sitio público (solo uno)
+  schedules     Schedule[]
+  examCalls     ExamCall[]
+  @@unique([year, kind])
+}
+
+// Horarios de cursada por comisión (grilla adjunta)
+model Schedule {
+  id             String       @id @default(uuid())
+  termId         String
+  term           AcademicTerm @relation(fields: [termId], references: [id])
+  commissionName String       // "Comisión A y B", "Comisión Única", "Prácticas Finales"
+  documentId     String?
+  document       Document?    @relation(fields: [documentId], references: [id])
+  notes          String?
+  published      Boolean      @default(false)
+  updatedBy      String
+  updatedAt      DateTime     @updatedAt
+}
+
+// Llamados a examen / mesas
+model ExamCall {
+  id             String       @id @default(uuid())
+  termId         String
+  term           AcademicTerm @relation(fields: [termId], references: [id])
+  name           String       // "Turno extraordinario de Diciembre 2026"
+  startsOn       DateTime
+  endsOn         DateTime
+  enrollmentOpen Boolean      @default(false)
+  highlighted    Boolean      @default(false) // destacar evento próximo (reunión 06/10)
+  documentId     String?
+  document       Document?    @relation(fields: [documentId], references: [id])
+  notes          String?
+  published      Boolean      @default(false)
+  updatedBy      String
+  updatedAt      DateTime     @updatedAt
+}
+
+// Clave/valor: sede, contactos, hashtag de Instagram, etc.
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// Texto editable de páginas estancas (Institucional, La carrera, Ingreso)
+model ContentSection {
+  id      String  @id @default(uuid())
+  page    String  // 'institucional' | 'carrera' | 'ingreso'
+  slug    String
+  title   String
+  body    String  // Markdown acotado, sanitizado al renderizar
+  order   Int     @default(0)
+  visible Boolean @default(true)
+  @@unique([page, slug])
+}
+
+model ExternalLink {
+  id          String  @id @default(uuid())
+  title       String
+  url         String
+  description String?
+  group       String  @default("academico")
+  order       Int     @default(0)
+  visible     Boolean @default(true)
+}
+
+// Should (RF08)
+model ContactMessage {
+  id         String        @id @default(uuid())
+  name       String
+  email      String
+  subject    String
+  message    String
+  status     MessageStatus @default(NEW)
+  consent    Boolean       // aceptó el aviso de uso de datos (Ley 25.326)
+  receivedAt DateTime      @default(now())
+}
+
+// Una sola fila (id = 1)
+model InstagramToken {
+  id          Int       @id @default(1)
+  tokenEnc    String    // AES-256-GCM con APP_ENCRYPTION_KEY
+  expiresAt   DateTime
+  refreshedAt DateTime  @default(now())
+  lastSyncAt  DateTime?
+  lastSyncOk  Boolean?
+}
+
+model AuditLog {
+  id       String   @id @default(uuid())
+  userId   String?
+  user     User?    @relation(fields: [userId], references: [id])
+  action   String   // 'publication.publish', 'document.archive', ...
+  entity   String
+  entityId String?
+  detail   Json?
+  at       DateTime @default(now())
+  @@index([entity, entityId])
+}

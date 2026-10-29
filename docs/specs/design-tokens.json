@@ -1,0 +1,19 @@
+{
+  "_fuente": "Figma IFTS N°2 — MVP visual y panel de administración (fileKey aRnoXCbNpkCFkHPH0En5B5). Color styles leídos con get_variable_defs el 18/10/2026.",
+  "color": {
+    "primary": "#8D775F",
+    "base": "#F6F6F3",
+    "accent": "#6F5142",
+    "accent-2": "#E0DFD5",
+    "accent-3": "#291711",
+    "font": "#6E7271",
+    "success-text": "#556B3F",
+    "success-back": "#E8EDE4",
+    "warning-text": "#B77A3A",
+    "warning-back": "#F7E9D6",
+    "danger-text": "#7A3A32",
+    "danger-back": "#F3DCDC"
+  },
+  "tipografia": { "familia": "Inter", "carga": "next/font/google" },
+  "_pendiente": "La escala tipográfica, radios, sombras y espaciados no se leyeron como variables: tomarlos del Figma (get_design_context) o inferirlos y documentarlos. Verificar todos los pares texto/fondo contra WCAG 2.2 AA (por ejemplo primary sobre base puede no alcanzar 4.5:1 para texto chico)."
+}
