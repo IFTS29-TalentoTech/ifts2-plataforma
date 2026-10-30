@@ -81,7 +81,7 @@ describe('/settings', () => {
     const put = (b: object) => as(admin.cookie).put('/api/v1/settings', b);
     expect((await put({})).status).toBe(400);
     expect((await put({ inventada: 'x' })).status).toBe(400);
-    let res = await put({
+    const res = await put({
       email_bedelia: 'no-es-correo',
       instagram_url: 'ftp://x',
       instagram_hashtag: 'a b',
