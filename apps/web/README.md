@@ -47,3 +47,9 @@ Implementado en `src/features/public/` (mapa de páginas, endpoints y decisiones
 ## Panel B (Horarios, Archivo, Configuración)
 
 Pantallas en `src/features/panel-b/` (ver su `README.md`) montadas desde `app/panel/(shell)/{horarios,archivo,configuracion}`. Specs en `cypress/e2e/panel-b/` con `cy.loginAsApi(rol)`, `cy.api()` y `cy.byLabel()` (`cypress/support/panel-b.ts`). Para E2E se recomienda `pnpm build` + `pnpm start` con `API_ORIGIN` exportado (ver Q105). Capturas del manual: `capturas-manual.cy.ts` y copiar `cypress/screenshots/capturas-manual.cy.ts/b-*.png` a `docs/capturas/panel/`.
+
+`pnpm test:e2e` (web levantada; `CYPRESS_BASE_URL` para otro puerto). Viewports 390 y 1440; el comando `cy.a11y()` corre axe (WCAG 2.2 AA, impactos serio/crítico). Specs: `smoke.cy.ts`, `ui-kit.cy.ts` y, del panel parte A, `e2e/panel-a/*.cy.ts` (ver `src/features/panel-a/README.md`). Cypress 16 no tiene `Cypress.env`: los usuarios de prueba están en `cypress/support/panel-a.ts`.
+
+## Panel parte A
+
+`/panel/login`, `/panel/login/cambiar-clave`, `/panel`, `/panel/publicaciones`, `/panel/avisos` y `/panel/mensajes` están implementados en `src/features/panel-a/` (pantallas, endpoints, permisos y cómo probar en su README). El menú del panel tiene el ítem Mensajes (permiso `contact:read`). El cierre de sesión también está en el menú móvil. `next.config.ts` aplica el `.env` de la raíz con `forceReload` (antes el proxy ignoraba `API_ORIGIN`).

@@ -1,4 +1,5 @@
 import { defineConfig } from 'cypress';
+import { registerPanelATasks } from './cypress/support/panel-a-tasks';
 
 export default defineConfig({
   e2e: {
@@ -24,6 +25,8 @@ export default defineConfig({
         }
         return launchOptions;
       });
+
+      registerPanelATasks(on); // tareas de las pruebas del panel (parte A)
       on('task', {
         log(message: string) {
           console.log(message);
