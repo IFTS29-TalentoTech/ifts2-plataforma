@@ -58,7 +58,7 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | N.° | Pregunta | Supuesto provisorio | Impacta |
 | --- | --- | --- | --- |
 | Q40 | `DELETE /content/:page/:slug` "solo secciones no estáticas" (04-api): ¿qué es una sección estática? | Se pueden eliminar solo las secciones ocultas (`visible=false`); las visibles se ocultan primero | RF01 |
-| Q41 | La matriz `PERMISSIONS` da `contact:delete` a BEDELIA, pero el encargo y 04-api indican que borra mensajes solo ADMIN | `DELETE /contact-messages/:id` exige rol ADMIN y mensaje ya respondido; revisar la matriz | RF08 |
+| Q41 | `contact:delete` en la matriz de BEDELIA | **Resuelta (integración)**: se quitó de BEDELIA; `contact:delete` es solo de ADMIN, la API usa `requirePermission` y hay pruebas | RF08 |
 | Q42 | Eliminar un documento: el encargo habla de "referenciado por vigentes"; la regla 8 de 01-requerimientos dice "referenciado" | Se bloquea ante CUALQUIER referencia de aviso, horario o llamado (la FK es SET NULL y se perderían adjuntos en silencio) | RF03 |
 | Q43 | Publicar un horario sin archivo adjunto | 422: un horario sin grilla no tiene qué mostrar | RF06 |
 | Q44 | El hashtag vive en `SiteSetting.instagram_hashtag` y también en la configuración de Instagram (`/integrations/instagram`) | Son valores independientes; unificar al conectar la sincronización real | RF04 |
@@ -97,8 +97,8 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | N.° | Pregunta | Supuesto provisorio | Impacta |
 | --- | --- | --- | --- |
 | Q80 | El Figma muestra el estado "Revisar" en publicaciones de redes pero no define cuándo aplica | Una publicación pendiente con más de 30 días desde que se publicó en Instagram se marca "Revisar" (puede estar desactualizada); el resto es "Pendiente". Constante `STALE_DAYS` en `social-posts-tab.tsx` | RF04 |
-| Q81 | `GET /social/posts` no filtra por origen (Instagram / carga manual) | El filtro "Origen" se aplica en el navegador sobre la página cargada; si se necesita en el servidor, agregar `?source=` a la API | RF04 |
-| Q82 | Los conteos del filtro Estado de Avisos (Activos / Pausados / Vencidos) no existen en la API | Se piden hasta 100 avisos con `status=ALL` y se cuenta en el navegador; se avisa si hay más de 100 | RF03 |
+| Q81 | `GET /social/posts` no filtraba por origen (Instagram / carga manual) | **Resuelta (integración)**: `?source=instagram|manual` en el servidor; el panel lo envía y reinicia la página | RF04 |
+| Q82 | Los conteos del filtro Estado de Avisos no existían en la API | **Resuelta (integración)**: `GET /notices` devuelve `counts { ALL, ACTIVE, PAUSED, EXPIRED }`; el panel pagina en el servidor (ya no pide 100 avisos) | RF03 |
 | Q83 | Mensajes de contacto en el panel no tiene diseño en el Figma | Se resolvió con tarjetas, insignias y diálogos del kit; requiere diseño | RF08 |
 | Q84 | El modal "Moderar contenido de red social" del Figma tiene "Prioridad visual (Destacada, primera fila)", que la API no soporta | Se omitió el campo; si el cliente lo quiere, hay que sumar un campo a `Publication` y al esquema de aprobación | RF04 |
 | Q85 | El Figma rotula "Correo institucional (@bue.edu.ar)" en el login | El producto es genérico (ADR-22): el rótulo es "Correo institucional" y no se impone dominio; la lista de dominios válidos, si se quiere, es del cliente | RF05 |

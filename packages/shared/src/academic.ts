@@ -187,6 +187,19 @@ export interface PublicFileDto {
 
 export type NoticeViewStatusDto = 'ACTIVE' | 'PAUSED' | 'EXPIRED';
 
+/** Conteos de avisos por estado calculado (respetan el filtro `audience`, no el de `status`). */
+export interface NoticeCountsDto {
+  ALL: number;
+  ACTIVE: number;
+  PAUSED: number;
+  EXPIRED: number;
+}
+
+/** GET /notices: página de avisos + conteos por estado para los filtros del panel. */
+export interface NoticeListDto extends Page<NoticeDto> {
+  counts: NoticeCountsDto;
+}
+
 /** GET /notices, GET /notices/:id, POST/PATCH, pause, resume. */
 export interface NoticeDto {
   id: string;

@@ -83,6 +83,23 @@ for (const vp of VIEWPORTS) {
     });
 
     it('validación del formulario: campos vacíos muestran el mensaje de la API', () => {
+      // Respuesta simulada: un 400 real cuenta como intento fallido para el límite por IP (ADR-06) y
+      // dejaría bloqueada a la suite siguiente (determinismo entre specs).
+      cy.intercept('POST', '/api/v1/auth/login', {
+        statusCode: 400,
+        headers: { 'content-type': 'application/problem+json' },
+        body: {
+          type: 'about:blank',
+          title: 'Datos inválidos',
+          status: 400,
+          code: 'validation',
+          detail: 'Revisá los datos ingresados.',
+          errors: {
+            email: ['El correo es obligatorio.'],
+            password: ['La contraseña es obligatoria.'],
+          },
+        },
+      });
       cy.visit('/panel/login');
       cy.contains('button', 'Ingresar al panel').click();
       cy.get('[role="alert"]').should('exist');

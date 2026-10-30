@@ -388,6 +388,22 @@ describe('GET /social/posts', () => {
     });
   });
 
+  it('filtra por origen (?source=) en el servidor: instagram o carga manual', async () => {
+    await createSocialPostRow({ status: 'DETECTED' });
+    await createSocialPostRow({ status: 'DETECTED' });
+    await createSocialPostRow({ status: 'DETECTED', externalId: 'manual-abc' });
+    await createSocialPostRow({ status: 'DISCARDED', externalId: 'manual-def' });
+    const ig = (await list('?status=DETECTED&source=instagram')).body;
+    expect(ig.total).toBe(2);
+    expect(ig.items.every((p: { source: string }) => p.source === 'instagram')).toBe(true);
+    const man = (await list('?status=DETECTED&source=manual')).body;
+    expect(man.total).toBe(1);
+    expect(man.items[0].source).toBe('manual');
+    // Los conteos por estado siguen siendo globales (alimentan las pestañas).
+    expect(man.counts).toMatchObject({ DETECTED: 3, DISCARDED: 1 });
+    expect((await list('?source=otro')).status).toBe(400);
+  });
+
   it('filtra por estado y valida el filtro', async () => {
     await createSocialPostRow({ status: 'DETECTED' });
     await createSocialPostRow({ status: 'DISCARDED' });

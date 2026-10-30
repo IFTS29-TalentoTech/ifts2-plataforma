@@ -16,7 +16,8 @@ Base: `/api/v1`. JSON UTF-8. Fechas ISO 8601 en UTC. Autenticación por cookie d
 | Archivo documental (ver, archivar, restaurar) | ✔ | ✔ | | |
 | Configuración del sitio y ciclo público | ✔ | | | |
 | Usuarios y roles | ✔ | | | |
-| Mensajes de contacto | ✔ | ✔ | | |
+| Mensajes de contacto (ver y marcar) | ✔ | ✔ | | |
+| Eliminar mensajes de contacto (`contact:delete`, solo respondidos) | ✔ | | | |
 | Auditoría | ✔ | | | |
 | Eliminar (DELETE) contenido no vigente | ✔ | Avisos, horarios, llamados y documentos propios de su área | Publicaciones propias y publicaciones sociales descartadas | |
 
@@ -49,7 +50,7 @@ Base: `/api/v1`. JSON UTF-8. Fechas ISO 8601 en UTC. Autenticación por cookie d
 **Publicaciones y redes**
 - `POST /social/sync` → renueva el token si hace falta y sincroniza; `{ created, matched, alreadyKnown, demo, lastSyncAt, token }`. 422 sin hashtag configurado; 502 con mensaje claro si Instagram falla (**implementado**).
 - `POST /social/cron` → tarea diaria para un cron externo; se autentica con el secreto `CRON_SECRET` (`X-Cron-Secret` o `Authorization: Bearer`), sin sesión; 403 si no hay secreto configurado, 401 si es incorrecto; responde 200 con `{ ok, token, sync }` aunque Instagram falle.
-- `GET /social/posts?status=DETECTED|LINKED|DISCARDED&page=&pageSize=` → `{ items, page, pageSize, total, counts: { DETECTED, LINKED, DISCARDED } }`
+- `GET /social/posts?status=DETECTED|LINKED|DISCARDED&source=instagram|manual&page=&pageSize=` → `{ items, page, pageSize, total, counts: { DETECTED, LINKED, DISCARDED } }`
 - `POST /social/posts/:id/approve` → `{ title?, summary?, section, categoryId?, visibleFrom?, visibleUntil?, consentConfirmed }` → crea la `Publication` PUBLISHED (origen INSTAGRAM), copia la imagen al almacenamiento propio y devuelve `201 { publication, post }`; `consentConfirmed` debe ser `true` (400 si no); 409 si ya estaba vinculada o está descartada; 502/422 si no se puede copiar la imagen (no se crea nada).
 - `POST /social/posts/:id/discard`, `POST /social/posts/:id/restore`
 - `POST /social/manual` → carga manual equivalente (contingencia).
@@ -58,7 +59,7 @@ Base: `/api/v1`. JSON UTF-8. Fechas ISO 8601 en UTC. Autenticación por cookie d
 - `GET/POST /categories`, `PATCH/DELETE /categories/:id` (único por nombre y tipo; `DELETE` 409 si está en uso).
 
 **Avisos académicos**
-- `GET /notices?status=ACTIVE|PAUSED|EXPIRED|ALL&audience=`, `POST /notices`, `GET/PATCH /notices/:id`
+- `GET /notices?status=ACTIVE|PAUSED|EXPIRED|ALL&audience=&page=&pageSize=` → `{ items, page, pageSize, total, counts: { ALL, ACTIVE, PAUSED, EXPIRED } }` (los conteos respetan `audience`, no `status`), `POST /notices`, `GET/PATCH /notices/:id`
 - `POST /notices/:id/pause`, `/resume`
 
 **Horarios y llamados**
@@ -116,7 +117,7 @@ Los tipos exactos de cada respuesta están en `packages/shared/src/academic.ts` 
 
 **Convenciones.** Fechas ISO 8601 UTC. Listados paginados `{ items, page, pageSize, total }` (`/terms` usa `pageSize` 50 por defecto; `/links` devuelve `{ items, total }` sin paginar). Errores Problem Details con `errors` por campo. Lo no vigente se calcula al consultar; nada se elimina solo.
 
-**Avisos** — `NoticeDto`: `{ id, title, body, categoryId, category: {id,name}|null, audience, urgent, highlighted, status: 'ACTIVE'|'PAUSED', viewStatus: 'ACTIVE'|'PAUSED'|'EXPIRED', visibleNow, visibleFrom, visibleUntil|null, attachmentId, attachment: DocumentRefDto|null, authorId, createdAt, updatedAt }`. `GET /notices?status=ACTIVE|PAUSED|EXPIRED|ALL(default)&audience=&page=&pageSize=` (urgentes primero). `POST /notices/:id/resume` acepta `{ visibleUntil? }` (obligatorio si el aviso venció). `DELETE` solo pausado o vencido (409 si vigente o programado).
+**Avisos** — `NoticeDto`: `{ id, title, body, categoryId, category: {id,name}|null, audience, urgent, highlighted, status: 'ACTIVE'|'PAUSED', viewStatus: 'ACTIVE'|'PAUSED'|'EXPIRED', visibleNow, visibleFrom, visibleUntil|null, attachmentId, attachment: DocumentRefDto|null, authorId, createdAt, updatedAt }`. `GET /notices?status=ACTIVE|PAUSED|EXPIRED|ALL(default)&audience=&page=&pageSize=` (urgentes primero; responde también `counts` por estado calculado). `POST /notices/:id/resume` acepta `{ visibleUntil? }` (obligatorio si el aviso venció). `DELETE` solo pausado o vencido (409 si vigente o programado).
 
 **Ciclos** — `TermDto`: `{ id, year, kind, label: "2026 · 2.º cuatrimestre", startsOn, endsOn, publicCurrent, counts: { schedules, examCalls } }`. `PATCH /terms/:id` (solo fechas). `PUT /terms/:id/public-current` (ADMIN) devuelve el `TermDto` ya público; idempotente.
 
@@ -130,6 +131,6 @@ Los tipos exactos de cada respuesta están en `packages/shared/src/academic.ts` 
 
 **Contenido** — `GET /content/:page` -> `{ page, items: ContentSectionDto[] }`; `PUT /content/:page/:slug` (201 crea, 200 reemplaza); `DELETE` solo secciones ocultas. **Enlaces** — `LinkDto`: `{ id, title, url, description, group, order, visible }`; `DELETE` solo ocultos; un enlace `*.invalid` no puede mostrarse (422).
 
-**Contacto** — `POST /public/contact` -> 201 `{ received: true }` (campo señuelo `website`; 5 envíos/hora por IP). Panel: `GET /contact-messages?status=&q=`, `PATCH /contact-messages/:id` `{ status }`, `DELETE` (ADMIN, solo respondidos).
+**Contacto** — `POST /public/contact` -> 201 `{ received: true }` (campo señuelo `website`; 5 envíos/hora por IP). Panel: `GET /contact-messages?status=&q=`, `PATCH /contact-messages/:id` `{ status }`, `DELETE` (permiso `contact:delete`: solo ADMIN, solo respondidos; BEDELIA recibe 403).
 
 **Público** — formas completas en `PublicHomeDto`, `PublicPublicationsDto`, `PublicPublicationDetailDto`, `PublicStudentsDto`, `PublicContentDto`, `PublicSettingsDto`. Cabecera `Cache-Control: public, max-age=20, s-maxage=30, stale-while-revalidate=30` (ajustes y contenido: 30/60/60). Los archivos llevan `downloadUrl` firmado (vigencia 30 min) o `null` si el almacenamiento falla.

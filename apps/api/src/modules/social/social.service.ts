@@ -83,9 +83,14 @@ async function moderatorNames(ctx: AppContext, rows: Array<{ moderatedBy: string
 /** Listado paginado (más nuevas primero) + conteo por estado para las pestañas del panel. */
 export async function listPosts(
   ctx: AppContext,
-  q: { status?: SocialStatus; page: number; pageSize: number },
+  q: { status?: SocialStatus; source?: 'instagram' | 'manual'; page: number; pageSize: number },
 ) {
-  const where: Prisma.SocialPostWhereInput = q.status ? { status: q.status } : {};
+  // El origen no es una columna: las cargas manuales se reconocen por el prefijo de `externalId`.
+  const where: Prisma.SocialPostWhereInput = {
+    ...(q.status ? { status: q.status } : {}),
+    ...(q.source === 'manual' ? { externalId: { startsWith: MANUAL_PREFIX } } : {}),
+    ...(q.source === 'instagram' ? { NOT: { externalId: { startsWith: MANUAL_PREFIX } } } : {}),
+  };
   const [total, rows, grouped] = await Promise.all([
     ctx.prisma.socialPost.count({ where }),
     ctx.prisma.socialPost.findMany({

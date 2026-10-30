@@ -23,55 +23,101 @@ import { endOfDayBA, startOfDayBA } from './time';
 
 // ---------- helpers de campos ----------
 
-export const text = (label: string, max = 200) =>
-  z
+/**
+ * Género y número del rótulo de un campo, para que los mensajes concuerden en español
+ * ("La leyenda es obligatoria.", "Las notas son obligatorias.", "El correo es obligatorio.").
+ * 'm' masculino, 'f' femenino, 'mp' / 'fp' plurales.
+ */
+export type Gender = 'm' | 'f' | 'mp' | 'fp';
+
+/** Deduce el género del artículo inicial del rótulo ("La…", "Las…", "El…", "Los…"); por defecto 'm'. */
+export function genderOf(label: string): Gender {
+  if (/^Las\s/i.test(label)) return 'fp';
+  if (/^Los\s/i.test(label)) return 'mp';
+  if (/^La\s/i.test(label)) return 'f';
+  return 'm';
+}
+
+/** Formas concordadas del verbo "ser" y de los adjetivos que usan los mensajes de validación. */
+function agree(label: string, gender?: Gender) {
+  const g = gender ?? genderOf(label);
+  const plural = g === 'mp' || g === 'fp';
+  const fem = g === 'f' || g === 'fp';
+  const adj = (stem: string) => `${stem}${fem ? 'a' : 'o'}${plural ? 's' : ''}`;
+  return {
+    es: plural ? 'son' : 'es',
+    puede: plural ? 'pueden' : 'puede',
+    obligatorio: adj('obligatori'),
+    valido: adj('válid'),
+    demasiadoLargo: `${adj('demasiad')} ${adj('larg')}`,
+  };
+}
+
+/**
+ * Texto obligatorio. \`gender\` es opcional: si falta se deduce del artículo del rótulo
+ * (`'La leyenda'` -> femenino); pasalo solo si el rótulo no empieza con artículo.
+ */
+export const text = (label: string, max = 200, gender?: Gender) => {
+  const w = agree(label, gender);
+  return z
     .string({
-      required_error: `${label} es obligatorio.`,
-      invalid_type_error: `${label} no es válido.`,
+      required_error: `${label} ${w.es} ${w.obligatorio}.`,
+      invalid_type_error: `${label} no ${w.es} ${w.valido}.`,
     })
     .trim()
-    .min(1, `${label} es obligatorio.`)
-    .max(max, `${label} no puede superar los ${max} caracteres.`);
+    .min(1, `${label} ${w.es} ${w.obligatorio}.`)
+    .max(max, `${label} no ${w.puede} superar los ${max} caracteres.`);
+};
 
-export const optionalText = (label: string, max = 200) =>
-  z
-    .string({ invalid_type_error: `${label} no es válido.` })
+export const optionalText = (label: string, max = 200, gender?: Gender) => {
+  const w = agree(label, gender);
+  return z
+    .string({ invalid_type_error: `${label} no ${w.es} ${w.valido}.` })
     .trim()
-    .max(max, `${label} no puede superar los ${max} caracteres.`)
+    .max(max, `${label} no ${w.puede} superar los ${max} caracteres.`)
     .nullish()
     .transform((v) => (v ? v : null));
+};
 
 const enumOf = <T extends readonly [string, ...string[]]>(label: string, values: T) =>
   z.enum(values, {
     errorMap: () => ({ message: `${label}: elegí una opción válida (${values.join(', ')}).` }),
   });
 
-const uuid = (label: string) =>
-  z.string({ required_error: `${label} es obligatorio.` }).uuid(`${label} no es válido.`);
+const uuid = (label: string, gender?: Gender) => {
+  const w = agree(label, gender);
+  return z
+    .string({ required_error: `${label} ${w.es} ${w.obligatorio}.` })
+    .uuid(`${label} no ${w.es} ${w.valido}.`);
+};
 
-export const email = (label = 'El correo') =>
-  z
+export const email = (label = 'El correo', gender?: Gender) => {
+  const w = agree(label, gender);
+  return z
     .string({
-      required_error: `${label} es obligatorio.`,
-      invalid_type_error: `${label} no es válido.`,
+      required_error: `${label} ${w.es} ${w.obligatorio}.`,
+      invalid_type_error: `${label} no ${w.es} ${w.valido}.`,
     })
     .trim()
     .toLowerCase()
-    .min(1, `${label} es obligatorio.`)
-    .max(254, `${label} es demasiado largo.`)
+    .min(1, `${label} ${w.es} ${w.obligatorio}.`)
+    .max(254, `${label} ${w.es} ${w.demasiadoLargo}.`)
     .email(`${label} no tiene un formato válido (ejemplo: nombre@dominio.com).`);
+};
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Fecha como `yyyy-mm-dd` (se interpreta en Buenos Aires: inicio o fin del día según `edge`)
- * o como fecha/hora ISO 8601. Devuelve `Date` (instante UTC).
+ * o como fecha/hora ISO 8601. Devuelve `Date` (instante UTC). Los rótulos de fecha son femeninos
+ * ("La fecha de inicio"), por eso \`gender\` vale 'f' por omisión.
  */
-export const dateTime = (label: string, edge: 'start' | 'end' = 'start') =>
-  z
+export const dateTime = (label: string, edge: 'start' | 'end' = 'start', gender?: Gender) => {
+  const w = agree(label, gender ?? 'f');
+  return z
     .union([z.string(), z.date()], {
       invalid_type_error: `${label} no es una fecha válida.`,
-      required_error: `${label} es obligatoria.`,
+      required_error: `${label} ${w.es} ${w.obligatorio}.`,
     })
     .transform((v, ctx) => {
       let d: Date;
@@ -84,19 +130,21 @@ export const dateTime = (label: string, edge: 'start' | 'end' = 'start') =>
       }
       return d;
     });
+};
 
 const optionalDate = (label: string, edge: 'start' | 'end' = 'start') =>
   z.preprocess((v) => (v === '' ? null : v), dateTime(label, edge).nullish());
 
-export const url = (label: string) =>
-  z
+export const url = (label: string, gender?: Gender) => {
+  const w = agree(label, gender);
+  return z
     .string({
-      required_error: `${label} es obligatoria.`,
-      invalid_type_error: `${label} no es válida.`,
+      required_error: `${label} ${w.es} ${w.obligatorio}.`,
+      invalid_type_error: `${label} no ${w.es} ${w.valido}.`,
     })
     .trim()
-    .min(1, `${label} es obligatoria.`)
-    .max(2000, `${label} es demasiado larga.`)
+    .min(1, `${label} ${w.es} ${w.obligatorio}.`)
+    .max(2000, `${label} ${w.es} ${w.demasiadoLargo}.`)
     .refine((v) => {
       try {
         const u = new URL(v);
@@ -105,6 +153,7 @@ export const url = (label: string) =>
         return false;
       }
     }, `${label} debe ser una dirección web completa que empiece con http:// o https://.`);
+};
 
 const password = (label = 'La contraseña') =>
   z
@@ -270,6 +319,8 @@ export const publicationListQuery = paginationQuery.extend({
 
 export const socialListQuery = paginationQuery.extend({
   status: enumOf('El estado', SOCIAL_STATUSES).optional(),
+  /** Origen de la publicación de redes: traída de Instagram o cargada a mano (contingencia). */
+  source: enumOf('El origen', ['instagram', 'manual'] as const).optional(),
 });
 
 export const socialApproveInput = z

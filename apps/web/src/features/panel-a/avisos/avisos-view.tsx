@@ -2,7 +2,7 @@
 
 /**
  * /panel/avisos (RF03, RF06, US-11, US-33, US-36; Figma 09-avisos-academicos).
- * Endpoints: GET /notices?status=ALL&audience=&pageSize=100, POST/PATCH /notices, POST /notices/:id/{pause,resume},
+ * Endpoints: GET /notices?status=&audience=&page=&pageSize= (con `counts` por estado), POST/PATCH /notices, POST /notices/:id/{pause,resume},
  * DELETE /notices/:id, GET /documents/:id/file (descarga del adjunto con URL firmada).
  *
  * Reglas de la spec:
@@ -11,8 +11,8 @@
  *  - Pausar saca el aviso del sitio sin perderlo (ConfirmDialog "Confirmación pausa").
  *  - Eliminar: solo pausados o vencidos, con confirmación; vigente -> 409 y se muestra el motivo. Permiso
  *    `notices:delete` (ADMIN y BEDELIA).
- *  - Los conteos y el filtro de Estado se calculan sobre `status=ALL` (hasta 100 avisos; es una cartelera,
- *    no un archivo). Si hubiera más, se avisa. Q82.
+ *  - Paginación y filtro de Estado en el servidor; los conteos del filtro vienen en `counts` de la respuesta
+ *    (ya no se cargan 100 avisos para contarlos en el navegador). Q82 resuelta.
  */
 import { Paperclip, Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
@@ -37,13 +37,13 @@ import {
   can,
   type DocumentFileDto,
   type NoticeDto,
+  type NoticeListDto,
   type NoticeViewStatusDto,
   type Role,
 } from '@ifts2/shared';
 import { orNull } from '../lib/dates';
 import { toDisplayError } from '../lib/display-error';
 import { fieldMessages, handleSessionExpired, humanError } from '../lib/errors';
-import type { Page } from '../lib/types';
 import { useResource } from '../lib/use-resource';
 import { AUDIENCE_LABELS, NoticeFormDialog } from './notice-form-dialog';
 import { useRouter } from 'next/navigation';
@@ -86,25 +86,24 @@ export function AvisosView({ role }: { role: Role }) {
   });
   const [resuming, setResuming] = useState<NoticeDto | null>(null);
 
-  const query = `status=ALL&pageSize=100${audience === 'ALL_AUDIENCES' ? '' : `&audience=${audience}`}`;
+  const query = `status=${status}&page=${page}&pageSize=${PAGE_SIZE}${audience === 'ALL_AUDIENCES' ? '' : `&audience=${audience}`}`;
   const { data, error, loading, reload } = useResource(`notices:${query}`, () =>
-    api.get<Page<NoticeDto>>(`/notices?${query}`),
+    api.get<NoticeListDto>(`/notices?${query}`),
   );
   const changed = () => {
     reload();
     router.refresh(); // contador "Avisos académicos" del menú
   };
 
-  const all = data?.items ?? [];
-  const count = (s: NoticeViewStatusDto) => all.filter((n) => n.viewStatus === s).length;
-  const filtered = status === 'ALL' ? all : all.filter((n) => n.viewStatus === status);
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pageItems = data?.items ?? [];
+  const counts = data?.counts;
+  const cnt = (k: 'ALL' | NoticeViewStatusDto) => (counts ? ` (${counts[k]})` : '');
 
   const statusOptions = [
-    { value: 'ALL', label: `Todos (${all.length})` },
-    { value: 'ACTIVE', label: `Activos (${count('ACTIVE')})` },
-    { value: 'PAUSED', label: `Pausados (${count('PAUSED')})` },
-    { value: 'EXPIRED', label: `Vencidos (${count('EXPIRED')})` },
+    { value: 'ALL', label: `Todos${cnt('ALL')}` },
+    { value: 'ACTIVE', label: `Activos${cnt('ACTIVE')}` },
+    { value: 'PAUSED', label: `Pausados${cnt('PAUSED')}` },
+    { value: 'EXPIRED', label: `Vencidos${cnt('EXPIRED')}` },
   ];
 
   function reportError(title: string, e: unknown) {
@@ -193,9 +192,9 @@ export function AvisosView({ role }: { role: Role }) {
     <ErrorState description={humanError(error, 'No pudimos cargar los avisos.')} onRetry={reload} />
   ) : pageItems.length === 0 ? (
     <EmptyState
-      title={all.length === 0 ? 'Todavía no hay avisos' : 'No hay avisos con este filtro'}
+      title={(counts?.ALL ?? 0) === 0 ? 'Todavía no hay avisos' : 'No hay avisos con este filtro'}
       description={
-        all.length === 0
+        (counts?.ALL ?? 0) === 0
           ? 'Publicá el primer comunicado oficial para la cartelera.'
           : 'Probá con otro estado o destinatario.'
       }
@@ -306,18 +305,8 @@ export function AvisosView({ role }: { role: Role }) {
 
       {list}
 
-      {!error && filtered.length > PAGE_SIZE && (
-        <Pagination
-          page={page}
-          pageSize={PAGE_SIZE}
-          total={filtered.length}
-          onPageChange={setPage}
-        />
-      )}
-      {data && data.total > 100 && (
-        <p className="text-sm text-font-strong">
-          Hay más de 100 avisos: se muestran los 100 primeros. Eliminá o archivá los que ya no usás.
-        </p>
+      {!error && data && data.total > PAGE_SIZE && (
+        <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPageChange={setPage} />
       )}
 
       <p className="rounded-md bg-accent-2 px-4 py-3 text-sm text-accent-3">

@@ -48,8 +48,8 @@ export const PERMISSIONS: Record<Role, readonly Action[]> = {
     'documents:manage',
     'documents:delete',
     'terms:manage',
+    // Bedelía lee y marca mensajes, pero NO los elimina: eliminar es solo ADMIN (Q41, resuelta).
     'contact:read',
-    'contact:delete',
     'categories:manage',
   ],
   EDITOR: [

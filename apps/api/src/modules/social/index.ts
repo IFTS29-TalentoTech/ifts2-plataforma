@@ -73,7 +73,12 @@ router.get(
   requirePermission('social:moderate'),
   validate({ query: socialListQuery }),
   async (req, res) => {
-    const q = valid<{ status?: SocialStatus; page: number; pageSize: number }>(req, 'query');
+    const q = valid<{
+      status?: SocialStatus;
+      source?: 'instagram' | 'manual';
+      page: number;
+      pageSize: number;
+    }>(req, 'query');
     res.json(await listPosts(req.ctx, q));
   },
 );

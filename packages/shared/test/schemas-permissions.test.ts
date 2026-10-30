@@ -11,6 +11,10 @@ import {
   socialApproveInput,
   termCreateInput,
   userCreateInput,
+  socialManualInput,
+  text,
+  email,
+  url,
 } from '../src';
 
 const msgs = (r: { success: boolean; error?: { issues: { message: string }[] } }) =>
@@ -28,6 +32,10 @@ describe('can(role, action)', () => {
     expect(can('BEDELIA', 'settings:manage')).toBe(false);
     expect(can('BEDELIA', 'social:moderate')).toBe(false);
     expect(can('BEDELIA', 'audit:read')).toBe(false);
+    // Q41: Bedelía lee mensajes de contacto pero no puede eliminarlos.
+    expect(can('BEDELIA', 'contact:read')).toBe(true);
+    expect(can('BEDELIA', 'contact:delete')).toBe(false);
+    expect(can('ADMIN', 'contact:delete')).toBe(true);
   });
   it('EDITOR: publicaciones y redes sí; avisos, horarios y usuarios no', () => {
     expect(can('EDITOR', 'publications:manage')).toBe(true);
@@ -140,5 +148,42 @@ describe('esquemas zod: mensajes claros', () => {
     );
     expect(settingsUpdateInput.safeParse({ inventada: 'x' }).success).toBe(false);
     expect(settingsUpdateInput.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('mensajes de validación: concordancia de género y número', () => {
+  const first = (r: { success: boolean; error?: { issues: { message: string }[] } }) =>
+    r.error?.issues[0]?.message;
+  it('femenino: "La leyenda es obligatoria."', () => {
+    expect(first(text('La leyenda').safeParse(''))).toBe('La leyenda es obligatoria.');
+  });
+  it('masculino: "El título es obligatorio."', () => {
+    expect(first(text('El título').safeParse(''))).toBe('El título es obligatorio.');
+  });
+  it('plural: "Las notas son obligatorias." y "Los datos son obligatorios."', () => {
+    expect(first(text('Las notas').safeParse(''))).toBe('Las notas son obligatorias.');
+    expect(first(text('Los datos').safeParse(''))).toBe('Los datos son obligatorios.');
+  });
+  it('género explícito para rótulos sin artículo', () => {
+    expect(first(text('Dirección web', 200, 'f').safeParse(''))).toBe(
+      'Dirección web es obligatoria.',
+    );
+  });
+  it('largo máximo y tipo inválido concuerdan', () => {
+    expect(first(text('La leyenda', 3).safeParse('abcd'))).toBe(
+      'La leyenda no puede superar los 3 caracteres.',
+    );
+    expect(first(text('La leyenda').safeParse(5))).toBe('La leyenda no es válida.');
+    expect(first(email('El correo').safeParse(5))).toBe('El correo no es válido.');
+    expect(first(url('El enlace').safeParse(''))).toBe('El enlace es obligatorio.');
+    expect(first(url('La dirección').safeParse(''))).toBe('La dirección es obligatoria.');
+  });
+  it('esquemas reales: leyenda y fecha de publicación', () => {
+    const r = socialManualInput.safeParse({ caption: '' });
+    const m = (r as { error?: { issues: { message: string }[] } }).error?.issues.map(
+      (i) => i.message,
+    );
+    expect(m).toContain('La leyenda es obligatoria.');
+    expect(m).not.toContain('La leyenda es obligatorio.');
   });
 });

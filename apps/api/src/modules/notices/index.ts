@@ -17,6 +17,7 @@ import {
   noticeUpdateInput,
   type NoticeCreateInput,
   type NoticeUpdateInput,
+  type NoticeViewStatus,
 } from '@ifts2/shared';
 import { z } from 'zod';
 import { errors } from '../../infra/errors';
@@ -52,7 +53,10 @@ router.get(
       ...viewStatusWhere(q.status, now),
       ...(q.audience ? { audience: q.audience } : {}),
     };
-    const [total, rows] = await Promise.all([
+    const audienceWhere: Prisma.NoticeWhereInput = q.audience ? { audience: q.audience } : {};
+    const count = (view: NoticeViewStatus) =>
+      req.ctx.prisma.notice.count({ where: { ...viewStatusWhere(view, now), ...audienceWhere } });
+    const [total, rows, all, active, paused, expired] = await Promise.all([
       req.ctx.prisma.notice.count({ where }),
       req.ctx.prisma.notice.findMany({
         where,
@@ -61,14 +65,20 @@ router.get(
         orderBy: [{ urgent: 'desc' }, { visibleFrom: 'desc' }, { createdAt: 'desc' }],
         ...pageArgs(q),
       }),
+      count('ALL'),
+      count('ACTIVE'),
+      count('PAUSED'),
+      count('EXPIRED'),
     ]);
-    res.json(
-      toPage(
+    // `counts` alimenta los filtros del panel sin traer todos los avisos (ya no hace falta pageSize=100).
+    res.json({
+      ...toPage(
         rows.map((n) => toNoticeDto(n, now)),
         total,
         q,
       ),
-    );
+      counts: { ALL: all, ACTIVE: active, PAUSED: paused, EXPIRED: expired },
+    });
   },
 );
 

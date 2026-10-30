@@ -7,8 +7,7 @@
  * Estados que ve la persona (etiqueta -> estado de la API):
  *  - Pendiente  = DETECTED reciente · Revisar = DETECTED con más de 30 días (Q80: criterio provisorio) ·
  *  - Aprobada   = LINKED · Descartada = DISCARDED (recuperable con "Restaurar").
- * El filtro Origen (Instagram / carga manual) se aplica en el navegador sobre la página cargada: la API
- * no lo filtra todavía (Q81).
+ * El filtro Origen (Instagram / carga manual) viaja como `?source=` y lo aplica la API (Q81 resuelta).
  */
 import { RefreshCw, PencilLine } from 'lucide-react';
 import { useState } from 'react';
@@ -70,8 +69,10 @@ export function SocialPostsTab({ role, onChanged }: { role: Role; onChanged: () 
   const [selected, setSelected] = useState<SocialPostDto | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
 
-  const { data, error, loading, reload } = useResource(`social:${status}:${page}`, () =>
-    api.get<SocialPostsPage>(`/social/posts?status=${status}&page=${page}&pageSize=${PAGE_SIZE}`),
+  const { data, error, loading, reload } = useResource(`social:${status}:${source}:${page}`, () =>
+    api.get<SocialPostsPage>(
+      `/social/posts?status=${status}&page=${page}&pageSize=${PAGE_SIZE}${source === 'all' ? '' : `&source=${source}`}`,
+    ),
   );
   const changed = () => {
     reload();
@@ -79,7 +80,7 @@ export function SocialPostsTab({ role, onChanged }: { role: Role; onChanged: () 
   };
   const { sync, syncing } = useInstagramSync(changed);
 
-  const items = (data?.items ?? []).filter((p) => source === 'all' || p.source === source);
+  const items = data?.items ?? [];
 
   const list = loading ? (
     <LoadingRegion label="Cargando publicaciones">
@@ -160,7 +161,10 @@ export function SocialPostsTab({ role, onChanged }: { role: Role; onChanged: () 
           className="sm:w-56"
           options={SOURCE_OPTIONS}
           value={source}
-          onValueChange={setSource}
+          onValueChange={(v) => {
+            setSource(v);
+            setPage(1);
+          }}
         />
         <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row">
           <Button variant="secondary" onClick={sync} loading={syncing}>

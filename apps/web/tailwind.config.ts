@@ -1,4 +1,11 @@
 import type { Config } from 'tailwindcss';
+import defaultTheme from 'tailwindcss/defaultTheme';
+
+// `base` es un token de COLOR del tema (texto claro sobre fondos oscuros). Tailwind trae además
+// `text-base` como TAMAÑO de fuente: ambas utilidades se generaban con el mismo nombre y el
+// tamaño pisaba a `text-sm`, o el color quedaba casi blanco al usarla como tamaño. Se quita el
+// tamaño `base` y se ofrece `text-md` (1rem). `text-base` pasa a significar solo color.
+const { base: _removedBaseSize, ...fontSizeSinBase } = defaultTheme.fontSize;
 
 /**
  * Todo viene de variables CSS definidas en src/styles/tokens.css (generado desde
@@ -9,6 +16,7 @@ const v = (name: string) => `var(--${name})`;
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
+    fontSize: { ...fontSizeSinBase, md: ['1rem', { lineHeight: '1.5rem' }] },
     extend: {
       colors: {
         primary: { DEFAULT: v('color-primary'), strong: v('color-primary-strong') },

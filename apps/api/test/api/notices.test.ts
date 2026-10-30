@@ -176,6 +176,24 @@ describe('GET /notices (filtros calculados)', () => {
     expect(urgent.urgent).toBe(true);
   });
 
+  it('devuelve `counts` por estado (sin traer todos los avisos) y respeta el destinatario', async () => {
+    await createNotice({ title: 'A' });
+    await createNotice({ title: 'B', visibleFrom: fromNow(2 * DAY) });
+    await createNotice({ title: 'C', visibleUntil: ago(DAY) });
+    await createNotice({ title: 'D', status: 'PAUSED' });
+    await testPrisma.notice.create({
+      data: { title: 'E', body: 'x', audience: 'ASPIRANTS', authorId: bedelia.user.id },
+    });
+    // Los conteos no dependen del filtro `status` ni de la página pedida.
+    const res = await get('/api/v1/notices?status=EXPIRED&pageSize=1');
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.total).toBe(1);
+    expect(res.body.counts).toEqual({ ALL: 5, ACTIVE: 3, PAUSED: 1, EXPIRED: 1 });
+    // Sí respetan `audience`.
+    const asp = await get('/api/v1/notices?audience=ASPIRANTS');
+    expect(asp.body.counts).toEqual({ ALL: 1, ACTIVE: 1, PAUSED: 0, EXPIRED: 0 });
+  });
+
   it('filtra por destinatario, pagina y valida los parámetros', async () => {
     await testPrisma.notice.create({
       data: { title: 'Aspirantes', body: 'x', audience: 'ASPIRANTS', authorId: bedelia.user.id },

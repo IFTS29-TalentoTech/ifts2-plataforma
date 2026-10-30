@@ -28,7 +28,7 @@ import { z } from 'zod';
 import { errors } from '../../infra/errors';
 import { pageArgs, toPage } from '../../lib/pagination';
 import { readRawSettings } from '../../lib/settings';
-import { requirePermission, requireRole } from '../../middleware/auth';
+import { requirePermission } from '../../middleware/auth';
 import { valid, validate } from '../../middleware/validate';
 import { audit } from '../audit/audit.service';
 
@@ -181,12 +181,11 @@ router.patch(
 
 /**
  * DELETE /contact-messages/:id — manual, solo ADMIN y solo mensajes ya RESPONDIDOS (409 si no).
- * La matriz de `PERMISSIONS` también le da `contact:delete` a BEDELIA; acá se restringe a ADMIN por
- * pedido del encargo (04-api.md no lista a Bedelía para borrar mensajes). Ver docs/specs/09.
+ * El permiso `contact:delete` es solo de ADMIN en la matriz de `PERMISSIONS` (Q41, resuelta).
  */
 router.delete(
   '/contact-messages/:id',
-  requireRole('ADMIN'),
+  requirePermission('contact:delete'),
   validate({ params: idParam }),
   async (req, res) => {
     const id = req.valid.params.id as string;

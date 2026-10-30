@@ -17,6 +17,6 @@ Se monta en la raíz de la API porque expone `/public/contact` y `/contact-messa
 3. **Se guarda SIEMPRE primero**; después se intenta el correo con `await req.ctx.getMailer()`. Si falla, o no hay destino, el mensaje queda con `mailSent=false` y la respuesta es 201 igual (RNF03). El destino es el configurado en el panel/entorno (`contactTo`) y, si no hay, el ajuste `email_institutional`.
 4. Privacidad: ni el correo ni el mensaje van a logs ni a la auditoría; el asunto se limpia de saltos de línea.
 
-Nota: la matriz `PERMISSIONS` también da `contact:delete` a BEDELIA; acá se restringe a ADMIN por pedido del encargo (ver `docs/specs/09-preguntas-abiertas.md`).
+Nota: `contact:delete` es solo de ADMIN en la matriz `PERMISSIONS` (Q41, resuelta); BEDELIA recibe 403.
 
 Probar: `pnpm --filter @ifts2/api exec vitest run test/api/contact.test.ts`
