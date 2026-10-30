@@ -21,9 +21,22 @@ function newPrisma() {
 
 export function registerPanelATasks(on: Cypress.PluginEvents) {
   loadEnvConfig(root);
+  // Ventana del navegador más grande que el viewport más ancho (1440): si no, las capturas salen recortadas.
+  on('before:browser:launch', (browser, launchOptions) => {
+    if (browser.name === 'electron') {
+      launchOptions.preferences.width = 1600;
+      launchOptions.preferences.height = 1100;
+    }
+    return launchOptions;
+  });
   on('task', {
     'panelA:moveCapture'({ from, to }: { from: string; to: string }) {
-      const src = path.resolve(__dirname, '../screenshots', from);
+      // Cypress guarda en screenshots/<spec>/ o, si corren varios specs de subcarpetas, en screenshots/<carpeta>/<spec>/.
+      const candidates = [from, `panel-a/${from}`].map((f) =>
+        path.resolve(__dirname, '../screenshots', f),
+      );
+      const src = candidates.find((f) => fs.existsSync(f));
+      if (!src) throw new Error(`No se encontró la captura: ${candidates.join(' | ')}`);
       const dest = path.join(root, 'docs', 'capturas', 'panel', to);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.copyFileSync(src, dest);

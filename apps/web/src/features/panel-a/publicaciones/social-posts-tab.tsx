@@ -183,7 +183,7 @@ export function SocialPostsTab({ role, onChanged }: { role: Role; onChanged: () 
       >
         <TabsList aria-label="Estado de la publicación">
           {TABS.map((t) => (
-            <TabsTrigger key={t.value} value={t.value}>
+            <TabsTrigger key={t.value} value={t.value} className="px-3">
               {t.label}
               {data ? ` (${data.counts[t.value]})` : ''}
             </TabsTrigger>

@@ -10,7 +10,6 @@ import {
   cleanupE2eSocial,
   seedNotice,
   seedPendingPost,
-  unique,
   VIEWPORTS,
 } from '../../support/panel-a';
 
@@ -48,8 +47,8 @@ for (const vp of VIEWPORTS) {
 
     it('comunicación (Editor): resumen y publicaciones', () => {
       cy.loginAs('editor');
-      seedPendingPost(unique('Jornada gastronómica en sede Lugano'));
-      seedPendingPost(unique('Feliz Día del Trabajador Gastronómico'));
+      seedPendingPost('Jornada gastronómica en sede Lugano');
+      seedPendingPost('Feliz Día del Trabajador Gastronómico');
       cy.visit('/panel');
       cy.contains('h1', 'Panel de control');
       cy.contains('Moderar').should('exist');
@@ -96,7 +95,7 @@ for (const vp of VIEWPORTS) {
 
     it('bedelía: resumen, avisos y mensajes', () => {
       cy.loginAs('bedelia');
-      seedNotice({ title: unique('Aviso e2e captura'), urgent: true });
+      seedNotice({ title: 'Reunión informativa de ingreso 2027', urgent: true });
       cy.visit('/panel');
       cy.contains('h1', 'Panel de control');
       cy.contains('Cartelera institucional activa');
@@ -109,7 +108,7 @@ for (const vp of VIEWPORTS) {
 
       cy.visit('/panel/avisos');
       ready();
-      cy.contains('h3', 'Aviso e2e captura').should('exist');
+      cy.contains('h3', 'Reunión informativa de ingreso 2027').should('exist');
       cy.captura('22-avisos');
       cy.contains('button', 'Nuevo aviso').click();
       cy.get('[role="dialog"]').contains('Publicar nuevo aviso académico');
@@ -131,12 +130,14 @@ for (const vp of VIEWPORTS) {
       cy.captura('25-avisos-confirmar-publicacion');
       cy.get('body').type('{esc}');
       cy.get('body').type('{esc}');
-      cy.contains('li', 'Aviso e2e captura').contains('button', 'Pausar').click();
+      cy.contains('li', 'Reunión informativa de ingreso 2027').contains('button', 'Pausar').click();
       cy.get('[role="alertdialog"]').contains('¿Pausar el aviso?');
       cy.captura('26-avisos-confirmar-pausa');
       cy.get('[role="alertdialog"]').contains('button', 'Sí, pausar').click();
-      cy.contains('li', 'Aviso e2e captura').contains('Pausado');
-      cy.contains('li', 'Aviso e2e captura').contains('button', 'Eliminar').click();
+      cy.contains('li', 'Reunión informativa de ingreso 2027').contains('Pausado');
+      cy.contains('li', 'Reunión informativa de ingreso 2027')
+        .contains('button', 'Eliminar')
+        .click();
       cy.get('[role="alertdialog"]').contains('¿Eliminar el aviso?');
       cy.captura('27-avisos-confirmar-eliminar');
       cy.get('body').type('{esc}');

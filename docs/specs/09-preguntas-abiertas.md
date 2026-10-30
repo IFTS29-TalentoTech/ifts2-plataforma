@@ -66,3 +66,16 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q46 | Frecuencia del contacto | 5 envíos por hora por IP + campo señuelo (sin captcha externo) | RNF08 |
 | Q47 | `GET /public/publications` con `archived=true` sin `year` | Usa el año en curso (hora de Buenos Aires); la "fecha" de una publicación es `visibleFrom` o, si no tiene, `createdAt` | RF03 |
 
+
+## Agregadas por el agente del panel A (rama `feat/web-panel-a`)
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q80 | El Figma muestra el estado "Revisar" en publicaciones de redes pero no define cuándo aplica | Una publicación pendiente con más de 30 días desde que se publicó en Instagram se marca "Revisar" (puede estar desactualizada); el resto es "Pendiente". Constante `STALE_DAYS` en `social-posts-tab.tsx` | RF04 |
+| Q81 | `GET /social/posts` no filtra por origen (Instagram / carga manual) | El filtro "Origen" se aplica en el navegador sobre la página cargada; si se necesita en el servidor, agregar `?source=` a la API | RF04 |
+| Q82 | Los conteos del filtro Estado de Avisos (Activos / Pausados / Vencidos) no existen en la API | Se piden hasta 100 avisos con `status=ALL` y se cuenta en el navegador; se avisa si hay más de 100 | RF03 |
+| Q83 | Mensajes de contacto en el panel no tiene diseño en el Figma | Se resolvió con tarjetas, insignias y diálogos del kit; requiere diseño | RF08 |
+| Q84 | El modal "Moderar contenido de red social" del Figma tiene "Prioridad visual (Destacada, primera fila)", que la API no soporta | Se omitió el campo; si el cliente lo quiere, hay que sumar un campo a `Publication` y al esquema de aprobación | RF04 |
+| Q85 | El Figma rotula "Correo institucional (@bue.edu.ar)" en el login | El producto es genérico (ADR-22): el rótulo es "Correo institucional" y no se impone dominio; la lista de dominios válidos, si se quiere, es del cliente | RF05 |
+| Q86 | Reanudar un aviso cuya vigencia ya terminó | Se pide una nueva fecha de fin (la API responde 422 sin ella): botón "Reactivar" con diálogo de fecha | RF03 |
+| Q87 | El mensaje de bloqueo por intentos de login menciona "unos 15 minutos" (valor por defecto de `LOGIN_WINDOW_MINUTES`) | Texto fijo en la web; si se cambia la variable de entorno hay que ajustarlo o exponerla en la API | RNF06 |

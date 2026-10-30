@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 
 /**
@@ -18,6 +18,12 @@ export function PostThumb({
   label?: string;
 }) {
   const [failed, setFailed] = useState(false);
+  const img = useRef<HTMLImageElement>(null);
+  // Si la imagen ya falló antes de que React enganchara `onError` (carga previa a la hidratación), se detecta acá.
+  useEffect(() => {
+    const el = img.current;
+    if (el && el.complete && el.naturalWidth === 0) setFailed(true);
+  }, [src]);
   return (
     <span
       aria-hidden="true"
@@ -29,6 +35,7 @@ export function PostThumb({
       {src && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element -- URLs externas o firmadas que vencen: no pasan por el optimizador
         <img
+          ref={img}
           src={src}
           alt=""
           loading="lazy"

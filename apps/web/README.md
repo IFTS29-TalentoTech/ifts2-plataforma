@@ -36,4 +36,8 @@ if (await confirm({ title: '¿Eliminar el aviso?', tone: 'danger', confirmLabel:
 
 ## Cypress
 
-`pnpm test:e2e` (web levantada; `CYPRESS_BASE_URL` para otro puerto). Viewports 390 y 1440; el comando `cy.a11y()` corre axe (WCAG 2.2 AA, impactos serio/crítico). Specs: `smoke.cy.ts`, `ui-kit.cy.ts`.
+`pnpm test:e2e` (web levantada; `CYPRESS_BASE_URL` para otro puerto). Viewports 390 y 1440; el comando `cy.a11y()` corre axe (WCAG 2.2 AA, impactos serio/crítico). Specs: `smoke.cy.ts`, `ui-kit.cy.ts` y, del panel parte A, `e2e/panel-a/*.cy.ts` (ver `src/features/panel-a/README.md`). Cypress 16 no tiene `Cypress.env`: los usuarios de prueba están en `cypress/support/panel-a.ts`.
+
+## Panel parte A
+
+`/panel/login`, `/panel/login/cambiar-clave`, `/panel`, `/panel/publicaciones`, `/panel/avisos` y `/panel/mensajes` están implementados en `src/features/panel-a/` (pantallas, endpoints, permisos y cómo probar en su README). El menú del panel tiene el ítem Mensajes (permiso `contact:read`). El cierre de sesión también está en el menú móvil. `next.config.ts` aplica el `.env` de la raíz con `forceReload` (antes el proxy ignoraba `API_ORIGIN`).

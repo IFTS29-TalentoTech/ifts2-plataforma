@@ -61,7 +61,12 @@ Cypress.Commands.add('loginAs', (who: Who) => {
 Cypress.Commands.add(
   'api',
   (method: string, url: string, body?: unknown, failOnStatusCode = true) =>
-    cy.request({ method, url: `/api/v1${url}`, body, failOnStatusCode }),
+    cy.request({
+      method,
+      url: `/api/v1${url}`,
+      body: body as Cypress.RequestBody,
+      failOnStatusCode,
+    }),
 );
 
 Cypress.Commands.add('openPanelNav', () => {
@@ -75,14 +80,15 @@ Cypress.Commands.add('openPanelNav', () => {
 });
 
 Cypress.Commands.add('captura', (nombre: string) => {
-  const width = Cypress.config('viewportWidth');
-  const file = `${nombre}-${width}`;
   // Se espera a que no haya esqueletos de carga en pantalla.
   cy.get('[aria-busy="true"]').should('not.exist');
-  cy.screenshot(file, { overwrite: true, capture: 'viewport' });
-  cy.task('panelA:moveCapture', {
-    from: `${Cypress.spec.relative.replace(/^cypress[\\/]e2e[\\/]/, '').replace(/\\/g, '/')}/${file}.png`,
-    to: `${file}.png`,
+  // El ancho real sale de la ventana de la aplicación (cy.viewport no cambia la configuración).
+  cy.window().then((win) => {
+    const file = `${nombre}-${win.innerWidth < 1024 ? 390 : 1440}`;
+    cy.screenshot(file, { overwrite: true, capture: 'viewport' });
+    // Cypress guarda en screenshots/<archivo del spec>/<nombre>.png
+    const specFile = Cypress.spec.relative.split(/[\\/]/).pop();
+    cy.task('panelA:moveCapture', { from: `${specFile}/${file}.png`, to: `${file}.png` });
   });
 });
 
@@ -134,7 +140,8 @@ export function seedExpiredNotice(title: string) {
  * Solo toca lo que llevan marcas de prueba en el título/enlace. Usa los endpoints reales (pausar y eliminar).
  */
 export function cleanupE2eData() {
-  const noticeRe = /^(Aviso e2e|Aviso con adjunto|Aviso con txt|Aviso vencido|Aviso a eliminar)/;
+  const noticeRe =
+    /^(Aviso e2e|Aviso con adjunto|Aviso con txt|Aviso vencido|Aviso a eliminar|placeholder|Reunión informativa de ingreso|Inscripción al turno extraordinario$)/;
   cy.api('GET', '/notices?status=ALL&pageSize=100').then((r) => {
     for (const n of r.body.items as Array<{ id: string; title: string; viewStatus: string }>) {
       if (!noticeRe.test(n.title)) continue;

@@ -50,7 +50,7 @@ import { useRouter } from 'next/navigation';
 
 const PAGE_SIZE = 10;
 const AUDIENCE_FILTER = [
-  { value: 'ALL_AUDIENCES', label: 'Toda la comunidad y específicos' },
+  { value: 'ALL_AUDIENCES', label: 'Todos los destinatarios' },
   ...Object.entries(AUDIENCE_LABELS).map(([value, label]) => ({ value, label })),
 ];
 

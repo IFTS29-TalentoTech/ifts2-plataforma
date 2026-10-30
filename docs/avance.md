@@ -4,6 +4,18 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-10-30 · Panel parte A: login, Resumen, Publicaciones, Avisos y Mensajes (agente web, rama `feat/web-panel-a`)
+
+**Qué se hizo.** Pantallas del panel en `apps/web/src/features/panel-a/` (README propio con pantallas, endpoints, permisos y cómo probar): login con límite de intentos, "¿Olvidaste tu clave?" y cambio obligatorio de contraseña; Resumen (US-12) con estado de Instagram, modo demostración, tarjetas y bloques por rol; Publicaciones (moderación con consentimiento, descartar/restaurar, carga manual, publicaciones propias con publicar/pausar/programar/reactivar/eliminar); Avisos (filtros con conteos, adjunto, pausar/reanudar/reactivar/eliminar, validación en línea); Mensajes de contacto. Toda confirmación usa `ConfirmDialog`. Ítem "Mensajes" en `PANEL_NAV` y cierre de sesión en el menú móvil.
+
+**Verificación.** `pnpm lint`, `pnpm typecheck`, `pnpm build` y Cypress (`e2e/panel-a/*`, `smoke`, `ui-kit`) en verde en 390 y 1440 px, con axe sin violaciones serias; salidas en `docs/evidencias/2026-10-30-panel-a-*.txt`. Capturas para el Manual de Usuario en `docs/capturas/panel/` (46 imágenes, generadas con `capturas.cy.ts`).
+
+**Decisiones.** Q80 a Q87 en `docs/specs/09-preguntas-abiertas.md` ("Revisar" a 30 días, filtro Origen en el navegador, conteos de Avisos sobre `status=ALL`, Mensajes sin diseño, "Prioridad visual" omitida, reactivar un aviso vencido pide fecha). Los fallos de login y el bloqueo 429 se simulan en Cypress para no bloquear la IP de la suite.
+
+**Dificultades.** (1) `next.config.ts` no aplicaba el `.env` raíz (la segunda llamada a `loadEnvConfig` devolvía lo cacheado): el proxy iba a `localhost:4000`; se arregló con `forceReload`. (2) Cypress 16 eliminó `Cypress.env`: los usuarios de prueba van fijos en `cypress/support/panel-a.ts`. (3) En desarrollo la pantalla se hidrata tarde y el primer clic se perdía: las pruebas esperan a que cargue la lista. (4) La API no permite crear avisos ya vencidos: la prueba los vence en la base con una tarea de Node. (5) Las capturas salían recortadas: se agranda la ventana de Electron en `before:browser:launch`.
+
+**Pendiente.** Pantalla de Configuración y Horarios/Archivo (panel B). Filtro `?source=` en `/social/posts` y conteos por estado en `/notices` si se quiere paginar en el servidor.
+
 ### 2026-10-29 · Bloque académico de la API (agente académico, rama `feat/academic`)
 
 **Qué se hizo.** Diez módulos de API bajo `apps/api/src/modules/`, cada uno con su `README.md`: `notices`, `terms`, `schedules`, `exam-calls`, `documents`, `settings`, `content`, `links`, `contact` y `public` (solo lectura, sin sesión). Contrato de respuestas tipado en `packages/shared/src/academic.ts` (una línea nueva en `index.ts`); no se tocó `prisma/schema.prisma`. Utilidades en `src/lib/` (`documents`, `settings`, `markdown`). Documentación al día: `docs/specs/04-api.md` (sección "Bloque académico"), `docs/specs/09-preguntas-abiertas.md` (Q40 a Q47), `docs/ARQUITECTURA.md` y `apps/api/README.md`.

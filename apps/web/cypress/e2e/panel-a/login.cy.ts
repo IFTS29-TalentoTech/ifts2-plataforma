@@ -124,12 +124,12 @@ for (const vp of VIEWPORTS) {
       cy.get('input[name="email"]').type(email);
       cy.then(() => cy.get('input[name="password"]').type(temp, { log: false }));
       cy.contains('button', 'Ingresar al panel').click();
-      cy.location('pathname').should('eq', '/panel/login/cambiar-clave');
+      cy.location('pathname', { timeout: 60000 }).should('eq', '/panel/login/cambiar-clave'); // margen: primera compilación en frío
       cy.contains('h1', 'Elegí una contraseña nueva');
       cy.a11y();
       // No se puede saltear: /panel vuelve a esta pantalla.
       cy.visit('/panel');
-      cy.location('pathname').should('eq', '/panel/login/cambiar-clave');
+      cy.location('pathname', { timeout: 60000 }).should('eq', '/panel/login/cambiar-clave'); // margen: primera compilación en frío
       // Validaciones: no coinciden / muy corta.
       cy.then(() => cy.get('input[autocomplete="current-password"]').type(temp, { log: false }));
       cy.get('input[autocomplete="new-password"]').first().type('NuevaClave2026');
