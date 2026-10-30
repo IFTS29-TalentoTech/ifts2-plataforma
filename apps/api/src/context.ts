@@ -39,6 +39,11 @@ export interface AppContext {
   getInstagramClient(): Promise<InstagramClient>;
   getMailer(): Promise<ResolvedMail>;
   limiters: Limiters;
+  /**
+   * `fetch` para llamadas HTTP salientes (Instagram, descarga de imágenes). Inyectable para probar con
+   * respuestas simuladas sin salir a la red.
+   */
+  fetch: typeof fetch;
 }
 
 export interface AuthUser {

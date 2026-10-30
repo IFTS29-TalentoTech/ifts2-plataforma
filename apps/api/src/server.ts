@@ -5,6 +5,7 @@
  */
 import { createApp, getContext } from './app';
 import { ConfigError, loadConfig } from './config';
+import { startSocialScheduler } from './modules/social/jobs';
 
 async function main() {
   let config;
@@ -25,8 +26,12 @@ async function main() {
     ctx.logger.info({ port: config.port, env: config.nodeEnv }, 'API escuchando');
   });
 
+  // Sincronización diaria de redes con temporizador interno (opcional; alternativa: POST /social/cron).
+  const stopScheduler = config.social.schedulerEnabled ? startSocialScheduler(ctx) : null;
+
   const shutdown = async (signal: string) => {
     ctx.logger.info({ signal }, 'cerrando');
+    stopScheduler?.();
     server.close();
     await ctx.prisma.$disconnect();
     process.exit(0);

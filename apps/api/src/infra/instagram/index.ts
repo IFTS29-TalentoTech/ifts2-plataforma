@@ -6,7 +6,15 @@ import type { InstagramClient } from './types';
 
 export * from './types';
 export { FakeInstagramClient, FAKE_MEDIA } from './fake';
-export { GraphInstagramClient, buildAuthorizationUrl, exchangeCodeForToken } from './graph';
+export {
+  GraphInstagramClient,
+  buildAuthorizationUrl,
+  exchangeCodeForToken,
+  refreshLongLivedToken,
+  TOKEN_INVALID_MESSAGE,
+  type TokenGrant,
+} from './graph';
+export { captionHasHashtag, normalizeHashtag } from './hashtag';
 
 /**
  * Resuelve el cliente de Instagram EN CADA USO (no se cachea), para que los cambios hechos desde el
@@ -19,6 +27,7 @@ export { GraphInstagramClient, buildAuthorizationUrl, exchangeCodeForToken } fro
 export async function createInstagramClient(
   config: AppConfig,
   store: IntegrationStore,
+  fetchFn?: typeof fetch,
 ): Promise<InstagramClient> {
   const stored = await store.get('instagram');
   if (stored) {
@@ -27,6 +36,7 @@ export async function createInstagramClient(
         appId: stored.appId,
         appSecret: stored.appSecret,
         accessToken: stored.accessToken,
+        fetchFn,
       });
     }
     return new FakeInstagramClient();
@@ -39,6 +49,7 @@ export async function createInstagramClient(
     return new GraphInstagramClient({
       appId: config.instagram.appId,
       appSecret: config.instagram.appSecret,
+      fetchFn,
     });
   }
   return new FakeInstagramClient();

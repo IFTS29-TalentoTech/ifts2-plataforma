@@ -1,32 +1,136 @@
+/**
+ * Cliente de la API de Instagram (inicio de sesión de Instagram, cuenta PROFESIONAL) — ADR-09.
+ *
+ * Qué hace:
+ *  - `GraphInstagramClient.fetchRecentMedia`: lee `/me/media` con paginación y filtra por hashtag en la leyenda.
+ *  - `GraphInstagramClient.testConnection`: valida el token y devuelve el usuario.
+ *  - `exchangeCodeForToken`: canjea el `code` OAuth por un token de corta duración y luego de LARGA duración (~60 días).
+ *  - `refreshLongLivedToken`: renueva un token de larga duración (Instagram exige que tenga >24 h y no haya vencido).
+ *
+ * Decisiones:
+ *  - Todo recibe un `fetch` inyectable: las pruebas usan respuestas simuladas (no hay credenciales reales).
+ *  - Los mensajes de error están en español y NUNCA contienen el token ni la URL con `access_token`.
+ *  - Las URLs `paging.next` solo se siguen si apuntan a graph.instagram.com (no se filtra el token a terceros).
+ *  - Para VIDEO la API no entrega imagen en `media_url`: se usa `thumbnail_url`, así toda publicación
+ *    detectada tiene una imagen copiable al aprobar (las URLs de Instagram expiran).
+ *
+ * Referencia: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login
+ * Estado de verificación: probado con servidores/respuestas simuladas; la prueba de concepto contra la API
+ * real queda a cargo del equipo cuando el cliente cree su app de Meta (ver docs/avance.md).
+ */
 import { INSTAGRAM_REQUIRED_SCOPES } from '@ifts2/shared';
+import { captionHasHashtag } from './hashtag';
 import {
+  InstagramApiError,
   InstagramNotConfiguredError,
   type ConnectionTest,
+  type FetchMediaOptions,
   type InstagramClient,
   type InstagramMedia,
 } from './types';
 
-/**
- * ESQUELETO de la integración real con la API de Instagram (inicio de sesión de Instagram).
- * Lo completa y verifica contra la API real otro agente (backlog US-06/US-07): la fundación solo
- * garantiza la interfaz, la selección por configuración y errores claros cuando falta configurar.
- * Los endpoints de abajo siguen la documentación pública de Meta pero NO se probaron contra la red.
- */
 export interface GraphOptions {
   appId?: string;
   appSecret?: string;
   accessToken?: string;
   fetchFn?: typeof fetch;
+  /** Tope de páginas a recorrer por sincronización (evita bucles y consumo excesivo). */
+  maxPages?: number;
 }
 
-const GRAPH = 'https://graph.instagram.com';
+export const GRAPH_BASE = 'https://graph.instagram.com';
+const OAUTH_BASE = 'https://api.instagram.com';
+const GRAPH_HOST = new URL(GRAPH_BASE).hostname;
+const PAGE_SIZE = 50;
+const DEFAULT_MAX_PAGES = 6;
+const REQUEST_TIMEOUT_MS = 15_000;
+const MEDIA_FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
+
+/** Texto que ve el cliente cuando el token ya no sirve (vencido, revocado, contraseña cambiada). */
+export const TOKEN_INVALID_MESSAGE =
+  'El acceso a Instagram venció o fue revocado. Volvé a conectar la cuenta desde Configuración.';
+
+interface GraphErrorBody {
+  error?: { message?: string; type?: string; code?: number };
+}
+
+const defaultFetch: typeof fetch = (input, init) => fetch(input, init);
+
+/** Hace la llamada y traduce fallas de red / HTTP a `InstagramApiError` con mensaje claro. */
+async function callGraph<T>(fetchFn: typeof fetch, url: string, init?: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetchFn(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  } catch {
+    // Sin detalles de la excepción: podrían incluir la URL con el token.
+    throw new InstagramApiError(
+      'No pudimos comunicarnos con Instagram. Intentá de nuevo en unos minutos.',
+    );
+  }
+  const body: unknown = await res.json().catch(() => null);
+  if (!res.ok) {
+    const err = (body as GraphErrorBody | null)?.error;
+    // code 190 = token inválido/vencido; 102 = sesión inválida; 401 = no autorizado.
+    const tokenInvalid =
+      res.status === 401 ||
+      err?.code === 190 ||
+      err?.code === 102 ||
+      err?.type === 'OAuthException';
+    if (tokenInvalid) {
+      throw new InstagramApiError(TOKEN_INVALID_MESSAGE, {
+        status: res.status,
+        code: err?.code,
+        tokenInvalid: true,
+      });
+    }
+    if (res.status === 429 || err?.code === 4 || err?.code === 32 || err?.code === 613) {
+      throw new InstagramApiError(
+        'Instagram limitó temporalmente las consultas. Probá de nuevo en unos minutos.',
+        { status: res.status, code: err?.code },
+      );
+    }
+    throw new InstagramApiError(
+      `Instagram respondió con un error (${res.status}). Intentá de nuevo más tarde.`,
+      { status: res.status, code: err?.code },
+    );
+  }
+  if (body === null || typeof body !== 'object') {
+    throw new InstagramApiError('Instagram devolvió una respuesta que no pudimos interpretar.', {
+      status: res.status,
+    });
+  }
+  return body as T;
+}
+
+interface RawMedia {
+  id: string;
+  caption?: string;
+  media_type: InstagramMedia['mediaType'];
+  media_url?: string;
+  thumbnail_url?: string;
+  permalink: string;
+  timestamp: string;
+}
+
+function toMedia(m: RawMedia): InstagramMedia | null {
+  const ts = new Date(m.timestamp);
+  if (!m.id || !m.permalink || Number.isNaN(ts.getTime())) return null; // dato corrupto: se ignora
+  return {
+    id: String(m.id),
+    caption: m.caption ?? '',
+    mediaType: m.media_type,
+    mediaUrl: (m.media_type === 'VIDEO' ? (m.thumbnail_url ?? m.media_url) : m.media_url) ?? '',
+    permalink: m.permalink,
+    timestamp: ts.toISOString(),
+  };
+}
 
 export class GraphInstagramClient implements InstagramClient {
   readonly kind = 'graph' as const;
   private readonly fetchFn: typeof fetch;
 
   constructor(private readonly opts: GraphOptions) {
-    this.fetchFn = opts.fetchFn ?? fetch;
+    this.fetchFn = opts.fetchFn ?? defaultFetch;
   }
 
   private requireToken(): string {
@@ -43,44 +147,58 @@ export class GraphInstagramClient implements InstagramClient {
     return this.opts.accessToken;
   }
 
-  async fetchRecentMedia(opts?: { limit?: number }): Promise<InstagramMedia[]> {
+  /**
+   * Recorre `/me/media` (más nuevas primero) hasta juntar `limit` publicaciones que cumplan el filtro
+   * o agotar las páginas / el tope `maxPages`.
+   */
+  async fetchRecentMedia(opts?: FetchMediaOptions): Promise<InstagramMedia[]> {
     const token = this.requireToken();
-    const fields = 'id,caption,media_type,media_url,permalink,timestamp';
-    const url = `${GRAPH}/me/media?fields=${fields}&limit=${opts?.limit ?? 25}&access_token=${encodeURIComponent(token)}`;
-    const res = await this.fetchFn(url);
-    if (!res.ok) throw new Error(`La API de Instagram respondió ${res.status}.`);
-    const json = (await res.json()) as {
-      data?: Array<{
-        id: string;
-        caption?: string;
-        media_type: InstagramMedia['mediaType'];
-        media_url?: string;
-        permalink: string;
-        timestamp: string;
-      }>;
-    };
-    return (json.data ?? []).map((m) => ({
-      id: m.id,
-      caption: m.caption ?? '',
-      mediaType: m.media_type,
-      mediaUrl: m.media_url ?? '',
-      permalink: m.permalink,
-      timestamp: new Date(m.timestamp).toISOString(),
-    }));
+    const limit = opts?.limit ?? 50;
+    const maxPages = this.opts.maxPages ?? DEFAULT_MAX_PAGES;
+    const out: InstagramMedia[] = [];
+
+    let url: string | null =
+      `${GRAPH_BASE}/me/media?fields=${MEDIA_FIELDS}&limit=${PAGE_SIZE}` +
+      `&access_token=${encodeURIComponent(token)}`;
+    for (let page = 0; url && page < maxPages && out.length < limit; page++) {
+      const json: { data?: RawMedia[]; paging?: { next?: string } } = await callGraph(
+        this.fetchFn,
+        url,
+      );
+      for (const raw of json.data ?? []) {
+        const media = toMedia(raw);
+        if (!media) continue;
+        if (opts?.hashtag && !captionHasHashtag(media.caption, opts.hashtag)) continue;
+        out.push(media);
+        if (out.length >= limit) break;
+      }
+      url = safeNext(json.paging?.next);
+    }
+    return out;
   }
 
   async testConnection(): Promise<ConnectionTest> {
     try {
       const token = this.requireToken();
-      const res = await this.fetchFn(
-        `${GRAPH}/me?fields=username&access_token=${encodeURIComponent(token)}`,
+      const json = await callGraph<{ username?: string }>(
+        this.fetchFn,
+        `${GRAPH_BASE}/me?fields=username&access_token=${encodeURIComponent(token)}`,
       );
-      if (!res.ok) return { ok: false, error: `La API de Instagram respondió ${res.status}.` };
-      const json = (await res.json()) as { username?: string };
       return { ok: true, username: json.username };
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : 'Error desconocido.' };
     }
+  }
+}
+
+/** Solo seguimos `paging.next` si apunta a graph.instagram.com por https (no se filtra el token). */
+function safeNext(next: string | undefined): string | null {
+  if (!next) return null;
+  try {
+    const u = new URL(next);
+    return u.protocol === 'https:' && u.hostname === GRAPH_HOST ? next : null;
+  } catch {
+    return null;
   }
 }
 
@@ -106,15 +224,33 @@ export interface TokenGrant {
   username?: string;
 }
 
+interface LongLived {
+  access_token: string;
+  expires_in: number;
+}
+
+function toGrant(json: LongLived, now: number): TokenGrant {
+  if (!json.access_token || !Number.isFinite(json.expires_in)) {
+    throw new InstagramApiError('Instagram no devolvió un token válido.');
+  }
+  return { accessToken: json.access_token, expiresAt: new Date(now + json.expires_in * 1000) };
+}
+
 /**
- * Canjea el `code` del callback por un token de larga duración (~60 días).
- * TODO(agente Instagram): verificar contra la API real y manejar la renovación (ADR-09).
+ * Canjea el `code` del callback por un token de larga duración (~60 días): primero el token de corta
+ * duración (POST a api.instagram.com) y luego el intercambio por uno de larga duración.
  */
 export async function exchangeCodeForToken(
   p: { appId: string; appSecret: string; redirectUri: string; code: string },
-  fetchFn: typeof fetch = fetch,
+  fetchFn: typeof fetch = defaultFetch,
+  now: () => number = Date.now,
 ): Promise<TokenGrant> {
-  const short = await fetchFn('https://api.instagram.com/oauth/access_token', {
+  // Meta agrega "#_" al final del código en la redirección; no forma parte del código.
+  const code = p.code.replace(/#_$/, '');
+  const shortJson = await callGraph<{
+    access_token?: string;
+    data?: Array<{ access_token?: string }>;
+  }>(fetchFn, `${OAUTH_BASE}/oauth/access_token`, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -122,18 +258,34 @@ export async function exchangeCodeForToken(
       client_secret: p.appSecret,
       grant_type: 'authorization_code',
       redirect_uri: p.redirectUri,
-      code: p.code,
+      code,
     }),
   });
-  if (!short.ok) throw new Error(`Instagram rechazó el código de autorización (${short.status}).`);
-  const shortJson = (await short.json()) as { access_token: string };
-  const long = await fetchFn(
-    `${GRAPH}/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(p.appSecret)}&access_token=${encodeURIComponent(shortJson.access_token)}`,
+  // Según la versión de la API, el token viene plano o dentro de `data[0]`.
+  const shortToken = shortJson.access_token ?? shortJson.data?.[0]?.access_token;
+  if (!shortToken) throw new InstagramApiError('Instagram no devolvió el token de acceso.');
+
+  const long = await callGraph<LongLived>(
+    fetchFn,
+    `${GRAPH_BASE}/access_token?grant_type=ig_exchange_token` +
+      `&client_secret=${encodeURIComponent(p.appSecret)}&access_token=${encodeURIComponent(shortToken)}`,
   );
-  if (!long.ok) throw new Error(`No pudimos obtener el token de larga duración (${long.status}).`);
-  const longJson = (await long.json()) as { access_token: string; expires_in: number };
-  return {
-    accessToken: longJson.access_token,
-    expiresAt: new Date(Date.now() + longJson.expires_in * 1000),
-  };
+  return toGrant(long, now());
+}
+
+/**
+ * Renueva un token de larga duración (`ig_refresh_token`): devuelve uno nuevo con ~60 días más.
+ * Instagram solo lo permite si el token tiene más de 24 h y todavía no venció; si venció hay que
+ * reconectar la cuenta (error con `tokenInvalid`).
+ */
+export async function refreshLongLivedToken(
+  accessToken: string,
+  fetchFn: typeof fetch = defaultFetch,
+  now: () => number = Date.now,
+): Promise<TokenGrant> {
+  const json = await callGraph<LongLived>(
+    fetchFn,
+    `${GRAPH_BASE}/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(accessToken)}`,
+  );
+  return toGrant(json, now());
 }

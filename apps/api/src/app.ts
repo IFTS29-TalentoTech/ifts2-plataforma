@@ -35,6 +35,8 @@ export interface CreateAppOptions {
   mailer?: Mailer;
   contactTo?: string | null;
   instagramClient?: InstagramClient;
+  /** Doble de `fetch` para integraciones salientes (pruebas). */
+  fetch?: typeof fetch;
 }
 
 export const API_PREFIX = '/api/v1';
@@ -44,7 +46,9 @@ export function buildContext(opts: CreateAppOptions = {}): AppContext {
   const logger = opts.logger ?? createLogger(config.logLevel, config.nodeEnv === 'development');
   const prisma = opts.prisma ?? createPrisma(config.databaseUrl);
   const integrations = new IntegrationStore(prisma, config.encryptionKey);
+  const fetchFn: typeof fetch = opts.fetch ?? ((input, init) => fetch(input, init));
   return {
+    fetch: fetchFn,
     config,
     logger,
     prisma,
@@ -52,7 +56,7 @@ export function buildContext(opts: CreateAppOptions = {}): AppContext {
     storage: opts.storage ?? createStorage(config),
     limiters: createLimiters(config),
     getInstagramClient: async () =>
-      opts.instagramClient ?? createInstagramClient(config, integrations),
+      opts.instagramClient ?? createInstagramClient(config, integrations, fetchFn),
     getMailer: async () => {
       if (opts.mailer) {
         return {

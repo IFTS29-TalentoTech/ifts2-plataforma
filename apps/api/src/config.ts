@@ -58,6 +58,19 @@ const envSchema = z
     INSTAGRAM_APP_ID: z.string().optional(),
     INSTAGRAM_APP_SECRET: z.string().optional(),
     INSTAGRAM_REDIRECT_URI: z.string().optional(),
+
+    // Sincronización de redes (módulo social). Ver apps/api/src/modules/social/README.md
+    // Secreto del endpoint POST /social/cron para un cron externo (vacío = endpoint deshabilitado).
+    CRON_SECRET: z
+      .string()
+      .optional()
+      .transform((v) => (v ? v : undefined))
+      .refine((v) => v === undefined || v.length >= 16, {
+        message: 'CRON_SECRET debe tener al menos 16 caracteres (usá un valor aleatorio largo).',
+      }),
+    // Planificador interno opcional (alternativa al cron externo). Apagado por defecto.
+    SOCIAL_SCHEDULER_ENABLED: bool,
+    SOCIAL_SYNC_INTERVAL_HOURS: z.coerce.number().positive().default(24),
   })
   .superRefine((e, ctx) => {
     const need = (cond: unknown, path: string, msg: string) => {
@@ -135,6 +148,8 @@ export interface AppConfig {
     appSecret?: string;
     redirectUri: string;
   };
+  /** Tareas de redes: secreto del cron externo y planificador interno (ambos opcionales). */
+  social: { cronSecret?: string; schedulerEnabled: boolean; syncIntervalHours: number };
 }
 
 export class ConfigError extends Error {
@@ -198,6 +213,11 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       appSecret: e.INSTAGRAM_APP_SECRET || undefined,
       redirectUri:
         e.INSTAGRAM_REDIRECT_URI || `${apiOrigin}/api/v1/integrations/instagram/callback`,
+    },
+    social: {
+      cronSecret: e.CRON_SECRET,
+      schedulerEnabled: e.SOCIAL_SCHEDULER_ENABLED,
+      syncIntervalHours: e.SOCIAL_SYNC_INTERVAL_HOURS,
     },
   };
 }

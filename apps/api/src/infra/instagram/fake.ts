@@ -1,4 +1,5 @@
-import type { ConnectionTest, InstagramClient, InstagramMedia } from './types';
+import { captionHasHashtag } from './hashtag';
+import type { ConnectionTest, FetchMediaOptions, InstagramClient, InstagramMedia } from './types';
 
 export const FAKE_MEDIA: InstagramMedia[] = [
   {
@@ -36,9 +37,12 @@ export class FakeInstagramClient implements InstagramClient {
   failWith: Error | null = null;
   constructor(private readonly media: InstagramMedia[] = FAKE_MEDIA) {}
 
-  async fetchRecentMedia(opts?: { limit?: number }) {
+  async fetchRecentMedia(opts?: FetchMediaOptions) {
     if (this.failWith) throw this.failWith;
-    return this.media.slice(0, opts?.limit ?? this.media.length);
+    const filtered = opts?.hashtag
+      ? this.media.filter((m) => captionHasHashtag(m.caption, opts.hashtag!))
+      : this.media;
+    return filtered.slice(0, opts?.limit ?? filtered.length);
   }
   async testConnection(): Promise<ConnectionTest> {
     if (this.failWith) return { ok: false, error: this.failWith.message };

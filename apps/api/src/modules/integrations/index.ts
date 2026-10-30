@@ -134,16 +134,20 @@ router.get('/instagram/callback', validate({ query: callbackQuery }), async (req
     return fail('Faltan el App ID y el App Secret.');
   }
   try {
-    const grant = await exchangeCodeForToken({
-      appId: stored.appId,
-      appSecret: stored.appSecret,
-      redirectUri: req.ctx.config.instagram.redirectUri,
-      code: q.code,
-    });
+    const grant = await exchangeCodeForToken(
+      {
+        appId: stored.appId,
+        appSecret: stored.appSecret,
+        redirectUri: req.ctx.config.instagram.redirectUri,
+        code: q.code,
+      },
+      req.ctx.fetch,
+    );
     const probe = await new GraphInstagramClient({
       appId: stored.appId,
       appSecret: stored.appSecret,
       accessToken: grant.accessToken,
+      fetchFn: req.ctx.fetch,
     }).testConnection();
     await integrations.set(
       'instagram',
