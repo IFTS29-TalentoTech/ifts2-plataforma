@@ -43,7 +43,8 @@ function scenario(name, baseUrl, paths, thinkSeconds = 0) {
         duration,
         timeout: 30,
         headers: { 'accept-encoding': 'gzip, deflate, br' },
-        ...(thinkSeconds ? { connectionRate: 1 / thinkSeconds } : {}),
+        // autocannon no admite menos de 1 pedido/s por conexión: se limita la tasa total (N usuarios / pausa).
+        ...(thinkSeconds ? { overallRate: Math.round(users / thinkSeconds) } : {}),
         requests: paths.map((p) => ({ method: 'GET', path: p })),
       },
       (err, result) => {
@@ -82,6 +83,9 @@ function scenario(name, baseUrl, paths, thinkSeconds = 0) {
 const fmt = (ms) => (ms >= 1000 ? `${(ms / 1000).toFixed(2)} s` : `${Math.round(ms)} ms`);
 const verdict = (r) =>
   r.s5xx === 0 && r.errors === 0 && r.timeouts === 0 && r.p95 < 1500 ? 'CUMPLE' : 'NO CUMPLE';
+
+const NOTE =
+  '## Cómo leer estos números\n\n- **Uso real** (400 usuarios, un pedido cada 3 s por usuario, ~133 pedidos/s) es el perfil que evalúa RNF09. La base, la API y la web corren en la misma PC de desarrollo junto con el generador de carga.\n- **Saturación** (400 usuarios insistiendo sin pausa) es una prueba de estrés: muestra el techo de un único proceso de Node (~300-360 pedidos/s para Inicio, Estudiantes o Novedades). Los escenarios de una sola página arrojan reinicios de conexión y colas largas (p95 de varios segundos) al pasar ese techo; no hubo ningún 5xx. En producción el techo se sube con la caché de la plataforma de hosting/CDN (las páginas ya responden `s-maxage=60`) o con más de un proceso web.\n- Mejoras aplicadas a partir de la primera medición (`2026-10-30-carga-publico-antes-de-mejoras.txt`: Novedades se renderizaba por pedido y limitaba todo a ~40 pedidos/s): `/novedades` sin filtros pasó a ser estática con ISR; el resto del sitio ya lo era.\n';
 
 let results;
 try {
@@ -133,7 +137,7 @@ try {
 const lines = [
   `# Prueba de carga del sitio público — ${today}`,
   '',
-  `Herramienta: autocannon (Node). ${users} usuarios virtuales concurrentes sin pausas, ${duration} s por escenario, contra el build de producción (\`next start\`) + API de producción en la misma máquina de desarrollo. Objetivo (RNF05/RNF09): sin errores 5xx y p95 < 1,5 s en el perfil de **uso real**; los escenarios de **saturación** (sin pausa entre pedidos) son de estrés y no un uso humano.`,
+  `Herramienta: autocannon (Node). ${users} usuarios virtuales concurrentes, ${duration} s por escenario, contra el build de producción (\`next start\`) + API de producción en la misma máquina de desarrollo. Objetivo (RNF05/RNF09): sin errores 5xx y p95 < 1,5 s en el perfil de **uso real**; los escenarios de **saturación** (sin pausa entre pedidos) son de estrés y no un uso humano.`,
   '',
   '| Escenario | Pedidos | Req/s | p50 | p95 | p99 | Máx. | 5xx | Errores de conexión | Veredicto |',
   '|---|---|---|---|---|---|---|---|---|---|',
