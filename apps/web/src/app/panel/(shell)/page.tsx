@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
-import { Placeholder } from '@/components/layout/page-header';
+import { DashboardView } from '@/features/panel-a/dashboard/dashboard-view';
+import { requireSession } from '@/lib/session';
 
 export const metadata: Metadata = { title: 'Resumen' };
 
-export default function Page() {
-  return <Placeholder title="Panel de control" />;
+/** /panel (Figma 07): Resumen. Los bloques que se muestran dependen del rol (ver DashboardView). */
+export default async function Page() {
+  const session = await requireSession();
+  return <DashboardView role={session.role} />;
 }
