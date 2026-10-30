@@ -26,9 +26,9 @@ src/
   infra/            prisma, logger (pino), crypto (AES-256-GCM), errors (AppError/errors.*),
                     storage/ (local, memory, s3 + upload.ts), mailer/, instagram/, integration-store.ts
   lib/              password (argon2id), pagination
-  modules/<nombre>/ health, auth, users, audit, integrations, files, categories, publications, social, dashboard  (+ los que agreguen los demás)
-  modules/<nombre>/ health, auth, users, audit, integrations, files, notices, terms, schedules, exam-calls,
-                    documents, settings, content, links, contact, public  (+ los que agreguen los demás; cada uno tiene su README)
+  modules/<nombre>/ health, auth, users, audit, integrations, files, categories, publications, social, dashboard,
+                    notices, terms, schedules, exam-calls, documents, settings, content, links, contact, public
+                    (+ los que agreguen los demás; cada uno tiene su README)
 test/               unit/ y api/ (Supertest), helpers/
 ```
 
