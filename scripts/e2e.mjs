@@ -15,6 +15,7 @@
 //
 // Uso: node scripts/e2e.mjs [--reset] [--build] [--spec "cypress/e2e/public/**"] [--browser chrome]
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { killAll, root, startStack } from './lib/stack.mjs';
 
@@ -37,6 +38,23 @@ let code = 1;
 try {
   if (flag('--reset')) run('pnpm', ['db:reset'], { SEED_MODE: 'demo' });
   if (flag('--build')) run('pnpm', ['build'], { ENABLE_UI_KIT: 'true' });
+
+  // La web degradada se COMPILA con la API caída (si no, serviría las páginas prerenderizadas del build normal,
+  // con datos). Se arma una vez y se reutiliza; --build la rehace.
+  if (flag('--build') || !existsSync(path.join(root, 'apps/web/.next-degraded'))) {
+    const r = spawnSync('npx', ['next', 'build'], {
+      cwd: path.join(root, 'apps/web'),
+      stdio: 'inherit',
+      shell: isWin,
+      env: {
+        ...process.env,
+        NEXT_DIST_DIR: '.next-degraded',
+        API_ORIGIN: 'http://localhost:4999',
+        ENABLE_UI_KIT: 'true',
+      },
+    });
+    if (r.status !== 0) throw new Error('Falló la compilación de la web degradada.');
+  }
 
   const urls = await startStack({
     apiPort: Number(process.env.E2E_API_PORT ?? 4000),

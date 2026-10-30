@@ -56,7 +56,12 @@ export async function waitFor(url, label, ms = 90_000) {
  * Levanta la API (dist/server.js) y la web (`next start`) ya compiladas.
  * `degraded: true` suma una segunda web con la API caída (spec de degradación, RNF03).
  */
-export async function startStack({ apiPort = 4000, webPort = 3100, degraded = false, extraApiEnv = {} } = {}) {
+export async function startStack({
+  apiPort = 4000,
+  webPort = 3100,
+  degraded = false,
+  extraApiEnv = {},
+} = {}) {
   const web = `http://localhost:${webPort}`;
   const env = {
     APP_ORIGIN: web,
@@ -76,7 +81,7 @@ export async function startStack({ apiPort = 4000, webPort = 3100, degraded = fa
       'npx',
       ['next', 'start', '-p', String(webPort + 1)],
       path.join(root, 'apps/web'),
-      { ...env, API_ORIGIN: 'http://localhost:4999' },
+      { ...env, API_ORIGIN: 'http://localhost:4999', NEXT_DIST_DIR: '.next-degraded' },
     );
   }
   await waitFor(`http://localhost:${apiPort}/health`, 'La API');

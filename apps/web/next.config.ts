@@ -19,6 +19,9 @@ const apiOrigin = process.env.API_ORIGIN ?? 'http://localhost:4000';
 const apiUrl = new URL(apiOrigin);
 
 const config: NextConfig = {
+  // Salida de compilación alternativa: la usa la web "degradada" de la prueba de punta a punta (se compila
+  // con la API caída para que sus páginas muestren el estado de error; ver scripts/e2e.mjs).
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   images: {
     remotePatterns: [
       {

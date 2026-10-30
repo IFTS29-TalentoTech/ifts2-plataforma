@@ -95,20 +95,23 @@ Mientras no haya pantallas implementadas verás páginas "en construcción": es 
 
 ## 6. Comandos útiles
 
-| Comando                                              | Qué hace                                                                                          |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                                           | API y web en modo desarrollo                                                                      |
-| `pnpm build`                                         | Compila todo                                                                                      |
-| `pnpm lint`                                          | ESLint + Prettier + regla de "sin colores ni fuentes escritos a mano" + `tokens.css` sincronizado |
-| `pnpm format`                                        | Formatea con Prettier                                                                             |
-| `pnpm typecheck`                                     | TypeScript estricto en los tres paquetes                                                          |
-| `pnpm test`                                          | Pruebas de `shared` y de la API                                                                   |
-| `pnpm test:api`                                      | Solo API (Supertest sobre `ifts2_test`)                                                           |
-| `pnpm test:e2e`                                      | Cypress (390 y 1440 px, axe) contra una web ya levantada                                          |
-| `pnpm db:up` / `db:migrate` / `db:seed` / `db:reset` | Base: levantar, migrar, sembrar, reiniciar (borra y resiembra)                                    |
-| `pnpm db:migrate:dev`                                | Crear una migración nueva tras editar `prisma/schema.prisma`                                      |
-| `pnpm tokens`                                        | Regenera `apps/web/src/styles/tokens.css` desde `docs/specs/design-tokens.json`                   |
-| `pnpm contrast`                                      | Calcula contrastes WCAG de la paleta                                                              |
+| Comando                                              | Qué hace                                                                                                    |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                           | API y web en modo desarrollo                                                                                |
+| `pnpm build`                                         | Compila todo                                                                                                |
+| `pnpm lint`                                          | ESLint + Prettier + regla de "sin colores ni fuentes escritos a mano" + `tokens.css` sincronizado           |
+| `pnpm format`                                        | Formatea con Prettier                                                                                       |
+| `pnpm typecheck`                                     | TypeScript estricto en los tres paquetes                                                                    |
+| `pnpm test`                                          | Pruebas de `shared` y de la API                                                                             |
+| `pnpm test:api`                                      | Solo API (Supertest sobre `ifts2_test`)                                                                     |
+| `pnpm test:e2e`                                      | Cypress (390 y 1440 px, axe) contra una web ya levantada                                                    |
+| `pnpm e2e`                                           | Levanta API y web de producción, corre toda la suite Cypress y cierra todo (`--build`, `--reset`, `--spec`) |
+| `pnpm load`                                          | Prueba de carga del sitio público (400 usuarios virtuales, autocannon); `--users`, `--duration`, `--out`    |
+| `pnpm lighthouse`                                    | Lighthouse móvil (Inicio, Estudiantes, Novedades, login del panel); rendimiento >= 80, accesibilidad >= 90  |
+| `pnpm db:up` / `db:migrate` / `db:seed` / `db:reset` | Base: levantar, migrar, sembrar, reiniciar (borra y resiembra)                                              |
+| `pnpm db:migrate:dev`                                | Crear una migración nueva tras editar `prisma/schema.prisma`                                                |
+| `pnpm tokens`                                        | Regenera `apps/web/src/styles/tokens.css` desde `docs/specs/design-tokens.json`                             |
+| `pnpm contrast`                                      | Calcula contrastes WCAG de la paleta                                                                        |
 
 ## 7. Pruebas
 
@@ -118,6 +121,8 @@ pnpm test:api       # solo API; la base ifts2_test se migra sola
 pnpm dev            # en otra terminal, y luego:
 pnpm test:e2e       # Cypress contra http://localhost:3000 (CYPRESS_BASE_URL para otro puerto)
 ```
+
+**Una sola orden para la suite completa de punta a punta:** `pnpm e2e --build` compila, levanta la API (con `LOGIN_MAX_ATTEMPTS` alto para que los inicios de sesión repetidos de los specs no activen el bloqueo por IP) y la web de producción en los puertos 4000 y 3100 (`E2E_API_PORT`, `E2E_WEB_PORT`), corre todos los specs —incluida la web degradada sin API— y cierra todo. `pnpm e2e --reset` antes recrea la base de desarrollo con la semilla demo (borra datos: la ejecuta una persona, no un agente). Los registros de los procesos quedan en `.e2e-logs/`.
 
 Para guardar evidencia (la cátedra la pide) volcá la salida a `docs/evidencias/AAAA-MM-DD-<cosa>.txt`. Cómo escribir pruebas de API: `apps/api/README.md`. Cómo escribir pruebas de Cypress: `apps/web/README.md`.
 
@@ -210,6 +215,7 @@ Estados posibles: sin configurar (modo demostración) · credenciales guardadas,
 | La API no arranca y lista variables          | Es a propósito: `.env` incompleto o proveedor mal configurado. Compará con `.env.example`                                                                                                      |
 | `ECONNREFUSED` o `P1001` a la base           | Docker Desktop apagado o contenedor caído: `pnpm db:up`. El puerto es **5433**, no 5432                                                                                                        |
 | Pruebas de API fallan por la base            | `pnpm db:up` y confirmá que existe `ifts2_test` (la crea el script de init al primer arranque; si el volumen ya existía: `docker exec ifts2-db psql -U ifts2 -c "CREATE DATABASE ifts2_test"`) |
+| Cypress falla con `429` al iniciar sesión    | El límite de intentos fallidos por IP (5 en 15 min, ADR-06) se activó en una corrida anterior. Reiniciá la API o usá `pnpm e2e`, que la levanta con `LOGIN_MAX_ATTEMPTS=1000`                  |
 | Cypress: `bad option: --smoke-test`          | El entorno define `ELECTRON_RUN_AS_NODE`. Ejecutá `env -u ELECTRON_RUN_AS_NODE pnpm test:e2e` (PowerShell: `$env:ELECTRON_RUN_AS_NODE=$null`)                                                  |
 | Cambié el schema y falla el tipo de Prisma   | `pnpm db:migrate:dev` (crea la migración) y `pnpm db:generate`                                                                                                                                 |
 | Saltos de línea / "CRLF will be replaced"    | Normal en Windows: el repo normaliza a LF (`.gitattributes`)                                                                                                                                   |

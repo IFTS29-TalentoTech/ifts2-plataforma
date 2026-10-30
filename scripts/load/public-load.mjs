@@ -19,8 +19,8 @@ const args = process.argv.slice(2);
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
 const users = Number(opt('--users', 400));
 const duration = Number(opt('--duration', 30));
-const out = opt('--out');
 const today = new Date().toISOString().slice(0, 10);
+const out = opt('--out', `docs/evidencias/${today}-carga-publico.md`);
 
 const percentile = (sorted, p) =>
   sorted.length ? sorted[Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1)] : 0;

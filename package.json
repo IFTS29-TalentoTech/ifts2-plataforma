@@ -26,7 +26,9 @@
     "contrast": "node scripts/contrast.mjs",
     "lint:styles": "node scripts/check-no-hardcoded-styles.mjs",
     "e2e": "node scripts/e2e.mjs",
-    "e2e:full": "node scripts/e2e.mjs --reset --build"
+    "e2e:full": "node scripts/e2e.mjs --reset --build",
+    "load": "node scripts/load/public-load.mjs",
+    "lighthouse": "node scripts/load/lighthouse.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

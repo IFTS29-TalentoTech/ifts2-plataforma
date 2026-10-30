@@ -16,8 +16,8 @@ import { killAll, root, startStack } from '../lib/stack.mjs';
 const args = process.argv.slice(2);
 const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
 const runs = Number(opt('--runs', 3));
-const out = opt('--out');
 const today = new Date().toISOString().slice(0, 10);
+const out = opt('--out', `docs/evidencias/${today}-lighthouse-movil.md`);
 const isWin = process.platform === 'win32';
 
 const PAGES = [
@@ -65,7 +65,11 @@ try {
       });
     }
     const m = (k) => median(samples.map((s) => s[k]));
-    rows.push({ name, route, ...Object.fromEntries(Object.keys(samples[0]).map((k) => [k, m(k)])) });
+    rows.push({
+      name,
+      route,
+      ...Object.fromEntries(Object.keys(samples[0]).map((k) => [k, m(k)])),
+    });
     console.log(`${name}: rendimiento ${m('perf')}, accesibilidad ${m('a11y')}`);
   }
 } finally {
