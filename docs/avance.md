@@ -4,6 +4,16 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-10-30 · Entrega de la cátedra: documentación y empaquetado
+
+**Hecho.** `docs/entrega/`: Manual Técnico (con DER por áreas y tablas/campos derivados de `prisma/schema.prisma` por `pnpm docs:der`), Manual de Usuario (flujos con capturas, guía de Instagram para el cliente, mensajes frecuentes), Evidencias de pruebas y CRUD (3 unitarias + 2 de integración con salida real) y el PDF único `IFTS2-Etapa-3-Documentacion.pdf` (`pnpm docs:pdf`, 85 páginas). `pnpm package` genera el zip desde `HEAD` (sin `node_modules`, `.env` ni secretos). Pruebas nuevas: `apps/api/test/api/integracion-catedra.test.ts` (INT-1 e INT-2) y los specs Cypress `panel-a/capturas-crud.cy.ts` (CRUD de avisos, publicaciones, documentos y usuarios con la interfaz real) y `public/capturas-contacto.cy.ts`.
+
+**Corrida de entrega.** `pnpm test`: 43 + 352 pruebas; Cypress: 190 en 19 archivos; `pnpm verify`: 33/33; lint y tipos sin errores (salidas `docs/evidencias/2026-10-30-entrega-*`). Instalación en limpio desde el zip: `docs/evidencias/2026-10-30-instalacion-en-limpio.md`.
+
+**Dificultades.** Mermaid: dos diagramas compartían id y se pisaban (ahora se dibujan de a uno) y un `;` en un mensaje rompía el diagrama de secuencia; `pdftotext` devuelve Latin-1 por defecto (hace falta `-enc UTF-8` para numerar el índice); Cypress borra `cypress/screenshots` (versionado) al correr: restaurar con `git checkout`; `pnpm db:up` choca si ya existe un contenedor `ifts2-db`.
+
+**Pendiente.** Enlaces del repositorio y de la aplicación desplegada (`[completar]`); Instagram, SMTP y S3 reales; despliegue; k6 (se usó autocannon); datos de ingreso y ubicación de materias por año (cliente).
+
 ### 2026-10-30 · Sitio público (agente web público, rama `feat/web-public`)
 
 **Qué se hizo.** Páginas `/`, `/institucional` (con formulario de contacto), `/la-carrera`, `/estudiantes`, `/ingreso`, `/inscripciones`, `/novedades` y `/novedades/[id]` con datos de `/public/*`, ISR de 60 s y degradación sin romperse si la API falla. Código en `apps/web/src/features/public/` (README con mapa páginas -> endpoints -> componentes). Specs Cypress en `apps/web/cypress/e2e/public/` (recorrido 390/1440 con axe, Estudiantes/Inscripciones/Ingreso, Novedades, Contacto E2E-14, degradación, capturas). Capturas en `docs/capturas/publico/` (15). Lighthouse móvil en `docs/evidencias/2026-10-30-web-public-lighthouse.md` (Inicio: rendimiento 93, accesibilidad 100).
