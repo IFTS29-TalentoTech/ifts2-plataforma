@@ -1,0 +1,153 @@
+npm warn Unknown user config "git-url-prefix". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        16.2.1                                                                         │
+  │ Browser:        Electron 146 (headless) (deprecated)                                           │
+  │ Node Version:   v24.15.0 (C:\Program Files\nodejs\node.exe)                                    │
+  │ Specs:          3 found (e2e-08-horarios.cy.ts, e2e-09-10-12-15.cy.ts, integraciones-a11y.cy.t │
+  │                 s)                                                                             │
+  │ Searched:       C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-panel-b\apps │
+  │                 \web\cypress\e2e\panel-b\e2e-*.cy.ts, C:\Users\zampa\Desktop\CURSOS\Tecnicatur │
+  │                 a\proyectos_2026\ifts2-wt-panel-b\apps\web\cypress\e2e\panel-b\integraciones-a │
+  │                 11y.cy.ts                                                                      │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Warning: The Electron browser is deprecated as a test browser and will be removed in a future version of Cypress.
+
+Switch to Chrome or another installed browser to avoid a breaking change when you upgrade.
+
+Read more about supported browsers: https://on.cypress.io/launching-browsers
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  e2e-08-horarios.cy.ts                                                           (1 of 3)
+
+
+  E2E-08 Horarios y llamados · móvil 390
+    √ muestra el ciclo público y las grillas del ciclo (sin violaciones de accesibilidad) (3157ms)
+    √ BEDELIA no ve el cambio de ciclo público (solo ADMIN) (637ms)
+    √ carga una grilla, la publica, la despublica y la elimina con confirmación (2932ms)
+    √ crea un llamado destacado, lo edita, lo publica y lo elimina (4009ms)
+    √ muestra un error claro si la fecha de fin es anterior a la de inicio (1247ms)
+
+  E2E-08 Horarios y llamados · escritorio 1440
+    √ muestra el ciclo público y las grillas del ciclo (sin violaciones de accesibilidad) (1018ms)
+    √ BEDELIA no ve el cambio de ciclo público (solo ADMIN) (403ms)
+    √ carga una grilla, la publica, la despublica y la elimina con confirmación (2448ms)
+    √ crea un llamado destacado, lo edita, lo publica y lo elimina (3319ms)
+    √ muestra un error claro si la fecha de fin es anterior a la de inicio (1221ms)
+
+
+  10 passing (21s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        10                                                                               │
+  │ Passing:      10                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     20 seconds                                                                       │
+  │ Spec Ran:     e2e-08-horarios.cy.ts                                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  e2e-09-10-12-15.cy.ts                                                           (2 of 3)
+
+
+  Panel B · móvil 390
+    √ E2E-09: el administrador cambia el ciclo público con confirmación y el sitio muestra solo el nuevo (2402ms)
+    √ E2E-10: archivo: búsqueda por año, ver detalle y restaurar (1858ms)
+    √ E2E-15: un archivo no permitido o demasiado grande muestra un error claro (4950ms)
+    √ E2E-12: el administrador crea un usuario con rol y lo desactiva; el desactivado no puede entrar (3761ms)
+    √ permisos: BEDELIA no ve Configuración; EDITOR no ve Horarios ni Archivo (1060ms)
+
+  Panel B · escritorio 1440
+    √ E2E-09: el administrador cambia el ciclo público con confirmación y el sitio muestra solo el nuevo (1492ms)
+    √ E2E-10: archivo: búsqueda por año, ver detalle y restaurar (1500ms)
+    √ E2E-15: un archivo no permitido o demasiado grande muestra un error claro (4989ms)
+    √ E2E-12: el administrador crea un usuario con rol y lo desactiva; el desactivado no puede entrar (3992ms)
+    √ permisos: BEDELIA no ve Configuración; EDITOR no ve Horarios ni Archivo (999ms)
+
+
+  10 passing (27s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        10                                                                               │
+  │ Passing:      10                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     27 seconds                                                                       │
+  │ Spec Ran:     e2e-09-10-12-15.cy.ts                                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  integraciones-a11y.cy.ts                                                        (3 of 3)
+
+
+  Integraciones y accesibilidad · móvil 390
+    √ Instagram: guía, redirectUri, guardar credenciales sin exponer el secreto y desconectar (5430ms)
+    √ Correo: destinatario, estado y correo de prueba en modo demostración (973ms)
+    √ Configuración: cambios globales piden confirmación y datos inválidos se marcan (1350ms)
+    √ E2E-13/axe: pantallas sin violaciones serias y diálogos con foco atrapado y devuelto (11040ms)
+
+  Integraciones y accesibilidad · escritorio 1440
+    √ Instagram: guía, redirectUri, guardar credenciales sin exponer el secreto y desconectar (3942ms)
+    √ Correo: destinatario, estado y correo de prueba en modo demostración (585ms)
+    √ Configuración: cambios globales piden confirmación y datos inválidos se marcan (1347ms)
+    √ E2E-13/axe: pantallas sin violaciones serias y diálogos con foco atrapado y devuelto (12801ms)
+
+
+  8 passing (38s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        8                                                                                │
+  │ Passing:      8                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     38 seconds                                                                       │
+  │ Spec Ran:     integraciones-a11y.cy.ts                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✔  e2e-08-horarios.cy.ts                    00:20       10       10        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  e2e-09-10-12-15.cy.ts                    00:27       10       10        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  integraciones-a11y.cy.ts                 00:38        8        8        -        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✔  All specs passed!                        01:26       28       28        -        -        -  
+

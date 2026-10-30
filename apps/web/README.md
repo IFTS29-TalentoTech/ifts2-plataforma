@@ -41,3 +41,9 @@ if (await confirm({ title: '¿Eliminar el aviso?', tone: 'danger', confirmLabel:
 ## Sitio público
 
 Implementado en `src/features/public/` (mapa de páginas, endpoints y decisiones en su README). `next.config.ts` lee el `.env` de la raíz con `forceReload` y autoriza el origen de la API para `next/image`. Cuidado con `text-base` (también es un color del tema).
+
+`pnpm test:e2e` (web levantada; `CYPRESS_BASE_URL` para otro puerto). Viewports 390 y 1440; el comando `cy.a11y()` corre axe (WCAG 2.2 AA, impactos serio/crítico). Specs: `smoke.cy.ts`, `ui-kit.cy.ts`.
+
+## Panel B (Horarios, Archivo, Configuración)
+
+Pantallas en `src/features/panel-b/` (ver su `README.md`) montadas desde `app/panel/(shell)/{horarios,archivo,configuracion}`. Specs en `cypress/e2e/panel-b/` con `cy.loginAsApi(rol)`, `cy.api()` y `cy.byLabel()` (`cypress/support/panel-b.ts`). Para E2E se recomienda `pnpm build` + `pnpm start` con `API_ORIGIN` exportado (ver Q105). Capturas del manual: `capturas-manual.cy.ts` y copiar `cypress/screenshots/capturas-manual.cy.ts/b-*.png` a `docs/capturas/panel/`.

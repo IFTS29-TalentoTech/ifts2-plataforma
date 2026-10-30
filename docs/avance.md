@@ -97,3 +97,13 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 - `examCallNext` considera cualquier ciclo y llamados no publicados (el panel es interno); confirmar si debe limitarse al ciclo público.
 - Mensajes de `text()` en shared salen con género masculino ("La leyenda es obligatorio."): conviene un parámetro de género en el helper (cambio en `schemas.ts`, no tocado para no pisar a otros agentes).
 - Planificador interno sin prueba automatizada (se probó la tarea que ejecuta, `runSocialJob`, vía `POST /social/cron`).
+
+## Panel B: Horarios, Archivo y Configuración (rama `feat/web-panel-b`, 2026-10-30)
+
+**Hecho.** `/panel/horarios` (ciclo público, cambio con confirmación, alta de ciclos, grillas por comisión y llamados: crear, editar, publicar, eliminar no publicados), `/panel/archivo` (búsqueda, filtros, tabla y tarjetas móviles, detalle con referencias, restaurar, archivar con `force`, eliminar, subida con metadatos), `/panel/configuracion` (ajustes globales con confirmación, usuarios y roles con clave temporal única, contenido en Markdown con vista previa, enlaces) e Integraciones (Instagram con guía, redirectUri copiable, secreto enmascarado, conectar OAuth, token manual, probar, desconectar; correo con SMTP y prueba). Código y mapa en `apps/web/src/features/panel-b/README.md`.
+
+**Pruebas.** Cypress `apps/web/cypress/e2e/panel-b/` (E2E-08, 09, 10, 11 parcial, 12, 13, 15, integraciones y axe), 390 y 1440 px, todo en verde. Capturas del manual en `docs/capturas/panel/b-*.png`.
+
+**Dificultades.** El lint exige no hacer `setState` en efectos (se usa `useResetOn`); `text-base` de Tailwind choca con el color `base` del tema (usar `text-lg`/`text-[1rem]`); Q105 y Q106 de `09-preguntas-abiertas.md`.
+
+**Pendiente.** Remitente SMTP (Q100); probar OAuth de Instagram contra Meta real.

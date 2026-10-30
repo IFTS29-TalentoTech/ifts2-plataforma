@@ -12,10 +12,15 @@ export default defineConfig({
     viewportWidth: 1440,
     viewportHeight: 900,
     setupNodeEvents(on) {
-      // Chrome limita la ventana a la pantalla y recorta las capturas de 1440 px: se fuerza el tamaño.
+      // Las capturas de 1440 px salen recortadas si la ventana es más chica que la pantalla:
+      // se fuerza el tamaño en Chrome (público) y en Electron (panel).
       on('before:browser:launch', (browser, launchOptions) => {
         if (browser.family === 'chromium' && browser.name !== 'electron') {
           launchOptions.args.push('--window-size=1500,1100');
+        }
+        if (browser.name === 'electron') {
+          launchOptions.preferences.width = 1440;
+          launchOptions.preferences.height = 900;
         }
         return launchOptions;
       });
