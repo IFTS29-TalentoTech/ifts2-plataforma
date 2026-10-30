@@ -1,0 +1,37 @@
+%% Generado por scripts/docs/prisma-to-docs.mjs desde prisma/schema.prisma. No editar a mano.
+%% Contenido del sitio y contacto
+erDiagram
+  SiteSetting {
+    String key PK
+    String value
+    DateTime updatedAt
+  }
+  ContentSection {
+    String id PK
+    String page
+    String slug
+    String title
+    String body
+    Int order
+    Boolean visible
+  }
+  ExternalLink {
+    String id PK
+    String title
+    String url
+    String description
+    String group
+    Int order
+    Boolean visible
+  }
+  ContactMessage {
+    String id PK
+    String name
+    String email
+    String subject
+    String message
+    MessageStatus status
+    Boolean consent
+    DateTime receivedAt
+    Boolean mailSent
+  }

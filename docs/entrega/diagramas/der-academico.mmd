@@ -1,0 +1,80 @@
+%% Generado por scripts/docs/prisma-to-docs.mjs desde prisma/schema.prisma. No editar a mano.
+%% Bloque académico: avisos, ciclos, horarios, llamados y archivo
+erDiagram
+  Category {
+    String id PK
+    String name
+    String kind
+  }
+  Notice {
+    String id PK
+    String title
+    String body
+    String categoryId FK
+    NoticeAudience audience
+    Boolean urgent
+    Boolean highlighted
+    NoticeStatus status
+    DateTime visibleFrom
+    DateTime visibleUntil
+    String attachmentId FK
+    String authorId
+    DateTime createdAt
+    DateTime updatedAt
+  }
+  Document {
+    String id PK
+    String title
+    String filename
+    DocumentKind kind
+    String category
+    Int cycleYear
+    String termLabel
+    String resolutionCode
+    String storageKey UK
+    String mimeType
+    Int sizeBytes
+    DocumentStatus status
+    DateTime archivedAt
+    DateTime restoredAt
+    String uploadedBy
+    DateTime createdAt
+  }
+  AcademicTerm {
+    String id PK
+    Int year
+    TermKind kind
+    DateTime startsOn
+    DateTime endsOn
+    Boolean publicCurrent
+  }
+  Schedule {
+    String id PK
+    String termId FK
+    String commissionName
+    String documentId FK
+    String notes
+    Boolean published
+    String updatedBy
+    DateTime updatedAt
+  }
+  ExamCall {
+    String id PK
+    String termId FK
+    String name
+    DateTime startsOn
+    DateTime endsOn
+    Boolean enrollmentOpen
+    Boolean highlighted
+    String documentId FK
+    String notes
+    Boolean published
+    String updatedBy
+    DateTime updatedAt
+  }
+  Category |o--o{ Notice : "categoryId"
+  Document |o--o{ Notice : "attachmentId"
+  AcademicTerm ||--o{ Schedule : "termId"
+  Document |o--o{ Schedule : "documentId"
+  AcademicTerm ||--o{ ExamCall : "termId"
+  Document |o--o{ ExamCall : "documentId"

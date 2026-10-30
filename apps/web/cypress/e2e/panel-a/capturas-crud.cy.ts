@@ -183,7 +183,9 @@ describe('CRUD con la interfaz real · 1440px', () => {
     cy.get('[role="dialog"]')
       .contains('[data-testid="user-row"]', email)
       .within(() => {
-        cy.contains('label', 'Rol de').invoke('attr', 'for').then((id) => cy.get(`[id="${id}"]`).click());
+        cy.contains('label', 'Rol de')
+          .invoke('attr', 'for')
+          .then((id) => cy.get(`[id="${id}"]`).click());
       });
     cy.get('[role="option"]').contains('Comunicación').click();
     cy.contains('[data-testid="user-row"]', email).contains('Comunicación');

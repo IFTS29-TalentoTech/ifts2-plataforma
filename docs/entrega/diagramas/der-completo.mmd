@@ -1,0 +1,56 @@
+%% Generado por scripts/docs/prisma-to-docs.mjs desde prisma/schema.prisma. No editar a mano.
+%% Vista general (solo claves y relaciones; sin las tablas aisladas)
+erDiagram
+  User {
+    String id PK
+  }
+  Session {
+    String id PK
+    String userId FK
+  }
+  AuditLog {
+    String id PK
+    String userId FK
+  }
+  Category {
+    String id PK
+  }
+  SocialPost {
+    String id PK
+  }
+  Publication {
+    String id PK
+    String categoryId FK
+    String socialPostId FK,UK
+  }
+  Notice {
+    String id PK
+    String categoryId FK
+    String attachmentId FK
+  }
+  Document {
+    String id PK
+  }
+  AcademicTerm {
+    String id PK
+  }
+  Schedule {
+    String id PK
+    String termId FK
+    String documentId FK
+  }
+  ExamCall {
+    String id PK
+    String termId FK
+    String documentId FK
+  }
+  User ||--o{ Session : "userId"
+  Category |o--o{ Publication : "categoryId"
+  SocialPost |o--o| Publication : "socialPostId"
+  Category |o--o{ Notice : "categoryId"
+  Document |o--o{ Notice : "attachmentId"
+  AcademicTerm ||--o{ Schedule : "termId"
+  Document |o--o{ Schedule : "documentId"
+  AcademicTerm ||--o{ ExamCall : "termId"
+  Document |o--o{ ExamCall : "documentId"
+  User |o--o{ AuditLog : "userId"

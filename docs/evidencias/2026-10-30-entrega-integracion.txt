@@ -1,0 +1,11 @@
+
+ RUN  v5.0.5 C:/Users/zampa/Desktop/CURSOS/Tecnicatura/proyectos_2026/ifts2-plataforma/apps/api
+
+ ✓ test/api/integracion-catedra.test.ts > INT-1 · crear un aviso por la API impacta en la base y se ve en el sitio público > POST /notices -> fila en PostgreSQL -> aparece en GET /public/students 695ms
+ ✓ test/api/integracion-catedra.test.ts > INT-2 · eliminar un aviso (acción confirmada): 204 y auditoría; 409 si está vigente > un aviso pausado se elimina (204), desaparece de la base y queda auditado; uno vigente da 409 374ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  07:27:37
+   Duration  6.42s (import 50%, tests 42%, transform 7%, setup 1%)
+

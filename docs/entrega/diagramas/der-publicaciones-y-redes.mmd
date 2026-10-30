@@ -1,0 +1,58 @@
+%% Generado por scripts/docs/prisma-to-docs.mjs desde prisma/schema.prisma. No editar a mano.
+%% Publicaciones, redes e integraciones
+erDiagram
+  Category {
+    String id PK
+    String name
+    String kind
+  }
+  SocialPost {
+    String id PK
+    String platform
+    String externalId UK
+    String permalink
+    String caption
+    String mediaUrl
+    DateTime postedAt
+    SocialStatus status
+    DateTime detectedAt
+    String moderatedBy
+    DateTime moderatedAt
+  }
+  Publication {
+    String id PK
+    PublicationKind kind
+    String title
+    String summary
+    String body
+    String coverUrl
+    String categoryId FK
+    PublicationSection section
+    PublicationStatus status
+    PublicationOrigin origin
+    String socialPostId FK,UK
+    DateTime visibleFrom
+    DateTime visibleUntil
+    DateTime eventStart
+    DateTime eventEnd
+    String location
+    String authorId
+    DateTime createdAt
+    DateTime updatedAt
+  }
+  InstagramToken {
+    Int id PK
+    String tokenEnc
+    DateTime expiresAt
+    DateTime refreshedAt
+    DateTime lastSyncAt
+    Boolean lastSyncOk
+  }
+  IntegrationConfig {
+    String key PK
+    String valueEnc
+    String updatedBy
+    DateTime updatedAt
+  }
+  Category |o--o{ Publication : "categoryId"
+  SocialPost |o--o| Publication : "socialPostId"

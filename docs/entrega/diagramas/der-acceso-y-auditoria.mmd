@@ -1,0 +1,34 @@
+%% Generado por scripts/docs/prisma-to-docs.mjs desde prisma/schema.prisma. No editar a mano.
+%% Acceso y auditoría
+erDiagram
+  User {
+    String id PK
+    String email UK
+    String name
+    String passwordHash
+    Role role
+    Boolean active
+    Boolean mustChangePassword
+    DateTime createdAt
+    DateTime updatedAt
+    DateTime lastLoginAt
+  }
+  Session {
+    String id PK
+    String userId FK
+    String tokenHash UK
+    DateTime expiresAt
+    DateTime createdAt
+    String userAgent
+  }
+  AuditLog {
+    String id PK
+    String userId FK
+    String action
+    String entity
+    String entityId
+    Json detail
+    DateTime at
+  }
+  User ||--o{ Session : "userId"
+  User |o--o{ AuditLog : "userId"
