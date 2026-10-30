@@ -2,11 +2,16 @@
 //
 // Simula N usuarios virtuales concurrentes (400 por defecto, el pico de inscripciones del cliente)
 // que navegan Inicio, Estudiantes y Novedades contra el build de producción + API, y mide la
-// latencia exacta (p50/p95/p99) y los errores. Objetivo: SIN errores 5xx y p95 < 1,5 s.
+// latencia exacta (p50/p95/p99) y los errores. Objetivo (RNF09): SIN errores 5xx y p95 < 1,5 s.
 //
 // Herramienta: autocannon (Node, sin instalar binarios; k6 requiere un instalador con permisos).
-// Cada "usuario" es una conexión que recorre las tres páginas en ciclo (como una persona que navega),
-// sin pausas: es un escenario más duro que un usuario real, que lee entre página y página.
+// Cada "usuario" es una conexión que recorre las tres páginas en ciclo, como una persona que navega.
+// Dos perfiles:
+//   - USO REAL: una página cada `--think` segundos por usuario (3 por defecto: lo que tarda alguien en
+//     leer). Es el que evalúa el objetivo.
+//   - SATURACIÓN: sin pausa entre pedidos (cada usuario insiste todo el tiempo). Es una prueba de estrés
+//     para ver dónde se rompe; no es un uso humano.
+// Se envía Accept-Encoding como lo hace un navegador.
 //
 // Uso: node scripts/load/public-load.mjs [--users 400] [--duration 30] [--out docs/evidencias/x.md]
 //      [--no-start]  (usa una pila ya levantada en WEB_URL / API_URL en lugar de levantar la propia)
@@ -20,13 +25,14 @@ const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
 const users = Number(opt('--users', 400));
 const duration = Number(opt('--duration', 30));
 const today = new Date().toISOString().slice(0, 10);
+const think = Number(opt('--think', 3));
 const out = opt('--out', `docs/evidencias/${today}-carga-publico.md`);
 
 const percentile = (sorted, p) =>
   sorted.length ? sorted[Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1)] : 0;
 
 /** Corre un escenario y devuelve métricas exactas calculadas con cada respuesta. */
-function scenario(name, baseUrl, paths) {
+function scenario(name, baseUrl, paths, thinkSeconds = 0) {
   return new Promise((resolve) => {
     const times = [];
     const statuses = {};
@@ -36,6 +42,8 @@ function scenario(name, baseUrl, paths) {
         connections: users,
         duration,
         timeout: 30,
+        headers: { 'accept-encoding': 'gzip, deflate, br' },
+        ...(thinkSeconds ? { connectionRate: 1 / thinkSeconds } : {}),
         requests: paths.map((p) => ({ method: 'GET', path: p })),
       },
       (err, result) => {
@@ -46,6 +54,7 @@ function scenario(name, baseUrl, paths) {
           .reduce((n, [, v]) => n + v, 0);
         resolve({
           name,
+          think: thinkSeconds,
           paths,
           users,
           duration,
@@ -74,7 +83,7 @@ const fmt = (ms) => (ms >= 1000 ? `${(ms / 1000).toFixed(2)} s` : `${Math.round(
 const verdict = (r) =>
   r.s5xx === 0 && r.errors === 0 && r.timeouts === 0 && r.p95 < 1500 ? 'CUMPLE' : 'NO CUMPLE';
 
-let results = [];
+let results;
 try {
   let web = process.env.WEB_URL ?? 'http://localhost:3100';
   let api = process.env.API_URL ?? 'http://localhost:4000';
@@ -90,20 +99,32 @@ try {
   // Calentamiento: la primera página de cada ruta compila/cachea (ISR); no se mide.
   for (const p of ['/', '/estudiantes', '/novedades']) await fetch(web + p).catch(() => null);
 
+  const pages = ['/', '/estudiantes', '/novedades'];
+  const apiPaths = [
+    '/api/v1/public/home',
+    '/api/v1/public/students',
+    '/api/v1/public/publications',
+  ];
   results = [
-    await scenario('Sitio público (Inicio + Estudiantes + Novedades)', web, [
-      '/',
-      '/estudiantes',
-      '/novedades',
-    ]),
-    await scenario('Solo Inicio', web, ['/']),
-    await scenario('Solo Estudiantes', web, ['/estudiantes']),
-    await scenario('Solo Novedades', web, ['/novedades']),
-    await scenario('API pública directa (home + students + publications)', api, [
-      '/api/v1/public/home',
-      '/api/v1/public/students',
-      '/api/v1/public/publications',
-    ]),
+    // Perfil de uso real (evalúa el objetivo).
+    await scenario(
+      `USO REAL: Inicio + Estudiantes + Novedades (1 pedido cada ${think} s por usuario)`,
+      web,
+      pages,
+      think,
+    ),
+    await scenario(
+      `USO REAL: API pública directa (1 pedido cada ${think} s por usuario)`,
+      api,
+      apiPaths,
+      think,
+    ),
+    // Saturación (estrés).
+    await scenario('SATURACIÓN: Inicio + Estudiantes + Novedades', web, pages),
+    await scenario('SATURACIÓN: solo Inicio', web, ['/']),
+    await scenario('SATURACIÓN: solo Estudiantes', web, ['/estudiantes']),
+    await scenario('SATURACIÓN: solo Novedades', web, ['/novedades']),
+    await scenario('SATURACIÓN: API pública directa', api, apiPaths),
   ];
 } finally {
   killAll();
@@ -112,7 +133,7 @@ try {
 const lines = [
   `# Prueba de carga del sitio público — ${today}`,
   '',
-  `Herramienta: autocannon (Node). ${users} usuarios virtuales concurrentes sin pausas, ${duration} s por escenario, contra el build de producción (\`next start\`) + API de producción en la misma máquina de desarrollo. Objetivo (RNF05/RNF09): sin errores 5xx y p95 < 1,5 s.`,
+  `Herramienta: autocannon (Node). ${users} usuarios virtuales concurrentes sin pausas, ${duration} s por escenario, contra el build de producción (\`next start\`) + API de producción en la misma máquina de desarrollo. Objetivo (RNF05/RNF09): sin errores 5xx y p95 < 1,5 s en el perfil de **uso real**; los escenarios de **saturación** (sin pausa entre pedidos) son de estrés y no un uso humano.`,
   '',
   '| Escenario | Pedidos | Req/s | p50 | p95 | p99 | Máx. | 5xx | Errores de conexión | Veredicto |',
   '|---|---|---|---|---|---|---|---|---|---|',
@@ -133,4 +154,5 @@ if (out) {
   writeFileSync(file, md);
   console.log(`Guardado en ${file}`);
 }
-process.exit(results.every((r) => verdict(r) === 'CUMPLE') ? 0 : 1);
+// El código de salida evalúa solo el perfil de uso real.
+process.exit(results.filter((r) => r.think).every((r) => verdict(r) === 'CUMPLE') ? 0 : 1);

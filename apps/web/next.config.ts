@@ -40,7 +40,17 @@ const config: NextConfig = {
   // El navegador habla con `/api/v1/*` en el mismo origen que la web: la cookie de sesión es de primer
   // nivel y no hace falta CORS. Next reenvía a la API.
   async rewrites() {
-    return [{ source: '/api/v1/:path*', destination: `${apiOrigin}/api/v1/:path*` }];
+    return {
+      // /novedades con filtros o paginación se atiende con la variante renderizada por pedido
+      // (/novedades/lista); /novedades a secas es una página estática con ISR (RNF09).
+      beforeFiles: ['year', 'category', 'archived', 'page'].map((key) => ({
+        source: '/novedades',
+        has: [{ type: 'query' as const, key }],
+        destination: '/novedades/lista',
+      })),
+      afterFiles: [{ source: '/api/v1/:path*', destination: `${apiOrigin}/api/v1/:path*` }],
+      fallback: [],
+    };
   },
 };
 

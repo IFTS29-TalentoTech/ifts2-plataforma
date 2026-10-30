@@ -59,9 +59,9 @@ describe('sin sesión, todo el panel responde 401', () => {
         PUBLIC_PREFIXES.some((p) => concrete === p || concrete.startsWith(`${p}/`)) ||
         PUBLIC_EXACT.has(`${r.method} ${concrete}`);
       if (isPublic) continue;
-      const res = await request(t.app)
-        [r.method.toLowerCase() as 'get'](`/api/v1${concrete}`)
-        .send(r.method === 'GET' ? undefined : {});
+      const agent = request(t.app);
+      const call = (url: string) => agent[r.method.toLowerCase() as 'get'](url);
+      const res = await call(`/api/v1${concrete}`).send(r.method === 'GET' ? undefined : {});
       checked += 1;
       if (res.status !== 401) offenders.push(`${r.method} ${concrete} -> ${res.status}`);
     }
