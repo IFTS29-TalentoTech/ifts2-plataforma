@@ -42,3 +42,29 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 - **Variables CSS no admiten opacidad de Tailwind** (`bg-x/50`): se evita y se documentó.
 - **El menú móvil cerraba con un `setState` en un efecto** (regla de lint de React): se resolvió guardando la ruta en la que se abrió.
 - **`/ui-kit` quedaba prerenderizado y siempre devolvía 404 en producción**: se hizo dinámico (`ENABLE_UI_KIT`).
+
+### 2026-10-29 · API de redes y publicaciones (agente `feat/social`)
+
+**Qué se hizo.** Módulos `categories`, `publications`, `social` y `dashboard` en `apps/api/src/modules/` (cada uno con su `README.md`) y el `GraphInstagramClient` completo: `/me/media` con paginación y filtro por hashtag, `testConnection`, canje de código OAuth (token corto -> larga duración), **renovación del token a los ~50 días** (`refreshLongLivedToken`, `modules/social/token.service.ts`). Sincronización idempotente por `externalId`, moderación (aprobar con copia de la imagen al almacenamiento propio, descartar, restaurar, eliminar descartadas), carga manual, `POST /social/cron` con `CRON_SECRET` y planificador interno opcional (`SOCIAL_SCHEDULER_ENABLED`). Publicaciones con estados, vigencia calculada al consultar, portada subida por archivo y eliminación manual con reglas. Resumen (`GET /dashboard`). Contrato en `docs/specs/04-api.md`; decisiones en `docs/decisiones/ADR-030-social-sincronizacion.md`.
+
+**Verificación.** `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde (215 pruebas de API + 37 de shared; salida en `docs/evidencias/2026-10-29-social-*.txt`). No hay credenciales de Meta: el cliente se probó contra un **servidor HTTP simulado** (`test/helpers/instagram-mock.ts`) con paginación, errores 190/429/500, fallas de red, canje y renovación.
+
+**Decisiones.**
+
+- `AppContext.fetch` (inyectable) para toda llamada saliente; `createInstagramClient` y el callback OAuth lo usan. Cambio aditivo en `context.ts`/`app.ts`.
+- `Publication.coverUrl` guarda una dirección `http(s)` o una **clave del almacenamiento** (no URL firmada, que vence). Quien sirva contenido público debe resolverla con `lib/cover.ts` (`resolveCoverSrc`).
+- Eliminar una publicación de Instagram devuelve la publicación de redes a _pendiente_ (en lugar de dejar el vínculo roto) y borra la imagen copiada.
+- `reactivate` exige nueva fecha de fin solo cuando la publicación está vencida; una pausada con vigencia abierta se reactiva sin fechas.
+- La descarga de imágenes rechaza direcciones internas (SSRF) porque la carga manual acepta una URL escrita por un usuario; no se resuelve DNS (limitación documentada en `infra/media-download.ts`).
+- Para videos se importa la miniatura (`thumbnail_url`) como imagen.
+- `InstagramToken` (fila única) guarda solo vencimiento y estado de sincronización; el token en claro vive cifrado en `IntegrationConfig` (ADR-020) y `tokenEnc` queda vacío a propósito.
+
+**Dificultades.** Los hosts de las imágenes de demostración (`example.invalid`) no se pueden descargar: el flujo de aprobación usa una imagen neutra generada para esas direcciones. Un `paging.next` de otro dominio podría filtrar el token: solo se siguen URLs de `graph.instagram.com`.
+
+**Pendiente / preguntas abiertas.**
+
+- **Prueba de concepto con la API real** de Instagram (cuenta profesional + app de Meta del cliente): los formatos siguen la documentación pero no se verificaron en vivo.
+- `ingresoCycle` del Resumen es **derivado** (año del ciclo vigente + 1): falta definir con el cliente de dónde sale el dato de inscripción al ingreso.
+- `examCallNext` considera cualquier ciclo y llamados no publicados (el panel es interno); confirmar si debe limitarse al ciclo público.
+- Mensajes de `text()` en shared salen con género masculino ("La leyenda es obligatorio."): conviene un parámetro de género en el helper (cambio en `schemas.ts`, no tocado para no pisar a otros agentes).
+- Planificador interno sin prueba automatizada (se probó la tarea que ejecuta, `runSocialJob`, vía `POST /social/cron`).

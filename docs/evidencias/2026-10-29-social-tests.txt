@@ -1,0 +1,24 @@
+$ pnpm -r --workspace-concurrency=1 test
+Scope: 3 of 4 workspace projects
+$ vitest run
+
+ RUN  v5.0.5 C:/Users/zampa/Desktop/CURSOS/Tecnicatura/proyectos_2026/ifts2-wt-social/packages/shared
+
+
+ Test Files  2 passed (2)
+      Tests  37 passed (37)
+   Start at  21:14:39
+   Duration  606ms (import 57%, transform 17%, tests 14%, worker 12%)
+
+$ vitest run
+
+ RUN  v5.0.5 C:/Users/zampa/Desktop/CURSOS/Tecnicatura/proyectos_2026/ifts2-wt-social/apps/api
+
+
+ Test Files  13 passed (13)
+      Tests  215 passed (215)
+   Start at  21:14:41
+   Duration  94.60s (tests 97%, import 2%)
+
+$ echo "sin pruebas unitarias en web"
+"sin pruebas unitarias en web"

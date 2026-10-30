@@ -44,16 +44,18 @@ Base: `/api/v1`. JSON UTF-8. Fechas ISO 8601 en UTC. Autenticación por cookie d
 ## Panel
 
 **Resumen**
-- `GET /dashboard` → `{ instagram: { ok, lastSyncAt, error? }, pendingPosts, activeNotices, noticesExpiringIn7Days, currentTerm, examCallNext, ingresoCycle }`
+- `GET /dashboard` → `{ instagram: { mode, status, ok, lastSyncAt, error?, tokenExpiresAt?, hashtag }, pendingPosts, activeNotices, noticesExpiringIn7Days, currentTerm, examCallNext, ingresoCycle }` (**implementado**; forma exacta y reglas en `apps/api/src/modules/dashboard/README.md`: `currentTerm` y `examCallNext` pueden ser `null`; `ingresoCycle` es `{ year, derived: true }`)
 
 **Publicaciones y redes**
-- `POST /social/sync` → dispara la sincronización; devuelve cantidad de nuevas.
-- `GET /social/posts?status=DETECTED|LINKED|DISCARDED&page=`
-- `POST /social/posts/:id/approve` → `{ title?, summary?, section, categoryId?, visibleFrom?, visibleUntil?, consentConfirmed }` → crea la `Publication` PUBLISHED, copia la imagen; 409 si ya estaba vinculada.
+- `POST /social/sync` → renueva el token si hace falta y sincroniza; `{ created, matched, alreadyKnown, demo, lastSyncAt, token }`. 422 sin hashtag configurado; 502 con mensaje claro si Instagram falla (**implementado**).
+- `POST /social/cron` → tarea diaria para un cron externo; se autentica con el secreto `CRON_SECRET` (`X-Cron-Secret` o `Authorization: Bearer`), sin sesión; 403 si no hay secreto configurado, 401 si es incorrecto; responde 200 con `{ ok, token, sync }` aunque Instagram falle.
+- `GET /social/posts?status=DETECTED|LINKED|DISCARDED&page=&pageSize=` → `{ items, page, pageSize, total, counts: { DETECTED, LINKED, DISCARDED } }`
+- `POST /social/posts/:id/approve` → `{ title?, summary?, section, categoryId?, visibleFrom?, visibleUntil?, consentConfirmed }` → crea la `Publication` PUBLISHED (origen INSTAGRAM), copia la imagen al almacenamiento propio y devuelve `201 { publication, post }`; `consentConfirmed` debe ser `true` (400 si no); 409 si ya estaba vinculada o está descartada; 502/422 si no se puede copiar la imagen (no se crea nada).
 - `POST /social/posts/:id/discard`, `POST /social/posts/:id/restore`
 - `POST /social/manual` → carga manual equivalente (contingencia).
 - `GET /publications?status=&origin=&page=`, `POST /publications`, `GET/PATCH /publications/:id`
-- `POST /publications/:id/pause`, `/publish`, `/schedule`, `/reactivate` (con nueva vigencia)
+- `POST /publications/:id/pause`, `/publish`, `/schedule`, `/reactivate` (con nueva vigencia), `POST /publications/:id/cover` (multipart, sube la portada). Transiciones inválidas: 409. Cada publicación trae `visible` y `expired` (calculados con las reglas de vigencia) y `coverSrc` (URL lista para mostrar).
+- `GET/POST /categories`, `PATCH/DELETE /categories/:id` (único por nombre y tipo; `DELETE` 409 si está en uso).
 
 **Avisos académicos**
 - `GET /notices?status=ACTIVE|PAUSED|EXPIRED|ALL&audience=`, `POST /notices`, `GET/PATCH /notices/:id`
@@ -95,6 +97,8 @@ La configuración la carga el cliente desde el panel y se guarda cifrada (ADR-20
 | `POST /integrations/instagram/disconnect` | Borra credenciales y token; vuelve a modo demostración |
 | `GET/PUT /integrations/mail` | `{ contactToEmail?, smtpUrl? (null quita el SMTP) }`; devuelve proveedor activo, origen y SMTP enmascarado |
 | `POST /integrations/mail/test` | Envía un correo de prueba al destino de contacto (502 si falla) |
+
+**Eliminación de publicaciones:** `DELETE /publications/:id` solo en borrador, pausada o vencida; vigente o programada -> 409. Si venía de Instagram, la publicación de redes vuelve a pendiente.
 
 **Salud:** `GET /health` (y `/api/v1/health`) -> `{ status, api, db, integrations: { storage, mailer, instagram }, demoMode }`.
 
