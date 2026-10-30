@@ -57,6 +57,7 @@ docs/
   ARQUITECTURA.md Diagrama de capas y módulos
   avance.md       Bitácora de lo hecho, pendiente y problemas
   evidencias/     Salidas de pruebas con fecha (se piden en la entrega de la cátedra)
+  entrega/        ENTREGABLES de la Etapa 3: Manual Técnico, Manual de Usuario, Evidencias de pruebas y PDF único
 docker-compose.yml  Base de desarrollo (contenedor ifts2-db)
 ```
 
@@ -91,8 +92,6 @@ Comprobá: `http://localhost:4000/health` responde `{"status":"ok","db":"ok",…
 
 La semilla **demo** crea ciclo 2026-2.º público, avisos (vigente, urgente y vencido), publicaciones de redes detectadas, documentos archivados, llamado "Turno extraordinario de Diciembre 2026", contenido de páginas y enlaces. La semilla **prod** (`SEED_MODE=prod`) crea solo el administrador (con cambio de clave obligatorio), ajustes y enlaces reales; **nunca** datos de demostración. Ambas son idempotentes (se pueden repetir).
 
-Mientras no haya pantallas implementadas verás páginas "en construcción": es esperado, cada una la completa quien tenga esa historia (`docs/specs/07-backlog-y-plan.md`).
-
 ## 6. Comandos útiles
 
 | Comando                                              | Qué hace                                                                                                    |
@@ -112,6 +111,10 @@ Mientras no haya pantallas implementadas verás páginas "en construcción": es 
 | `pnpm db:migrate:dev`                                | Crear una migración nueva tras editar `prisma/schema.prisma`                                                |
 | `pnpm tokens`                                        | Regenera `apps/web/src/styles/tokens.css` desde `docs/specs/design-tokens.json`                             |
 | `pnpm contrast`                                      | Calcula contrastes WCAG de la paleta                                                                        |
+| `pnpm verify`                                        | Flujos de negocio y seguridad de punta a punta contra el build de producción (33 comprobaciones)            |
+| `pnpm docs:pdf`                                      | Regenera el PDF único de la entrega (`docs/entrega/`); necesita Google Chrome                               |
+| `pnpm docs:der`                                      | Regenera el DER (`.mmd`) y las tablas de campos del Manual Técnico desde `prisma/schema.prisma`             |
+| `pnpm package`                                       | Genera `dist-entrega/ifts2-plataforma-<fecha>.zip` desde `HEAD` (sin `node_modules`, `.env` ni secretos)    |
 
 ## 7. Pruebas
 
@@ -197,7 +200,7 @@ Todas las variables, con comentarios, están en `.env.example`. Si el proveedor 
 5. Copiar **App ID** y **App Secret** y pegarlos en la pantalla.
 6. Pulsar **Conectar con Instagram**, iniciar sesión con la cuenta del instituto, aceptar, y usar **Probar conexión**. Alternativa: pegar un token de larga duración.
 
-Estados posibles: sin configurar (modo demostración) · credenciales guardadas, falta conectar · conectada · token por vencer · error. La implementación real contra la API de Meta (`GraphInstagramClient`) está pendiente de completar y verificar: ver `docs/avance.md`.
+Estados posibles: sin configurar (modo demostración) · credenciales guardadas, falta conectar · conectada · token por vencer · error. El cliente real contra la API de Meta (`GraphInstagramClient`) está implementado y se probó **solo contra un servidor simulado**: falta la prueba con una cuenta profesional y una app de Meta reales (ver `docs/avance.md` y _Limitaciones conocidas_ en el Manual Técnico).
 
 ## 11. Convenciones, ramas y definición de terminado
 
@@ -222,19 +225,37 @@ Estados posibles: sin configurar (modo demostración) · credenciales guardadas,
 | `next build` falla bajando la fuente         | `next/font` descarga Plus Jakarta Sans de Google Fonts al compilar: hace falta internet                                                                                                        |
 | El panel redirige siempre al login           | La cookie de sesión no llega: `APP_ORIGIN` debe coincidir con el origen real de la web                                                                                                         |
 
-## 13. Mapa de la documentación
+## 13. Entregables de la cátedra (Etapa 3)
 
-| Dónde                                                                   | Qué hay                                                                                                                                                                       | Cuándo leerlo                       |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `CLAUDE.md`, `docs/BUILD-NOTES.md`                                      | Reglas de trabajo y entorno                                                                                                                                                   | **Primero**                         |
-| `docs/specs/AGENTS.md`                                                  | Reglas no negociables del proyecto                                                                                                                                            | **Primero**                         |
-| `docs/specs/00-vision-y-alcance.md` a `10-entregables-etapa-3.md`       | Visión, requerimientos con criterios de aceptación, decisiones técnicas, arquitectura, API, pantallas, pruebas, backlog, datos, preguntas abiertas, entregables de la cátedra | Leer en orden antes de programar    |
-| `docs/specs/prisma/schema.prisma`, `design-tokens.json`                 | Modelo de datos original y tokens de diseño (el vigente está en `prisma/` y se genera a CSS)                                                                                  | Al tocar datos o estilos            |
-| `docs/specs/historias-de-usuario.md`                                    | Historias priorizadas                                                                                                                                                         | Al elegir tarea                     |
-| `docs/design/`                                                          | Capturas del Figma (desktop y mobile) y modales                                                                                                                               | Al maquetar                         |
-| `docs/decisiones/`                                                      | ADR (por qué se decidió cada cosa)                                                                                                                                            | Antes de cambiar algo estructural   |
-| `docs/ARQUITECTURA.md`                                                  | Diagrama de capas y módulos                                                                                                                                                   | Para orientarte                     |
-| `docs/avance.md`                                                        | Bitácora, pendientes, dificultades                                                                                                                                            | Al empezar y al terminar cada tarea |
-| `docs/evidencias/`                                                      | Salidas de pruebas con fecha                                                                                                                                                  | Para la entrega                     |
-| `apps/api/README.md`, `apps/web/README.md`, `packages/shared/README.md` | Guías por paquete                                                                                                                                                             | Al trabajar en ese paquete          |
-| `CONTRIBUTING.md`                                                       | Flujo de trabajo                                                                                                                                                              | Antes de tu primer PR               |
+Todo está en `docs/entrega/`:
+
+| Archivo                           | Contenido                                                                                                                                                                     |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Manual-Tecnico.md`               | Instalación y puesta en marcha, arquitectura, estructura, base de datos (DER, tablas, relaciones), configuración, componentes, errores y validaciones, pruebas y limitaciones |
+| `Manual-de-Usuario.md`            | Uso del sitio y del panel paso a paso con capturas, CRUD demostrable y mensajes frecuentes (incluye la guía de Instagram para el cliente)                                     |
+| `Evidencias-de-pruebas.md`        | 3 pruebas unitarias y 2 de integración con salida real, resumen de todas las suites y matriz de CRUD                                                                          |
+| `Enlaces.md`                      | Repositorio, aplicación desplegada (`[completar]`) y Figma                                                                                                                    |
+| `IFTS2-Etapa-3-Documentacion.pdf` | PDF único con todo lo anterior (portada, índice, manuales y evidencias)                                                                                                       |
+| `diagramas/`                      | DER por áreas (`.mmd` fuente generado desde `prisma/schema.prisma` + `.png`/`.svg`)                                                                                           |
+
+- **Regenerar el PDF:** `pnpm docs:pdf` (Markdown → HTML con la paleta del proyecto → PDF con Chrome headless; el DER y las tablas de campos se vuelven a derivar del schema). Para volver a dibujar las imágenes del DER hace falta `@mermaid-js/mermaid-cli` (ver `docs/entrega/diagramas/README.md`).
+- **Empaquetar el proyecto:** hacer commit y `pnpm package` → `dist-entrega/ifts2-plataforma-<fecha>.zip` (desde `HEAD`, sin `node_modules`, `.env` ni secretos).
+- **Verificación de instalación en limpio:** `docs/evidencias/2026-10-30-instalacion-en-limpio.md`.
+
+## 14. Mapa de la documentación
+
+| Dónde                                                                   | Qué hay                                                                                                                                                                       | Cuándo leerlo                              |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `CLAUDE.md`, `docs/BUILD-NOTES.md`                                      | Reglas de trabajo y entorno                                                                                                                                                   | **Primero**                                |
+| `docs/specs/AGENTS.md`                                                  | Reglas no negociables del proyecto                                                                                                                                            | **Primero**                                |
+| `docs/specs/00-vision-y-alcance.md` a `10-entregables-etapa-3.md`       | Visión, requerimientos con criterios de aceptación, decisiones técnicas, arquitectura, API, pantallas, pruebas, backlog, datos, preguntas abiertas, entregables de la cátedra | Leer en orden antes de programar           |
+| `docs/specs/prisma/schema.prisma`, `design-tokens.json`                 | Modelo de datos original y tokens de diseño (el vigente está en `prisma/` y se genera a CSS)                                                                                  | Al tocar datos o estilos                   |
+| `docs/specs/historias-de-usuario.md`                                    | Historias priorizadas                                                                                                                                                         | Al elegir tarea                            |
+| `docs/design/`                                                          | Capturas del Figma (desktop y mobile) y modales                                                                                                                               | Al maquetar                                |
+| `docs/decisiones/`                                                      | ADR (por qué se decidió cada cosa)                                                                                                                                            | Antes de cambiar algo estructural          |
+| `docs/ARQUITECTURA.md`                                                  | Diagrama de capas y módulos                                                                                                                                                   | Para orientarte                            |
+| `docs/avance.md`                                                        | Bitácora, pendientes, dificultades                                                                                                                                            | Al empezar y al terminar cada tarea        |
+| `docs/entrega/`                                                         | Manual Técnico, Manual de Usuario, Evidencias de pruebas, PDF único                                                                                                           | Para la entrega y para instalar desde cero |
+| `docs/evidencias/`                                                      | Salidas de pruebas con fecha                                                                                                                                                  | Para la entrega                            |
+| `apps/api/README.md`, `apps/web/README.md`, `packages/shared/README.md` | Guías por paquete                                                                                                                                                             | Al trabajar en ese paquete                 |
+| `CONTRIBUTING.md`                                                       | Flujo de trabajo                                                                                                                                                              | Antes de tu primer PR                      |
