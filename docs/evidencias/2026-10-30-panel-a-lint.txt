@@ -1,0 +1,5 @@
+$ eslint . && prettier --check . && node scripts/check-no-hardcoded-styles.mjs && node scripts/generate-tokens.mjs --check
+Checking formatting...
+All matched files use Prettier code style!
+OK: sin colores ni fuentes hardcodeados en apps/web/src.
+tokens.css sincronizado.
