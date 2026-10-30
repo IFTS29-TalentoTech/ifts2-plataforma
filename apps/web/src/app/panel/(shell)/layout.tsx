@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { PanelShell } from '@/components/layout/panel-shell';
 import { api } from '@/lib/api';
@@ -15,6 +16,8 @@ interface Dashboard {
 /** Protege todo /panel/* (excepto /panel/login): sin sesión válida redirige al login. */
 export default async function Layout({ children }: { children: ReactNode }) {
   const session = await requireSession();
+  // Tras un restablecimiento de clave la API bloquea todo (403) hasta que se cambie: pantalla propia.
+  if (session.mustChangePassword) redirect('/panel/login/cambiar-clave');
   const cookie = await cookieHeader();
   const site = await getSiteInfo();
 

@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { PUBLIC_NAV } from '@/lib/nav';
 import type { SiteInfo } from '@/lib/site';
 import { cn } from '@/lib/cn';
+import { LogoutButton } from './logout-button';
 
 export interface MobilePanelItem {
   href: string;
@@ -161,6 +162,12 @@ export function SiteHeader({ site, panelItems, userName }: Props) {
                   ) : null}
                 </Link>
               ))}
+              {/* Cierre de sesión también en móvil (el menú lateral con el botón solo se ve en escritorio). */}
+              {userName && (
+                <div className="mt-2 border-t border-accent-3 pt-2">
+                  <LogoutButton />
+                </div>
+              )}
             </nav>
           )}
         </div>
