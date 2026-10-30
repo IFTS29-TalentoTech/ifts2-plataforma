@@ -119,3 +119,22 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 **Dificultades.** El lint exige no hacer `setState` en efectos (se usa `useResetOn`); `text-base` de Tailwind choca con el color `base` del tema (usar `text-lg`/`text-[1rem]`); Q105 y Q106 de `09-preguntas-abiertas.md`.
 
 **Pendiente.** Remitente SMTP (Q100); probar OAuth de Instagram contra Meta real.
+
+## Integración y calidad (agente de integración, 2026-10-30)
+
+**Verificado sobre `main` integrado.** `pnpm lint`, `pnpm typecheck`, `pnpm test` (43 de shared + 350 de API), `pnpm build`, y `pnpm e2e --build` (toda la suite Cypress a 390 y 1440 px, incluida la web degradada). Salidas en `docs/evidencias/2026-10-30-integracion-*.txt`. Flujos H1 a H8 y seguridad de punta a punta con `pnpm verify` (`2026-10-30-flujos-y-seguridad.md`). Carga con `pnpm load` (`2026-10-30-carga-publico.md`) y Lighthouse móvil con `pnpm lighthouse` (`2026-10-30-lighthouse-movil.md`).
+
+**Bugs de integración corregidos.**
+
+- `text-base` es a la vez tamaño y color en el tema: el tamaño pisaba a `text-sm` y `Button size="lg"` quedaba casi blanco. Se quitó el tamaño `base` de Tailwind (queda `text-md`) y `pnpm lint` falla si se usa como tamaño.
+- `contact:delete` salía en la matriz de BEDELIA (Q41): ahora es solo de ADMIN; la API usa `requirePermission`.
+- Mensajes de validación sin concordancia ("La leyenda es obligatorio."): `text()`, `email()`, `url()`, `uuid()` y `dateTime()` deducen género y número del artículo o aceptan `gender`.
+- `/panel/avisos` pedía 100 avisos y contaba en el navegador (Q82): `GET /notices` devuelve `counts` y pagina en el servidor. `GET /social/posts?source=` filtra por origen (Q81).
+- Cypress no era determinista: un 400 real de login (validación) y un 401 real contaban para el límite por IP y bloqueaban specs posteriores (429). La validación se simula y `pnpm e2e` levanta la API con `LOGIN_MAX_ATTEMPTS=1000`. La web degradada reutilizaba las páginas prerenderizadas con datos: ahora se compila con la API caída (`.next-degraded`).
+- El sitio público tardaba hasta 60 s en reflejar un cambio del panel: revalidación bajo demanda (`REVALIDATE_SECRET`, `POST /api/revalidate`).
+- La web no enviaba cabeceras de seguridad (hallado por `pnpm verify`): se agregaron en `next.config.ts`.
+- `/novedades` se renderizaba por pedido (~40 pedidos/s): sin filtros es estática con ISR; con filtros se reescribe a `/novedades/lista`.
+
+**Contenido real (Q61).** La semilla (prod y demo) carga el plan de estudios por área con horas y las 13 correlatividades de la Res. MEGC 1202/07 (`prisma/seed-plan.ts`) y el requisito "secundario completo". Pendientes con el cliente: ubicación por año (Q120), nombres de la resolución (Q121), fechas y documentación de ingreso (Q122).
+
+**Pendiente.** Probar Instagram y SMTP reales; el techo de un solo proceso web ronda 300-360 pedidos/s en saturación (se resuelve con CDN o más procesos); `pnpm e2e --reset` borra la base de desarrollo y debe correrlo una persona (Prisma bloquea el reset a agentes).
