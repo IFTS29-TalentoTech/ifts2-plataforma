@@ -1,3 +1,5 @@
+import { CORRELATIVIDADES, PLAN } from './seed-plan';
+
 // Datos reales del IFTS N.° 2 (docs/specs/08-contenido-y-datos-semilla.md). Son SOLO el valor inicial:
 // en la plataforma viven en SiteSetting / ContentSection / ExternalLink y se editan desde el panel.
 
@@ -125,13 +127,57 @@ export const CONTENT: SectionSeed[] = [
     slug: 'areas-formativas',
     title: 'Áreas formativas',
     order: 3,
-    body: '- Análisis del sector de servicios gastronómicos\n- Proceso de producción gastronómica\n- Gestión y administración gastronómica\n- Prácticas profesionales\n\n[completar] El plan completo por año, las horas y las correlatividades se cargan desde la ficha de la carrera y la resolución MEGC 1202/07.',
+    // Fuente: Resolución MEGC 1202/07 (ver seed-plan.ts).
+    body: [
+      'La carrera suma 2758 horas cátedra repartidas en cuatro áreas:',
+      '',
+      ...PLAN.map((a) => `- ${a.title}: ${a.total} hs cátedra (${a.percent} %)`),
+      '',
+      'Combina materias, talleres, un laboratorio y seminarios, anuales y cuatrimestrales. Las Prácticas Profesionales son uno de los ejes de la formación y culminan con el diseño de un emprendimiento gastronómico propio.',
+    ].join('\n'),
+  },
+  ...PLAN.map((a, i): SectionSeed => ({
+    page: 'carrera',
+    slug: a.slug,
+    title: `Plan de estudios · ${a.title}`,
+    order: 4 + i,
+    body: [
+      ...a.items.map((m) => `- ${m.name}: ${m.regime}, ${m.detail}`),
+      '',
+      `Total del área: ${a.total} hs cátedra.`,
+    ].join('\n'),
+  })),
+  {
+    page: 'carrera',
+    slug: 'plan-correlatividades',
+    title: 'Correlatividades',
+    order: 8,
+    body: [
+      'Para cursar cada instancia hay que tener:',
+      '',
+      ...CORRELATIVIDADES.map(([materia, requisito]) => `- ${materia}: ${requisito}`),
+    ].join('\n'),
+  },
+  {
+    page: 'carrera',
+    slug: 'plan-por-anio',
+    title: 'Plan por año',
+    order: 9,
+    body: 'En qué año y cuatrimestre se cursa cada instancia: [a confirmar con el cliente]. La ficha de la carrera y la resolución indican el régimen (cuatrimestral o anual) y la carga horaria, pero no la ubicación por año.',
   },
   {
     page: 'ingreso',
     slug: 'proceso',
     title: '¿Cómo es el proceso?',
     order: 1,
-    body: '1. Requisitos\n2. Preinscripción\n3. Confirmación\n\n[provisorio] Fechas sujetas a confirmación oficial por el instituto. Los requisitos, fechas y documentos de ingreso todavía no fueron relevados con el cliente.',
+    body: '1. Requisitos\n2. Preinscripción\n3. Confirmación\n\nFechas de inscripción a la tecnicatura: [a confirmar con el cliente]',
+  },
+  {
+    page: 'ingreso',
+    slug: 'requisitos',
+    title: 'Requisitos de ingreso',
+    order: 2,
+    // "Secundario completo" figura en la ficha de la carrera; lo demás no está en los documentos del cliente.
+    body: 'Secundario completo (nivel medio aprobado). La carrera es gratuita, dura 3 años y otorga un título oficial de alcance nacional. La cursada es presencial, de lunes a viernes de 18:00 a 22:00 hs.\n\nDocumentación a presentar y modo de preinscripción: [a confirmar con el cliente]',
   },
 ];

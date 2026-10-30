@@ -3,8 +3,9 @@
  *
  * - La primera sección es la ficha de la carrera: título = h1, texto = título, duración e ingreso.
  * - El resto (perfil profesional, áreas formativas y, cuando el cliente las cargue desde el panel,
- *   plan por año y correlatividades) se dibuja como bloques en orden. El plan completo todavía no
- *   está relevado (08-contenido, Q61): no se inventa; la semilla lo marca como [completar].
+ *   plan por año y correlatividades) se dibuja como bloques en orden. El plan (por área formativa, con
+ *   horas y correlatividades) viene de la Res. MEGC 1202/07; la ubicación por año no figura en los
+ *   documentos del cliente y queda como [a confirmar] (Q120). No se inventa.
  * - Sin imágenes: las fotos del Figma son de referencia y requieren consentimiento (RNF08).
  */
 import type { Metadata } from 'next';

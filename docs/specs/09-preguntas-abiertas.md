@@ -71,7 +71,7 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | # | Pregunta | Decisión provisoria | Afecta |
 |---|---|---|---|
 | Q60 | Contacto, Inscripciones y avisos de aspirantes no tienen diseño en el Figma | Contacto como sección `#contacto` de `/institucional` (formulario con aviso de datos, consentimiento y señuelo); `/inscripciones` e `/ingreso` armadas con las tarjetas del kit. Validar con el cliente | RF08 / Q20 |
-| Q61 | Plan por año, correlatividades y requisitos/fechas de ingreso no están cargados (la semilla los marca `[completar]` / `[provisorio]`) | Las páginas muestran lo que cargue el panel como secciones de contenido; los marcadores se ven tal cual en demo. Cargar el contenido real antes de publicar | 08-contenido |
+| Q61 | Plan por año, correlatividades y requisitos/fechas de ingreso no están cargados | **Parcialmente resuelta (integración)**: plan por área con horas y correlatividades cargados desde la Res. MEGC 1202/07 y la ficha (ver Q120 a Q122 para lo que sigue pendiente) | 08-contenido |
 | Q62 | "Material de consulta" de Ingreso pide documentos públicos descargables y no existe endpoint para ellos | Se muestra como sección de contenido; falta decidir si `/public/content/ingreso` lleva archivos o se crea `/public/documents` | RF02 |
 | Q63 | Fotografías del hero, de La carrera y "Vida en la cocina" (galería) | No se incluyen: requieren imágenes provistas y consentimiento (RNF08); la galería es RF09 (Could) | RNF08 |
 | Q64 | El titular de Inicio usa la frase ancla completa (`tagline`) y el Figma una frase más corta ("Formamos emprendedores gastronómicos") | Se usa `tagline`; si el cliente quiere un titular distinto hace falta un ajuste nuevo en `SiteSetting` | ADR-22 |
@@ -104,3 +104,12 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q85 | El Figma rotula "Correo institucional (@bue.edu.ar)" en el login | El producto es genérico (ADR-22): el rótulo es "Correo institucional" y no se impone dominio; la lista de dominios válidos, si se quiere, es del cliente | RF05 |
 | Q86 | Reanudar un aviso cuya vigencia ya terminó | Se pide una nueva fecha de fin (la API responde 422 sin ella): botón "Reactivar" con diálogo de fecha | RF03 |
 | Q87 | El mensaje de bloqueo por intentos de login menciona "unos 15 minutos" (valor por defecto de `LOGIN_WINDOW_MINUTES`) | Texto fijo en la web; si se cambia la variable de entorno hay que ajustarlo o exponerla en la API | RNF06 |
+
+
+## Agregadas por el agente de integración y calidad
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q120 | ¿En qué año y cuatrimestre se cursa cada instancia curricular? Ni la ficha ni la resolución MEGC 1202/07 lo indican (solo el régimen cuatrimestral/anual y las horas) | La página La carrera muestra el plan por **área formativa**; la sección "Plan por año" dice `[a confirmar con el cliente]`. Se necesita la grilla de cursada del instituto | 08-contenido, RF02 |
+| Q121 | La resolución nombra distinto a algunas instancias en la tabla de correlatividades que en el plan ("Química" / Elementos de Química, "Panadería" / Elaboraciones de Panadería, "Taller de producción escrita" / Taller de comunicación escrita, "Práctica 2 – Producción gastronómica" / Organización de la producción) y la ficha tiene la tabla de horas desalineada | Se transcribieron los nombres de la resolución tal cual; las horas salen de la tabla de la resolución, cuyos totales por área (256, 1378, 778, 346) y el de la carrera (2758) cierran. Confirmar con el instituto los nombres vigentes | 08-contenido |
+| Q122 | Fechas de inscripción a la tecnicatura, documentación a presentar y modo de preinscripción no figuran en ningún documento del cliente | Texto `[a confirmar con el cliente]` en Ingreso; el único requisito cargado es secundario completo | RF02 |

@@ -1,9 +1,10 @@
 /**
  * Semilla idempotente. Dos modos (SEED_MODE):
  *   prod  -> administrador inicial (desde SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD), ajustes y enlaces
- *            reales. Los enlaces "a confirmar" quedan visible=false. NUNCA carga datos de demostración.
+ *            reales y el contenido de las páginas estancas (plan de estudios). Los enlaces
+ *            "a confirmar" quedan visible=false. NUNCA carga datos de demostración.
  *   demo  -> todo lo de prod + un usuario por rol, ciclos, avisos, publicaciones, documentos, llamados,
- *            contenido de páginas estancas e integraciones en modo demostración.
+ *            integraciones en modo demostración.
  * Se puede ejecutar varias veces sin duplicar.
  *
  * Contraseña de los usuarios de demostración: DEMO_PASSWORD (abajo). El administrador usa SEED_ADMIN_PASSWORD.
@@ -68,6 +69,32 @@ async function seedSettingsAndLinks() {
     if (!found) await prisma.externalLink.create({ data: l });
   }
   log(`ajustes (${Object.keys(SETTINGS).length}) y enlaces (${LINKS.length}) listos`);
+}
+
+/**
+ * Contenido de las páginas estancas (Institucional, La carrera, Ingreso). Es contenido REAL (plan de
+ * estudios de la resolución MEGC 1202/07 y datos de la ficha), por eso va en prod y en demo.
+ * Respeta lo que el cliente edite en el panel: no pisa ninguna sección ya cargada, salvo las que
+ * todavía tienen el texto provisorio de versiones anteriores de la semilla ([completar] /
+ * [provisorio]), que se reemplazan por el contenido real.
+ */
+async function seedContent() {
+  for (const s of CONTENT) {
+    await prisma.contentSection.upsert({
+      where: { page_slug: { page: s.page, slug: s.slug } },
+      create: { ...s },
+      update: {},
+    });
+    await prisma.contentSection.updateMany({
+      where: {
+        page: s.page,
+        slug: s.slug,
+        OR: [{ body: { contains: '[completar]' } }, { body: { contains: '[provisorio]' } }],
+      },
+      data: { title: s.title, body: s.body, order: s.order },
+    });
+  }
+  log(`contenido de páginas listo (${CONTENT.length} secciones)`);
 }
 
 // ---------------------------------------------------------------- demo
@@ -431,15 +458,6 @@ async function seedDemo(adminId: string) {
     status: 'DRAFT',
   });
 
-  // Contenido de páginas estancas
-  for (const s of CONTENT) {
-    await prisma.contentSection.upsert({
-      where: { page_slug: { page: s.page, slug: s.slug } },
-      create: { ...s },
-      update: {},
-    });
-  }
-
   // Un mensaje de contacto de ejemplo
   if ((await prisma.contactMessage.count()) === 0) {
     await prisma.contactMessage.create({
@@ -484,6 +502,7 @@ async function main() {
   }
   const admin = await seedAdmin();
   await seedSettingsAndLinks();
+  await seedContent();
   if (mode === 'demo') await seedDemo(admin.id);
   log('listo');
 }

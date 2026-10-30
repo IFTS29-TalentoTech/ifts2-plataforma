@@ -10,7 +10,8 @@
  * - Una sección cuyo Markdown tiene una LISTA NUMERADA se dibuja como pasos (tarjetas "1 · ...").
  * - El resto de su texto (por ejemplo "Fechas sujetas a confirmación") va en "Próxima convocatoria".
  * - Las demás secciones (p. ej. "Material de consulta") se dibujan como tarjetas.
- * Los requisitos y fechas reales no están relevados todavía (08-contenido, Q61).
+ * Del ingreso solo está documentado el requisito de secundario completo; fechas y documentación quedan
+ * como [a confirmar con el cliente] (Q122).
  */
 import type { Metadata } from 'next';
 import Link from 'next/link';
