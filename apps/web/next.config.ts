@@ -2,8 +2,15 @@ import path from 'node:path';
 import type { NextConfig } from 'next';
 import { loadEnvConfig } from '@next/env';
 
-// Un solo .env en la raíz del monorepo.
-loadEnvConfig(path.resolve(__dirname, '../..'));
+// Un solo .env en la raíz del monorepo. `forceReload`: Next ya cargó los .env de apps/web (no hay) antes de
+// leer este archivo y, sin forzar, la segunda llamada devuelve lo cacheado y el .env raíz nunca se aplica
+// (el proxy iba a localhost:4000 aunque API_ORIGIN estuviera en el .env).
+loadEnvConfig(
+  path.resolve(__dirname, '../..'),
+  process.env.NODE_ENV !== 'production',
+  undefined,
+  true,
+);
 
 const apiOrigin = process.env.API_ORIGIN ?? 'http://localhost:4000';
 
