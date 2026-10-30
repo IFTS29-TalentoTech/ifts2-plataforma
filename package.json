@@ -24,7 +24,9 @@
     "postinstall": "prisma generate",
     "tokens": "node scripts/generate-tokens.mjs",
     "contrast": "node scripts/contrast.mjs",
-    "lint:styles": "node scripts/check-no-hardcoded-styles.mjs"
+    "lint:styles": "node scripts/check-no-hardcoded-styles.mjs",
+    "e2e": "node scripts/e2e.mjs",
+    "e2e:full": "node scripts/e2e.mjs --reset --build"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

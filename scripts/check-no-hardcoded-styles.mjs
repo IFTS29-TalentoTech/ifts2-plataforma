@@ -46,7 +46,7 @@ walk(root);
 //  - junto a un fondo claro (bg-primary*, bg-surface, bg-base, bg-accent-2) en la misma línea.
 // Además tailwind.config.ts debe seguir quitando el tamaño `base` del tema.
 const TEXT_BASE = /(^|[\s"'`:])text-base(?=[\s"'`]|$)/;
-const LIGHT_BG = /bg-(primary|primary-strong|surface|base|accent-2)/;
+const LIGHT_BG = /(^|[^\w-])bg-(primary|primary-strong|surface|base|accent-2)(?![\w-])/;
 const walkTextBase = (dir) => {
   for (const name of readdirSync(dir)) {
     const p = path.join(dir, name);

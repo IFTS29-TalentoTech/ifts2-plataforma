@@ -6,5 +6,5 @@ apps/api typecheck$ tsc --noEmit
 apps/web typecheck$ next typegen && tsc --noEmit
 apps/web typecheck: Generating route types...
 apps/web typecheck: ✓ Route types generated successfully
-apps/api typecheck: Done
 apps/web typecheck: Done
+apps/api typecheck: Done
