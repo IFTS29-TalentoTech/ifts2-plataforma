@@ -5,3 +5,4 @@ export * from './visibility';
 export * from './schemas';
 export * from './problem';
 export * from './instagram-guide';
+export * from './schemas-social';
