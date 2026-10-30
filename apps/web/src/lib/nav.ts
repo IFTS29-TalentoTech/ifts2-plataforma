@@ -34,6 +34,8 @@ export const PANEL_NAV: PanelNavItem[] = [
     permission: 'notices:manage',
     countKey: 'notices',
   },
+  // Mensajes de contacto (RF08, Should): solo ADMIN y BEDELIA (permiso `contact:read`). Ítem de panel-a.
+  { href: '/panel/mensajes', label: 'Mensajes', permission: 'contact:read' },
   { href: '/panel/horarios', label: 'Horarios', permission: 'schedules:manage' },
   { href: '/panel/archivo', label: 'Archivo', permission: 'documents:manage' },
   { href: '/panel/configuracion', label: 'Configuración', permission: 'settings:manage' },
