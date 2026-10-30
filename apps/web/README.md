@@ -36,4 +36,8 @@ if (await confirm({ title: '¿Eliminar el aviso?', tone: 'danger', confirmLabel:
 
 ## Cypress
 
-`pnpm test:e2e` (web levantada; `CYPRESS_BASE_URL` para otro puerto). Viewports 390 y 1440; el comando `cy.a11y()` corre axe (WCAG 2.2 AA, impactos serio/crítico). Specs: `smoke.cy.ts`, `ui-kit.cy.ts`.
+`pnpm test:e2e` (web levantada; `CYPRESS_BASE_URL` para otro puerto). Viewports 390 y 1440; el comando `cy.a11y()` corre axe (WCAG 2.2 AA, impactos serio/crítico). Specs: `smoke.cy.ts`, `ui-kit.cy.ts` y, para el sitio público, `e2e/public/*.cy.ts` (recorrido, estudiantes, novedades, contacto, degradación, capturas; ver `src/features/public/README.md`). Chrome: `--browser chrome --headless`.
+
+## Sitio público
+
+Implementado en `src/features/public/` (mapa de páginas, endpoints y decisiones en su README). `next.config.ts` lee el `.env` de la raíz con `forceReload` y autoriza el origen de la API para `next/image`. Cuidado con `text-base` (también es un color del tema).

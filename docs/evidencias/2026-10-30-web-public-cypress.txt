@@ -1,0 +1,396 @@
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        16.2.1                                                                         │
+  │ Browser:        Chrome 155 (headless)                                                          │
+  │ Node Version:   v24.15.0 (C:\Program Files\nodejs\node.exe)                                    │
+  │ Specs:          8 found (smoke.cy.ts, ui-kit.cy.ts, public/capturas.cy.ts, public/contacto.cy. │
+  │                 ts, public/degradacion.cy.ts, public/estudiantes.cy.ts, public/novedades.cy.ts │
+  │                 , public/recorrido.cy.ts)                                                      │
+  │ Searched:       cypress/e2e/**/*.cy.ts                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  smoke.cy.ts                                                                     (1 of 8)
+
+
+  Smoke: sitio público y panel (placeholders)
+    móvil 390
+      √ recorre las rutas públicas sin errores y sin violaciones de accesibilidad (4200ms)
+      √ el menú público separa Ingreso e Inscripciones y tiene Administración (315ms)
+      √ /panel sin sesión redirige al login (781ms)
+    escritorio 1440
+      √ recorre las rutas públicas sin errores y sin violaciones de accesibilidad (3913ms)
+      √ el menú público separa Ingreso e Inscripciones y tiene Administración (120ms)
+      √ /panel sin sesión redirige al login (308ms)
+
+
+  6 passing (10s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        6                                                                                │
+  │ Passing:      6                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     9 seconds                                                                        │
+  │ Spec Ran:     smoke.cy.ts                                                                      │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  ui-kit.cy.ts                                                                    (2 of 8)
+
+
+  Kit de UI
+    viewport 390
+      √ no tiene violaciones de accesibilidad serias (3058ms)
+      √ el diálogo de confirmación atrapa el foco, cierra con Escape y devuelve el foco (719ms)
+      √ el diálogo imperativo (useConfirm) resuelve con el botón elegido (422ms)
+    viewport 1440
+      √ no tiene violaciones de accesibilidad serias (1672ms)
+      √ el diálogo de confirmación atrapa el foco, cierra con Escape y devuelve el foco (943ms)
+      √ el diálogo imperativo (useConfirm) resuelve con el botón elegido (457ms)
+
+
+  6 passing (8s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        6                                                                                │
+  │ Passing:      6                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  2                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     7 seconds                                                                        │
+  │ Spec Ran:     ui-kit.cy.ts                                                                     │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (390x2756)
+     b\cypress\screenshots\ui-kit.cy.ts\ui-kit-390.png                                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we    (1440x1718)
+     b\cypress\screenshots\ui-kit.cy.ts\ui-kit-1440.png                                             
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/capturas.cy.ts                                                           (3 of 8)
+
+
+  Capturas del sitio público
+    √ inicio 1440 (1702ms)
+    √ institucional 1440 (1301ms)
+    √ la-carrera 1440 (712ms)
+    √ estudiantes 1440 (1477ms)
+    √ ingreso 1440 (1022ms)
+    √ inscripciones 1440 (1219ms)
+    √ novedades 1440 (631ms)
+    √ inicio 390 (1370ms)
+    √ institucional 390 (1063ms)
+    √ la-carrera 390 (678ms)
+    √ estudiantes 390 (1116ms)
+    √ ingreso 390 (686ms)
+    √ inscripciones 390 (732ms)
+    √ novedades 390 (873ms)
+    √ menú móvil abierto (579ms)
+
+
+  15 passing (16s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        15                                                                               │
+  │ Passing:      15                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  15                                                                               │
+  │ Video:        false                                                                            │
+  │ Duration:     15 seconds                                                                       │
+  │ Spec Ran:     public/capturas.cy.ts                                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we    (1440x1729)
+     b\cypress\screenshots\public\capturas.cy.ts\inicio-1440.png                                    
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we    (1440x1594)
+     b\cypress\screenshots\public\capturas.cy.ts\institucional-1440.png                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (1440x900)
+     b\cypress\screenshots\public\capturas.cy.ts\la-carrera-1440.png                                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we    (1440x1703)
+     b\cypress\screenshots\public\capturas.cy.ts\estudiantes-1440.png                               
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we    (1440x1016)
+     b\cypress\screenshots\public\capturas.cy.ts\ingreso-1440.png                                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we    (1440x1261)
+     b\cypress\screenshots\public\capturas.cy.ts\inscripciones-1440.png                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (1440x900)
+     b\cypress\screenshots\public\capturas.cy.ts\novedades-1440.png                                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (390x3049)
+     b\cypress\screenshots\public\capturas.cy.ts\inicio-390.png                                     
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (390x2519)
+     b\cypress\screenshots\public\capturas.cy.ts\institucional-390.png                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (390x1268)
+     b\cypress\screenshots\public\capturas.cy.ts\la-carrera-390.png                                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (390x2498)
+     b\cypress\screenshots\public\capturas.cy.ts\estudiantes-390.png                                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (390x1302)
+     b\cypress\screenshots\public\capturas.cy.ts\ingreso-390.png                                    
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (390x1389)
+     b\cypress\screenshots\public\capturas.cy.ts\inscripciones-390.png                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we     (390x1421)
+     b\cypress\screenshots\public\capturas.cy.ts\novedades-390.png                                  
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-wt-public\apps\we      (390x844)
+     b\cypress\screenshots\public\capturas.cy.ts\menu-movil-390.png                                 
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/contacto.cy.ts                                                           (4 of 8)
+
+
+  Contacto (390 px)
+    √ el consentimiento es obligatorio y no se envía sin él (2828ms)
+    √ valida campos vacíos con mensajes claros (522ms)
+    √ envía con consentimiento y muestra la confirmación (1152ms)
+    √ muestra un error claro si el servidor falla y conserva el texto (1002ms)
+    √ informa el límite de frecuencia (429) (938ms)
+    √ el campo señuelo no es accesible para personas (200ms)
+
+  Contacto (1440 px)
+    √ el consentimiento es obligatorio y no se envía sin él (931ms)
+    √ valida campos vacíos con mensajes claros (314ms)
+    √ envía con consentimiento y muestra la confirmación (1044ms)
+    √ muestra un error claro si el servidor falla y conserva el texto (957ms)
+    √ informa el límite de frecuencia (429) (945ms)
+    √ el campo señuelo no es accesible para personas (173ms)
+
+  Contacto contra la API real
+    √ guarda el mensaje (201) (1362ms)
+
+
+  13 passing (13s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        13                                                                               │
+  │ Passing:      13                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     13 seconds                                                                       │
+  │ Spec Ran:     public/contacto.cy.ts                                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/degradacion.cy.ts                                                        (5 of 8)
+
+
+  Degradación sin API
+    - / muestra su h1 y no se rompe
+    - /institucional muestra su h1 y no se rompe
+    - /la-carrera muestra su h1 y no se rompe
+    - /estudiantes muestra su h1 y no se rompe
+    - /ingreso muestra su h1 y no se rompe
+    - /inscripciones muestra su h1 y no se rompe
+    - /novedades muestra su h1 y no se rompe
+    - Estudiantes explica el problema en lenguaje claro
+
+
+  0 passing (58ms)
+  8 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        8                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      8                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     public/degradacion.cy.ts                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/estudiantes.cy.ts                                                        (6 of 8)
+
+
+  Estudiantes e Ingreso (390 px)
+    √ muestra solo el ciclo público vigente y la nota del archivo (724ms)
+    √ lista horarios por comisión con descarga y llamados con fechas (343ms)
+    √ los avisos urgentes van primero y los destacados se resaltan (113ms)
+    √ los enlaces de interés abren en pestaña nueva con rel seguro (104ms)
+    √ Inscripciones muestra los llamados con inscripción abierta (172ms)
+    √ Ingreso separa convocatoria y tres pasos (217ms)
+
+  Estudiantes e Ingreso (1440 px)
+    √ muestra solo el ciclo público vigente y la nota del archivo (120ms)
+    √ lista horarios por comisión con descarga y llamados con fechas (161ms)
+    √ los avisos urgentes van primero y los destacados se resaltan (156ms)
+    √ los enlaces de interés abren en pestaña nueva con rel seguro (165ms)
+    √ Inscripciones muestra los llamados con inscripción abierta (181ms)
+    √ Ingreso separa convocatoria y tres pasos (111ms)
+
+
+  12 passing (3s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        12                                                                               │
+  │ Passing:      12                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     3 seconds                                                                        │
+  │ Spec Ran:     public/estudiantes.cy.ts                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/novedades.cy.ts                                                          (7 of 8)
+
+
+  Novedades (390 px)
+    √ lista tarjetas y filtra por categoría (1124ms)
+    √ filtra por año y muestra el estado vacío con salida (1178ms)
+    √ vista de archivo (470ms)
+    √ abre el detalle y vuelve (1385ms)
+    √ un id inexistente muestra un 404 amable (536ms)
+    √ ignora parámetros inválidos sin romperse (169ms)
+
+  Novedades (1440 px)
+    √ lista tarjetas y filtra por categoría (696ms)
+    √ filtra por año y muestra el estado vacío con salida (454ms)
+    √ vista de archivo (329ms)
+    √ abre el detalle y vuelve (776ms)
+    √ un id inexistente muestra un 404 amable (754ms)
+    √ ignora parámetros inválidos sin romperse (110ms)
+
+
+  12 passing (9s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        12                                                                               │
+  │ Passing:      12                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     8 seconds                                                                        │
+  │ Spec Ran:     public/novedades.cy.ts                                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/recorrido.cy.ts                                                          (8 of 8)
+
+
+  Recorrido público (móvil 390)
+    √ /: un h1, landmarks, sin desborde y accesible (1364ms)
+    √ /institucional: un h1, landmarks, sin desborde y accesible (573ms)
+    √ /la-carrera: un h1, landmarks, sin desborde y accesible (578ms)
+    √ /estudiantes: un h1, landmarks, sin desborde y accesible (581ms)
+    √ /ingreso: un h1, landmarks, sin desborde y accesible (508ms)
+    √ /inscripciones: un h1, landmarks, sin desborde y accesible (568ms)
+    √ /novedades: un h1, landmarks, sin desborde y accesible (631ms)
+    √ el contenido viene de la API (frase ancla y pie, sin textos fijos) (324ms)
+    √ el menú hamburguesa se abre, expone el estado y navega (495ms)
+
+  Recorrido público (escritorio 1440)
+    √ /: un h1, landmarks, sin desborde y accesible (545ms)
+    √ /institucional: un h1, landmarks, sin desborde y accesible (425ms)
+    √ /la-carrera: un h1, landmarks, sin desborde y accesible (570ms)
+    √ /estudiantes: un h1, landmarks, sin desborde y accesible (617ms)
+    √ /ingreso: un h1, landmarks, sin desborde y accesible (524ms)
+    √ /inscripciones: un h1, landmarks, sin desborde y accesible (530ms)
+    √ /novedades: un h1, landmarks, sin desborde y accesible (588ms)
+    √ el contenido viene de la API (frase ancla y pie, sin textos fijos) (120ms)
+
+
+  17 passing (10s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        17                                                                               │
+  │ Passing:      17                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     10 seconds                                                                       │
+  │ Spec Ran:     public/recorrido.cy.ts                                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ √  smoke.cy.ts                              00:09        6        6        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ √  ui-kit.cy.ts                             00:07        6        6        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ √  public/capturas.cy.ts                    00:15       15       15        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ √  public/contacto.cy.ts                    00:13       13       13        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ √  public/degradacion.cy.ts                  67ms        8        -        -        8        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ √  public/estudiantes.cy.ts                 00:03       12       12        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ √  public/novedades.cy.ts                   00:08       12       12        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ √  public/recorrido.cy.ts                   00:10       17       17        -        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    √  All specs passed!                        01:08       89       81        -        8        -  
+

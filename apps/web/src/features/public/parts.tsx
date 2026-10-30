@@ -46,7 +46,7 @@ export function PageHero({
           {eyebrow && (
             <p className="text-xs font-semibold uppercase tracking-wider text-surface">{eyebrow}</p>
           )}
-          <h1 className="mt-2 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
+          <h1 className="mt-2 break-words font-display text-3xl font-extrabold leading-tight sm:text-4xl">
             {title}
           </h1>
           {description && <div className="mt-4 text-lg text-surface">{description}</div>}

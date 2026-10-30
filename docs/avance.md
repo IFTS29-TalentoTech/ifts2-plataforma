@@ -4,6 +4,16 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-10-30 · Sitio público (agente web público, rama `feat/web-public`)
+
+**Qué se hizo.** Páginas `/`, `/institucional` (con formulario de contacto), `/la-carrera`, `/estudiantes`, `/ingreso`, `/inscripciones`, `/novedades` y `/novedades/[id]` con datos de `/public/*`, ISR de 60 s y degradación sin romperse si la API falla. Código en `apps/web/src/features/public/` (README con mapa páginas -> endpoints -> componentes). Specs Cypress en `apps/web/cypress/e2e/public/` (recorrido 390/1440 con axe, Estudiantes/Inscripciones/Ingreso, Novedades, Contacto E2E-14, degradación, capturas). Capturas en `docs/capturas/publico/` (15). Lighthouse móvil en `docs/evidencias/2026-10-30-web-public-lighthouse.md` (Inicio: rendimiento 93, accesibilidad 100).
+
+**Decisiones.** Contacto dentro de Institucional; Ingreso (aspirantes: convocatoria y pasos desde la sección `ingreso`) separado de Inscripciones (alumnos: llamados con `enrollmentOpen` y enlace a SIU); renderizador Markdown propio que escapa HTML; hero con `primary-strong` por contraste AA; filtros de Novedades como formulario GET que funciona sin JavaScript. Preguntas Q60 a Q65.
+
+**Dificultades.** (1) `next.config.ts` nunca leía el `.env` de la raíz (Next ya había cacheado el entorno): con puertos propios la web llamaba a la API en 4000; se corrigió con `forceReload`. (2) `text-base` es a la vez tamaño y color en este tema: botones `size="lg"` y textos quedaban casi invisibles; se evitó y se documentó. (3) Next exige `revalidate` como literal. (4) La 404 del detalle devuelve 404 real en producción. (5) Dos servidores no pueden compartir `.next`.
+
+**Pendiente.** Fotos, galería, plan por año y documentos públicos de ingreso (Q61 a Q63); prueba de carga k6 del sitio; barra inferior móvil del Figma (Q65).
+
 ### 2026-10-29 · Bloque académico de la API (agente académico, rama `feat/academic`)
 
 **Qué se hizo.** Diez módulos de API bajo `apps/api/src/modules/`, cada uno con su `README.md`: `notices`, `terms`, `schedules`, `exam-calls`, `documents`, `settings`, `content`, `links`, `contact` y `public` (solo lectura, sin sesión). Contrato de respuestas tipado en `packages/shared/src/academic.ts` (una línea nueva en `index.ts`); no se tocó `prisma/schema.prisma`. Utilidades en `src/lib/` (`documents`, `settings`, `markdown`). Documentación al día: `docs/specs/04-api.md` (sección "Bloque académico"), `docs/specs/09-preguntas-abiertas.md` (Q40 a Q47), `docs/ARQUITECTURA.md` y `apps/api/README.md`.

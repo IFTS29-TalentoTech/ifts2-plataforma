@@ -66,3 +66,14 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q46 | Frecuencia del contacto | 5 envíos por hora por IP + campo señuelo (sin captcha externo) | RNF08 |
 | Q47 | `GET /public/publications` con `archived=true` sin `year` | Usa el año en curso (hora de Buenos Aires); la "fecha" de una publicación es `visibleFrom` o, si no tiene, `createdAt` | RF03 |
 
+## Agregadas por el agente del sitio público (rama `feat/web-public`)
+
+| # | Pregunta | Decisión provisoria | Afecta |
+|---|---|---|---|
+| Q60 | Contacto, Inscripciones y avisos de aspirantes no tienen diseño en el Figma | Contacto como sección `#contacto` de `/institucional` (formulario con aviso de datos, consentimiento y señuelo); `/inscripciones` e `/ingreso` armadas con las tarjetas del kit. Validar con el cliente | RF08 / Q20 |
+| Q61 | Plan por año, correlatividades y requisitos/fechas de ingreso no están cargados (la semilla los marca `[completar]` / `[provisorio]`) | Las páginas muestran lo que cargue el panel como secciones de contenido; los marcadores se ven tal cual en demo. Cargar el contenido real antes de publicar | 08-contenido |
+| Q62 | "Material de consulta" de Ingreso pide documentos públicos descargables y no existe endpoint para ellos | Se muestra como sección de contenido; falta decidir si `/public/content/ingreso` lleva archivos o se crea `/public/documents` | RF02 |
+| Q63 | Fotografías del hero, de La carrera y "Vida en la cocina" (galería) | No se incluyen: requieren imágenes provistas y consentimiento (RNF08); la galería es RF09 (Could) | RNF08 |
+| Q64 | El titular de Inicio usa la frase ancla completa (`tagline`) y el Figma una frase más corta ("Formamos emprendedores gastronómicos") | Se usa `tagline`; si el cliente quiere un titular distinto hace falta un ajuste nuevo en `SiteSetting` | ADR-22 |
+| Q65 | Menú móvil: el Figma muestra una barra inferior de navegación | Se mantiene el menú hamburguesa del layout compartido (accesible) | RNF04 |
+
