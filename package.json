@@ -29,7 +29,10 @@
     "e2e:full": "node scripts/e2e.mjs --reset --build",
     "load": "node scripts/load/public-load.mjs",
     "lighthouse": "node scripts/load/lighthouse.mjs",
-    "verify": "node scripts/verify-flows.mjs"
+    "verify": "node scripts/verify-flows.mjs",
+    "docs:der": "node scripts/docs/prisma-to-docs.mjs",
+    "docs:pdf": "node scripts/docs/build-entrega.mjs",
+    "package": "node scripts/package.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -42,6 +45,8 @@
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
+    "marked": "^18.1.2",
+    "mermaid": "^12.2.0",
     "prettier": "^3.9.10",
     "prisma": "^6.19.3",
     "tsx": "^4.23.15",

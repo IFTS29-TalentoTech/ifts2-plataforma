@@ -18,3 +18,5 @@ __pycache__/
 next-env.d.ts
 .vitest-cache/
 .e2e-logs/
+dist-entrega/
+docs/entrega/.build.html
