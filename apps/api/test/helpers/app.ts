@@ -28,7 +28,8 @@ export async function createTestApp(
   const instagram = new FakeInstagramClient();
   const { useRealIntegrationResolution, ...rest } = overrides;
   const app = await createApp({
-    config: loadConfig(process.env),
+    // REVALIDATE_SECRET vacío: las pruebas nunca avisan a una web real (revalidación bajo demanda).
+    config: loadConfig({ ...process.env, REVALIDATE_SECRET: '' }),
     prisma: testPrisma,
     storage,
     ...(useRealIntegrationResolution ? {} : { mailer, instagramClient: instagram }),

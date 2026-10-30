@@ -14,3 +14,5 @@ process.env.MAILER_PROVIDER = 'console';
 process.env.INSTAGRAM_PROVIDER = 'fake';
 process.env.APP_ENCRYPTION_KEY ??= 'ZGV2LW9ubHktZXhhbXBsZS1rZXktMzItYnl0ZXMhISE=';
 process.env.LOG_LEVEL = 'silent';
+// Las pruebas nunca deben avisarle a una web real (revalidación bajo demanda): se prueba con un fetch simulado.
+delete process.env.REVALIDATE_SECRET;

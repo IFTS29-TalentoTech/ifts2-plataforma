@@ -88,6 +88,7 @@ flowchart LR
 
 ### Bloque académico (avisos, ciclos, horarios, llamados, archivo, ajustes y sitio público)
 
+- **Revalidación bajo demanda:** el middleware `apps/api/src/middleware/revalidate-web.ts` avisa a la web (`POST {APP_ORIGIN}/api/revalidate`, secreto `REVALIDATE_SECRET`) tras cada mutación exitosa del panel; la ruta `apps/web/src/app/api/revalidate/route.ts` invalida las etiquetas `public` y `settings` de la caché ISR. Así un cambio se ve al instante y el sitio conserva la caché de 60 s para el resto de las visitas (RNF05/RNF09). Es "dispara y olvida": si la web no responde no pasa nada.
 - `public` solo lee y aplica la vigencia en dos capas (filtro SQL + funciones de `@ifts2/shared`); responde con `Cache-Control` corto + `stale-while-revalidate` (RNF09).
 - `documents` es el único dueño de los archivos: avisos, horarios y llamados solo guardan `documentId`; la clave de almacenamiento no sale de la API y la descarga es por URL firmada.
 - `terms` garantiza un único ciclo público (índice parcial + transacción); `schedules`/`exam-calls` solo se ven si su ciclo es el público.

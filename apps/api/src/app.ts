@@ -22,6 +22,7 @@ import { createStorage, type StorageProvider } from './infra/storage';
 import { attachAuth } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { originCheck } from './middleware/origin';
+import { revalidateWeb } from './middleware/revalidate-web';
 import { createLimiters } from './middleware/rate-limit';
 import { loadModules } from './routes';
 import healthRouter from './modules/health/router';
@@ -99,6 +100,7 @@ export async function createApp(opts: CreateAppOptions = {}): Promise<Express> {
   });
   app.use(originCheck);
   app.use(attachAuth);
+  app.use(revalidateWeb); // avisa a la web para refrescar el sitio público tras cada cambio del panel
 
   app.use('/health', healthRouter);
 
