@@ -4,6 +4,25 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-10-29 · Bloque académico de la API (agente académico, rama `feat/academic`)
+
+**Qué se hizo.** Diez módulos de API bajo `apps/api/src/modules/`, cada uno con su `README.md`: `notices`, `terms`, `schedules`, `exam-calls`, `documents`, `settings`, `content`, `links`, `contact` y `public` (solo lectura, sin sesión). Contrato de respuestas tipado en `packages/shared/src/academic.ts` (una línea nueva en `index.ts`); no se tocó `prisma/schema.prisma`. Utilidades en `src/lib/` (`documents`, `settings`, `markdown`). Documentación al día: `docs/specs/04-api.md` (sección "Bloque académico"), `docs/specs/09-preguntas-abiertas.md` (Q40 a Q47), `docs/ARQUITECTURA.md` y `apps/api/README.md`.
+
+**Verificación.** `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde: 37 pruebas en `shared` y 204 en `api` (125 nuevas: avisos, ciclos, horarios, llamados, documentos con subida real, ajustes, contenido, enlaces, contacto, `/public/*` con reloj fijo en los bordes de vigencia, lógica pura de `public-current` y sanitización de Markdown). Salidas en `docs/evidencias/2026-10-29-academic-*.txt`.
+
+**Decisiones.**
+
+- `EXPIRED` de un aviso nunca se guarda: `viewStatus` se calcula (PAUSED gana sobre EXPIRED). Reactivar un vencido exige una nueva fecha de fin.
+- `public` aplica la vigencia en dos capas: filtro SQL y verificación con las funciones de `@ifts2/shared`. Caché HTTP corta con `stale-while-revalidate`; archivos con URL firmada de 30 minutos (más larga que la caché) y `downloadUrl: null` si el almacenamiento falla.
+- Un único ciclo público: índice parcial de la migración + transacción (apaga el anterior y enciende el nuevo) + función pura `planPublicTermChange` con pruebas unitarias.
+- Borrado de documentos: se bloquea ante cualquier referencia (la clave foránea es `SET NULL`). Archivar con `force` deja el adjunto enlazado.
+- Contacto: honeypot + 5 envíos por hora por IP; el mensaje se guarda siempre antes de intentar el correo.
+- El módulo `contact` se monta en la raíz de la API (`mountPath: '/'`) porque expone `/public/contact` y `/contact-messages`.
+
+**Dificultades.** `Document` no tiene relación inversa con "visible": se calculó con las funciones de vigencia en `findReferences`. Las sesiones de las pruebas con reloj falso vencen: hay que iniciar sesión después de fijar la hora. La heredoc de Git Bash falló con ciertos caracteres, por eso algunos archivos se escribieron con la herramienta de archivos.
+
+**Pendiente / para el equipo.** Renderizador de Markdown en la web (la API entrega Markdown ya sanitizado). Revisar la matriz `PERMISSIONS` (`contact:delete` para BEDELIA, Q41). Prueba de carga k6 de `/public/*` (RNF09) y, si hace falta, una caché en memoria por proceso. Pantallas web que consuman los DTO.
+
 ### 2026-10-29 · Fundación técnica (agente de fundación)
 
 **Monorepo y herramientas.** pnpm workspaces (`apps/api`, `apps/web`, `packages/shared`), TypeScript estricto, ESLint + Prettier, scripts raíz (`dev`, `build`, `lint`, `typecheck`, `test`, `test:api`, `test:e2e`, `db:*`, `tokens`, `contrast`). `docker-compose.yml` con `ifts2-db` (postgres:17, puerto 5433, bases `ifts2` e `ifts2_test`). `.env.example` completo y `.env` local. CI en `.github/workflows/ci.yml` (lint, tipos, pruebas con PostgreSQL de servicio, build, Cypress), sin secretos.

@@ -105,3 +105,27 @@ La configuración la carga el cliente desde el panel y se guarda cifrada (ADR-20
 **Autenticación (implementado):** `GET /auth/me` devuelve además `mustChangePassword` y `permissions`; con `mustChangePassword` toda otra ruta responde 403 con `reason: "password-change-required"`.
 
 **Configuración pública (contrato para el agente de `/public/*`):** `GET /public/settings` debe devolver un objeto plano con las claves de `SETTING_KEYS` (`institution_name`, `institution_short`, `institution_subtitle`, `footer_text`, `address`, `phone`, `email_*`, `instagram_url`, `facebook_url`, `tagline`...), que la web usa para cabecera y pie (ADR-22).
+
+## Bloque académico (implementado en `feat/academic`)
+
+Los tipos exactos de cada respuesta están en `packages/shared/src/academic.ts` (`NoticeDto`, `TermDto`, `ScheduleDto`, `ExamCallDto`, `DocumentDto`, `Public*Dto`...). Resumen del contrato; cada módulo tiene su `README.md` en `apps/api/src/modules/<m>/`.
+
+**Convenciones.** Fechas ISO 8601 UTC. Listados paginados `{ items, page, pageSize, total }` (`/terms` usa `pageSize` 50 por defecto; `/links` devuelve `{ items, total }` sin paginar). Errores Problem Details con `errors` por campo. Lo no vigente se calcula al consultar; nada se elimina solo.
+
+**Avisos** — `NoticeDto`: `{ id, title, body, categoryId, category: {id,name}|null, audience, urgent, highlighted, status: 'ACTIVE'|'PAUSED', viewStatus: 'ACTIVE'|'PAUSED'|'EXPIRED', visibleNow, visibleFrom, visibleUntil|null, attachmentId, attachment: DocumentRefDto|null, authorId, createdAt, updatedAt }`. `GET /notices?status=ACTIVE|PAUSED|EXPIRED|ALL(default)&audience=&page=&pageSize=` (urgentes primero). `POST /notices/:id/resume` acepta `{ visibleUntil? }` (obligatorio si el aviso venció). `DELETE` solo pausado o vencido (409 si vigente o programado).
+
+**Ciclos** — `TermDto`: `{ id, year, kind, label: "2026 · 2.º cuatrimestre", startsOn, endsOn, publicCurrent, counts: { schedules, examCalls } }`. `PATCH /terms/:id` (solo fechas). `PUT /terms/:id/public-current` (ADMIN) devuelve el `TermDto` ya público; idempotente.
+
+**Horarios** — `ScheduleDto`: `{ id, termId, term: TermRefDto, commissionName, documentId, document: DocumentRefDto|null, notes, published, visibleNow, updatedBy, updatedAt }`. Publicar exige archivo (422). `DELETE` 409 si hoy se muestra.
+
+**Llamados** — `ExamCallDto`: `{ id, termId, term, name, startsOn, endsOn, enrollmentOpen, highlighted, documentId, document, notes, published, visibleNow, updatedBy, updatedAt }`.
+
+**Documentos** — `DocumentDto`: `{ id, title, filename, kind, category, cycleYear, termLabel, resolutionCode, mimeType, sizeBytes, status, archivedAt, restoredAt, uploadedBy, createdAt, usage: { notices, schedules, examCalls } }` (sin clave de almacenamiento). `GET /documents/:id` agrega `references: [{ type: 'notice'|'schedule'|'examCall', id, label, visible }]` y `visibleReferences`. `GET /documents/:id/file` -> `{ url, filename, mimeType }`. `POST /documents/:id/archive` con contenido visible adjunto responde 409 `{ ..., requiresConfirmation: true, references }`; reintentar con `{ "force": true }`. `DELETE` solo archivado y sin ninguna referencia.
+
+**Ajustes** — `GET /settings` -> objeto plano con todas las claves (`null` si falta; `exam_enrollment_open` booleano). `PUT /settings` (ADMIN) parcial, devuelve el objeto completo.
+
+**Contenido** — `GET /content/:page` -> `{ page, items: ContentSectionDto[] }`; `PUT /content/:page/:slug` (201 crea, 200 reemplaza); `DELETE` solo secciones ocultas. **Enlaces** — `LinkDto`: `{ id, title, url, description, group, order, visible }`; `DELETE` solo ocultos; un enlace `*.invalid` no puede mostrarse (422).
+
+**Contacto** — `POST /public/contact` -> 201 `{ received: true }` (campo señuelo `website`; 5 envíos/hora por IP). Panel: `GET /contact-messages?status=&q=`, `PATCH /contact-messages/:id` `{ status }`, `DELETE` (ADMIN, solo respondidos).
+
+**Público** — formas completas en `PublicHomeDto`, `PublicPublicationsDto`, `PublicPublicationDetailDto`, `PublicStudentsDto`, `PublicContentDto`, `PublicSettingsDto`. Cabecera `Cache-Control: public, max-age=20, s-maxage=30, stale-while-revalidate=30` (ajustes y contenido: 30/60/60). Los archivos llevan `downloadUrl` firmado (vigencia 30 min) o `null` si el almacenamiento falla.

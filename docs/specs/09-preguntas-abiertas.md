@@ -52,3 +52,17 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q27 | Los roles (Rectoría / Dirección, Bedelía Académica, Comunicación) están escritos como etiquetas de producto en `ROLE_LABELS`; para otra institución habría que llevarlos a configuración | Se deja así en el MVP | ADR-22 |
 | Q28 | El cierre de sesión por inactividad no está definido | Sesión de 8 h fijas (14 días con "recordar"), sin renovación deslizante | RNF06 |
 | Q29 | El rate limit está en memoria: con más de una instancia de la API los contadores no se comparten | Aceptado para una instancia; DevOps decide un store compartido si se escala | ADR-15 |
+
+## Agregadas por el agente académico (rama `feat/academic`)
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q40 | `DELETE /content/:page/:slug` "solo secciones no estáticas" (04-api): ¿qué es una sección estática? | Se pueden eliminar solo las secciones ocultas (`visible=false`); las visibles se ocultan primero | RF01 |
+| Q41 | La matriz `PERMISSIONS` da `contact:delete` a BEDELIA, pero el encargo y 04-api indican que borra mensajes solo ADMIN | `DELETE /contact-messages/:id` exige rol ADMIN y mensaje ya respondido; revisar la matriz | RF08 |
+| Q42 | Eliminar un documento: el encargo habla de "referenciado por vigentes"; la regla 8 de 01-requerimientos dice "referenciado" | Se bloquea ante CUALQUIER referencia de aviso, horario o llamado (la FK es SET NULL y se perderían adjuntos en silencio) | RF03 |
+| Q43 | Publicar un horario sin archivo adjunto | 422: un horario sin grilla no tiene qué mostrar | RF06 |
+| Q44 | El hashtag vive en `SiteSetting.instagram_hashtag` y también en la configuración de Instagram (`/integrations/instagram`) | Son valores independientes; unificar al conectar la sincronización real | RF04 |
+| Q45 | Archivar con `force` un documento adjunto a contenido visible | El adjunto sigue enlazado y descargable (no se rompe lo visible); solo sale del Archivo activo | RF03 |
+| Q46 | Frecuencia del contacto | 5 envíos por hora por IP + campo señuelo (sin captcha externo) | RNF08 |
+| Q47 | `GET /public/publications` con `archived=true` sin `year` | Usa el año en curso (hora de Buenos Aires); la "fecha" de una publicación es `visibleFrom` o, si no tiene, `createdAt` | RF03 |
+
