@@ -39,6 +39,26 @@ const config: NextConfig = {
   poweredByHeader: false,
   // El navegador habla con `/api/v1/*` en el mismo origen que la web: la cookie de sesión es de primer
   // nivel y no hace falta CORS. Next reenvía a la API.
+  // Cabeceras de seguridad de la web (RNF06). La CSP es deliberadamente acotada (sin script-src): Next inyecta
+  // scripts en línea y una CSP estricta pediría nonces por pedido, que impedirían cachear las páginas (RNF09).
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'",
+          },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return {
       // /novedades con filtros o paginación se atiende con la variante renderizada por pedido
