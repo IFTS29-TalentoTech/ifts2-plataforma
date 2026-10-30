@@ -159,7 +159,7 @@ Arquitectura **cliente–servidor en capas, modular**, con **API REST separada**
 - **Servicios externos detrás de interfaces** (almacenamiento, correo, Instagram): cambiar de proveedor es configuración, no código.
 
 ```mermaid
-flowchart TB
+flowchart LR
   subgraph Navegador
     B[Visitante / personal del instituto]
   end
@@ -221,7 +221,7 @@ sequenceDiagram
   A->>P: transacción: crear aviso + AuditLog
   A-->>W: 201 JSON (o Problem Details)
   A--)W: POST /api/revalidate (dispara y olvida)
-  W-->>N: respuesta; el sitio público se refresca al instante
+  W-->>N: respuesta (el sitio público se refresca al instante)
 ```
 
 1. El navegador llama a `/api/v1/...` en el origen de la web; Next lo reenvía a la API, así la cookie de sesión es de primer nivel y no hace falta CORS entre dominios.

@@ -1,0 +1,1111 @@
+(node:8188) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+npm warn Unknown user config "git-url-prefix". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        16.2.1                                                                         │
+  │ Browser:        Electron 146 (headless) (deprecated)                                           │
+  │ Node Version:   v24.15.0 (C:\Program Files\nodejs\node.exe)                                    │
+  │ Specs:          19 found (smoke.cy.ts, ui-kit.cy.ts, panel-a/avisos.cy.ts, panel-a/capturas-cr │
+  │                 ud.cy.ts, panel-a/capturas.cy.ts, panel-a/login.cy.ts, panel-a/publicaciones.c │
+  │                 y.ts, panel-a/roles-mensajes.cy.ts, panel-b/capturas-manual.cy.ts, panel-b/e2e │
+  │                 -08-horarios.cy.ts, pan...)                                                    │
+  │ Searched:       cypress/e2e/**/*.cy.ts                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Warning: The Electron browser is deprecated as a test browser and will be removed in a future version of Cypress.
+
+Switch to Chrome or another installed browser to avoid a breaking change when you upgrade.
+
+Read more about supported browsers: https://on.cypress.io/launching-browsers
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  smoke.cy.ts                                                                    (1 of 19)
+
+
+  Smoke: sitio público y panel (placeholders)
+    móvil 390
+      √ recorre las rutas públicas sin errores y sin violaciones de accesibilidad (4335ms)
+      √ el menú público separa Ingreso e Inscripciones y tiene Administración (268ms)
+      √ /panel sin sesión redirige al login (612ms)
+    escritorio 1440
+      √ recorre las rutas públicas sin errores y sin violaciones de accesibilidad (4471ms)
+      √ el menú público separa Ingreso e Inscripciones y tiene Administración (125ms)
+      √ /panel sin sesión redirige al login (389ms)
+
+
+  6 passing (11s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        6                                                                                │
+  │ Passing:      6                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     10 seconds                                                                       │
+  │ Spec Ran:     smoke.cy.ts                                                                      │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  ui-kit.cy.ts                                                                   (2 of 19)
+
+
+  Kit de UI
+    viewport 390
+      √ no tiene violaciones de accesibilidad serias (3006ms)
+      √ el diálogo de confirmación atrapa el foco, cierra con Escape y devuelve el foco (707ms)
+      √ el diálogo imperativo (useConfirm) resuelve con el botón elegido (323ms)
+    viewport 1440
+      √ no tiene violaciones de accesibilidad serias (1751ms)
+      √ el diálogo de confirmación atrapa el foco, cierra con Escape y devuelve el foco (597ms)
+      √ el diálogo imperativo (useConfirm) resuelve con el botón elegido (311ms)
+
+
+  6 passing (7s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        6                                                                                │
+  │ Passing:      6                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  2                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     6 seconds                                                                        │
+  │ Spec Ran:     ui-kit.cy.ts                                                                     │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2756)
+     eb\cypress\screenshots\ui-kit.cy.ts\ui-kit-390.png                                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1718)
+     eb\cypress\screenshots\ui-kit.cy.ts\ui-kit-1440.png                                            
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-a/avisos.cy.ts                                                           (3 of 19)
+
+
+  Avisos académicos · 390px
+    √ E2E-06: crea un aviso con adjunto y vigencia; se ve en Estudiantes (3598ms)
+    √ E2E-15: un archivo de tipo no permitido muestra un error claro (1272ms)
+    √ E2E-06: un aviso vencido no se ve en el sitio pero queda en el panel y se reactiva (1432ms)
+    √ E2E-07: pausar y reanudar un aviso (1228ms)
+    √ E2E-16: CRUD completo; el vigente no se elimina y el vencido sí, con confirmación (2008ms)
+    √ E2E-16: un aviso vigente no ofrece "Eliminar" en la lista (397ms)
+    √ E2E-17: validaciones en línea con mensajes claros (2058ms)
+    √ E2E-13: teclado y foco en los diálogos de Avisos (633ms)
+
+  Avisos académicos · 1440px
+    √ E2E-06: crea un aviso con adjunto y vigencia; se ve en Estudiantes (3023ms)
+    √ E2E-15: un archivo de tipo no permitido muestra un error claro (1330ms)
+    √ E2E-06: un aviso vencido no se ve en el sitio pero queda en el panel y se reactiva (1509ms)
+    √ E2E-07: pausar y reanudar un aviso (1748ms)
+    √ E2E-16: CRUD completo; el vigente no se elimina y el vencido sí, con confirmación (2076ms)
+    √ E2E-16: un aviso vigente no ofrece "Eliminar" en la lista (516ms)
+    √ E2E-17: validaciones en línea con mensajes claros (2644ms)
+    √ E2E-13: teclado y foco en los diálogos de Avisos (743ms)
+
+
+  16 passing (28s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        16                                                                               │
+  │ Passing:      16                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     28 seconds                                                                       │
+  │ Spec Ran:     panel-a/avisos.cy.ts                                                             │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-a/capturas-crud.cy.ts                                                    (4 of 19)
+
+
+  CRUD con la interfaz real · 1440px
+    √ Avisos: crear, leer, actualizar y eliminar (con confirmación) (6267ms)
+    √ Publicaciones propias: crear, leer, actualizar y eliminar (con confirmación) (4796ms)
+    √ Documentos: crear, leer, actualizar (restaurar) y eliminar definitivamente (con confirmación) (6500ms)
+    √ Usuarios: crear, leer, actualizar el rol y desactivar (con confirmación) (6737ms)
+
+
+  4 passing (24s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        4                                                                                │
+  │ Passing:      4                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  18                                                                               │
+  │ Video:        false                                                                            │
+  │ Duration:     24 seconds                                                                       │
+  │ Spec Ran:     panel-a/capturas-crud.cy.ts                                                      │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-avisos-1-crear-1440.png                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-avisos-2-leer-1440.png                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-avisos-3-actualizar-1440               
+     .png                                                                                           
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-avisos-4-eliminar-confir               
+     mar-1440.png                                                                                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-pub-1-crear-1440.png                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-pub-2-leer-1440.png                    
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-pub-3-actualizar-1440.pn               
+     g                                                                                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-pub-4-eliminar-confirmar               
+     -1440.png                                                                                      
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-doc-1-crear-1440.png                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-doc-2-leer-1440.png                    
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-doc-3-detalle-1440.png                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-doc-4-restaurar-confirma               
+     r-1440.png                                                                                     
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-doc-5-eliminar-confirmar               
+     -1440.png                                                                                      
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (768x868)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-usr-1-crear-1440.png                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-usr-2-leer-y-duplicado-1               
+     440.png                                                                                        
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-usr-3-actualizar-rol-144               
+     0.png                                                                                          
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-usr-4-desactivar-confirm               
+     ar-1440.png                                                                                    
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas-crud.cy.ts\crud-usr-5-desactivado-1440.p               
+     ng                                                                                             
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-a/capturas.cy.ts                                                         (5 of 19)
+
+
+  Capturas del panel · 390px
+    √ login (3020ms)
+    √ comunicación (Editor): resumen y publicaciones (6368ms)
+    √ bedelía: resumen, avisos y mensajes (6483ms)
+    √ menú del panel y pantalla sin permiso (768ms)
+
+  Capturas del panel · 1440px
+    √ login (2545ms)
+    √ comunicación (Editor): resumen y publicaciones (8246ms)
+    √ bedelía: resumen, avisos y mensajes (8220ms)
+    √ menú del panel y pantalla sin permiso (939ms)
+
+
+  8 passing (38s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        8                                                                                │
+  │ Passing:      8                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  46                                                                               │
+  │ Video:        false                                                                            │
+  │ Duration:     37 seconds                                                                       │
+  │ Spec Ran:     panel-a/capturas.cy.ts                                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\01-login-390.png                                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\02-login-olvido-de-clave-390.png                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\03-login-error-390.png                           
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\10-resumen-390.png                               
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\11-resumen-moderar-publicacion-390               
+     .png                                                                                           
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\12-publicaciones-pendientes-390.pn               
+     g                                                                                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\13-publicaciones-moderar-y-aprobar               
+     -390.png                                                                                       
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\14-publicaciones-consentimiento-ob               
+     ligatorio-390.png                                                                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\15-publicaciones-confirmar-publica               
+     cion-390.png                                                                                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\16-publicaciones-confirmar-descart               
+     e-390.png                                                                                      
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\17-publicaciones-carga-manual-390.               
+     png                                                                                            
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\18-publicaciones-propias-390.png                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\19-publicaciones-formulario-propia               
+     -390.png                                                                                       
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\20-resumen-bedelia-390.png                       
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\21-resumen-crear-aviso-390.png                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\22-avisos-390.png                                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\23-avisos-formulario-validacion-39               
+     0.png                                                                                          
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\24-avisos-formulario-con-adjunto-3               
+     90.png                                                                                         
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\25-avisos-confirmar-publicacion-39               
+     0.png                                                                                          
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\26-avisos-confirmar-pausa-390.png                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\27-avisos-confirmar-eliminar-390.p               
+     ng                                                                                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\28-mensajes-390.png                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\29-menu-administrativo-movil-390.p               
+     ng                                                                                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\01-login-1440.png                                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\02-login-olvido-de-clave-1440.png                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\03-login-error-1440.png                          
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\10-resumen-1440.png                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\11-resumen-moderar-publicacion-144               
+     0.png                                                                                          
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\12-publicaciones-pendientes-1440.p               
+     ng                                                                                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\13-publicaciones-moderar-y-aprobar               
+     -1440.png                                                                                      
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\14-publicaciones-consentimiento-ob               
+     ligatorio-1440.png                                                                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\15-publicaciones-confirmar-publica               
+     cion-1440.png                                                                                  
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\16-publicaciones-confirmar-descart               
+     e-1440.png                                                                                     
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\17-publicaciones-carga-manual-1440               
+     .png                                                                                           
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\18-publicaciones-propias-1440.png                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\19-publicaciones-formulario-propia               
+     -1440.png                                                                                      
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\20-resumen-bedelia-1440.png                      
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\21-resumen-crear-aviso-1440.png                  
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\22-avisos-1440.png                               
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\23-avisos-formulario-validacion-14               
+     40.png                                                                                         
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\24-avisos-formulario-con-adjunto-1               
+     440.png                                                                                        
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\25-avisos-confirmar-publicacion-14               
+     40.png                                                                                         
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\26-avisos-confirmar-pausa-1440.png               
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\27-avisos-confirmar-eliminar-1440.               
+     png                                                                                            
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\28-mensajes-1440.png                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x900)
+     eb\cypress\screenshots\panel-a\capturas.cy.ts\29-sin-permiso-1440.png                          
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-a/login.cy.ts                                                            (6 of 19)
+
+
+  Login del panel · 390px
+    √ sin sesión, /panel redirige al login y la pantalla es accesible (1010ms)
+    √ login correcto: entra al Resumen (895ms)
+    √ login incorrecto: mensaje genérico (no revela si el correo existe) (893ms)
+    √ bloqueo tras 5 intentos fallidos: mensaje claro con el plazo (1243ms)
+    √ "¿Olvidaste tu clave?" explica que la restablece un administrador (244ms)
+    √ validación del formulario: campos vacíos muestran el mensaje de la API (265ms)
+    √ cierre de sesión desde el shell (1034ms)
+    √ sesión vencida (401 en una pantalla) lleva al login con aviso (15978ms)
+    √ cambio obligatorio de contraseña tras un restablecimiento (3312ms)
+
+  Login del panel · 1440px
+    √ sin sesión, /panel redirige al login y la pantalla es accesible (523ms)
+    √ login correcto: entra al Resumen (971ms)
+    √ login incorrecto: mensaje genérico (no revela si el correo existe) (1263ms)
+    √ bloqueo tras 5 intentos fallidos: mensaje claro con el plazo (1280ms)
+    √ "¿Olvidaste tu clave?" explica que la restablece un administrador (226ms)
+    √ validación del formulario: campos vacíos muestran el mensaje de la API (233ms)
+    √ cierre de sesión desde el shell (16015ms)
+    √ sesión vencida (401 en una pantalla) lleva al login con aviso (15997ms)
+    √ cambio obligatorio de contraseña tras un restablecimiento (6442ms)
+
+
+  18 passing (1m)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        18                                                                               │
+  │ Passing:      18                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     1 minute, 8 seconds                                                              │
+  │ Spec Ran:     panel-a/login.cy.ts                                                              │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-a/publicaciones.cy.ts                                                    (7 of 19)
+
+
+  Publicaciones · 390px
+    √ E2E-03: el Editor modera, aprueba con sección y vigencia y la ve en el sitio (3401ms)
+    √ E2E-04: descartar y recuperar desde Descartadas (1565ms)
+    √ E2E-05: si Instagram falla se informa el motivo y la carga manual funciona (1942ms)
+    √ E2E-13: el diálogo de moderación atrapa el foco, cierra con Escape y devuelve el foco (598ms)
+    √ publicaciones propias: crear borrador, publicar, pausar, reactivar y eliminar con confirmación (3377ms)
+
+  Publicaciones · 1440px
+    √ E2E-03: el Editor modera, aprueba con sección y vigencia y la ve en el sitio (3159ms)
+    √ E2E-04: descartar y recuperar desde Descartadas (2176ms)
+    √ E2E-05: si Instagram falla se informa el motivo y la carga manual funciona (2468ms)
+    √ E2E-13: el diálogo de moderación atrapa el foco, cierra con Escape y devuelve el foco (913ms)
+    √ publicaciones propias: crear borrador, publicar, pausar, reactivar y eliminar con confirmación (3946ms)
+
+
+  10 passing (24s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        10                                                                               │
+  │ Passing:      10                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     23 seconds                                                                       │
+  │ Spec Ran:     panel-a/publicaciones.cy.ts                                                      │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-a/roles-mensajes.cy.ts                                                   (8 of 19)
+
+
+  Roles y mensajes · 390px
+    √ E2E-11: Bedelía no ve Publicaciones ni bloques de redes, y la API responde 403 (2274ms)
+    √ Comunicación (Editor) no ve Avisos ni Mensajes (702ms)
+    √ Mensajes: marcar leído y respondido (Bedelía); no puede eliminar (982ms)
+    √ Mensajes: el Administrador elimina uno respondido con confirmación (1113ms)
+    √ el Administrador ve todas las secciones del Resumen (723ms)
+
+  Roles y mensajes · 1440px
+    √ E2E-11: Bedelía no ve Publicaciones ni bloques de redes, y la API responde 403 (934ms)
+    √ Comunicación (Editor) no ve Avisos ni Mensajes (687ms)
+    √ Mensajes: marcar leído y respondido (Bedelía); no puede eliminar (979ms)
+    √ Mensajes: el Administrador elimina uno respondido con confirmación (1197ms)
+    √ el Administrador ve todas las secciones del Resumen (833ms)
+
+
+  10 passing (11s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        10                                                                               │
+  │ Passing:      10                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     10 seconds                                                                       │
+  │ Spec Ran:     panel-a/roles-mensajes.cy.ts                                                     │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-b/capturas-manual.cy.ts                                                  (9 of 19)
+
+
+  Capturas Panel B · 1440
+    √ Horarios (10450ms)
+    √ Archivo (7137ms)
+    √ Configuración e integraciones (20845ms)
+
+  Capturas Panel B · 390
+    √ Horarios (9551ms)
+    √ Archivo (7568ms)
+    √ Configuración e integraciones (21050ms)
+
+
+  6 passing (1m)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        6                                                                                │
+  │ Passing:      6                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  34                                                                               │
+  │ Video:        false                                                                            │
+  │ Duration:     1 minute, 17 seconds                                                             │
+  │ Spec Ran:     panel-b/capturas-manual.cy.ts                                                    │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1284)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-1440.png                       
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1284)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-cargar-grilla-14               
+     40.png                                                                                         
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1284)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-nuevo-llamado-14               
+     40.png                                                                                         
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1284)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-confirmar-public               
+     acion-1440.png                                                                                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1284)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-cambiar-ciclo-co               
+     nfirmar-1440.png                                                                               
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1085)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-archivo-1440.png                        
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1085)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-archivo-detalle-1440.png                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1085)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-archivo-confirmar-restaur               
+     ar-1440.png                                                                                    
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1085)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-archivo-subir-1440.png                  
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1851)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-1440.png                  
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1851)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-confirmar-c               
+     ambios-1440.png                                                                                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1851)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-usuarios-14               
+     40.png                                                                                         
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1851)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-contenido-1               
+     440.png                                                                                        
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x2055)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-enlaces-144               
+     0.png                                                                                          
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x3002)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-integraciones-instagram-1               
+     440.png                                                                                        
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x3570)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-integraciones-guia-1440.p               
+     ng                                                                                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x3570)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-integraciones-correo-1440               
+     .png                                                                                           
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2478)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-390.png                        
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2506)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-cargar-grilla-39               
+     0.png                                                                                          
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2506)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-nuevo-llamado-39               
+     0.png                                                                                          
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2506)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-confirmar-public               
+     acion-390.png                                                                                  
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2506)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-horarios-cambiar-ciclo-co               
+     nfirmar-390.png                                                                                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2321)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-archivo-390.png                         
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2365)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-archivo-detalle-390.png                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2429)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-archivo-confirmar-restaur               
+     ar-390.png                                                                                     
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2365)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-archivo-subir-390.png                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x3162)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-390.png                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x3182)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-confirmar-c               
+     ambios-390.png                                                                                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x3182)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-usuarios-39               
+     0.png                                                                                          
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x3162)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-contenido-3               
+     90.png                                                                                         
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x3486)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-configuracion-enlaces-390               
+     .png                                                                                           
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x4927)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-integraciones-instagram-3               
+     90.png                                                                                         
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x6043)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-integraciones-guia-390.pn               
+     g                                                                                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x6043)
+     eb\cypress\screenshots\panel-b\capturas-manual.cy.ts\b-integraciones-correo-390.               
+     png                                                                                            
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-b/e2e-08-horarios.cy.ts                                                 (10 of 19)
+
+
+  E2E-08 Horarios y llamados · móvil 390
+    √ muestra el ciclo público y las grillas del ciclo (sin violaciones de accesibilidad) (1630ms)
+    √ BEDELIA no ve el cambio de ciclo público (solo ADMIN) (399ms)
+    √ carga una grilla, la publica, la despublica y la elimina con confirmación (2254ms)
+    √ crea un llamado destacado, lo edita, lo publica y lo elimina (2833ms)
+    √ muestra un error claro si la fecha de fin es anterior a la de inicio (1166ms)
+
+  E2E-08 Horarios y llamados · escritorio 1440
+    √ muestra el ciclo público y las grillas del ciclo (sin violaciones de accesibilidad) (980ms)
+    √ BEDELIA no ve el cambio de ciclo público (solo ADMIN) (377ms)
+    √ carga una grilla, la publica, la despublica y la elimina con confirmación (2133ms)
+    √ crea un llamado destacado, lo edita, lo publica y lo elimina (5243ms)
+    √ muestra un error claro si la fecha de fin es anterior a la de inicio (1400ms)
+
+
+  10 passing (19s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        10                                                                               │
+  │ Passing:      10                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     18 seconds                                                                       │
+  │ Spec Ran:     panel-b/e2e-08-horarios.cy.ts                                                    │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-b/e2e-09-10-12-15.cy.ts                                                 (11 of 19)
+
+
+  Panel B · móvil 390
+    √ E2E-09: el administrador cambia el ciclo público con confirmación y el sitio muestra solo el nuevo (2178ms)
+    √ E2E-10: archivo: búsqueda por año, ver detalle y restaurar (1341ms)
+    √ E2E-15: un archivo no permitido o demasiado grande muestra un error claro (4621ms)
+    √ E2E-12: el administrador crea un usuario con rol y lo desactiva; el desactivado no puede entrar (4533ms)
+    √ permisos: BEDELIA no ve Configuración; EDITOR no ve Horarios ni Archivo (922ms)
+
+  Panel B · escritorio 1440
+    √ E2E-09: el administrador cambia el ciclo público con confirmación y el sitio muestra solo el nuevo (1650ms)
+    √ E2E-10: archivo: búsqueda por año, ver detalle y restaurar (1342ms)
+    √ E2E-15: un archivo no permitido o demasiado grande muestra un error claro (4581ms)
+    √ E2E-12: el administrador crea un usuario con rol y lo desactiva; el desactivado no puede entrar (4446ms)
+    √ permisos: BEDELIA no ve Configuración; EDITOR no ve Horarios ni Archivo (912ms)
+
+
+  10 passing (27s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        10                                                                               │
+  │ Passing:      10                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     26 seconds                                                                       │
+  │ Spec Ran:     panel-b/e2e-09-10-12-15.cy.ts                                                    │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  panel-b/integraciones-a11y.cy.ts                                              (12 of 19)
+
+
+  Integraciones y accesibilidad · móvil 390
+    √ Instagram: guía, redirectUri, guardar credenciales sin exponer el secreto y desconectar (4329ms)
+    √ Correo: destinatario, estado y correo de prueba en modo demostración (641ms)
+    √ Configuración: cambios globales piden confirmación y datos inválidos se marcan (1421ms)
+    √ E2E-13/axe: pantallas sin violaciones serias y diálogos con foco atrapado y devuelto (9808ms)
+
+  Integraciones y accesibilidad · escritorio 1440
+    √ Instagram: guía, redirectUri, guardar credenciales sin exponer el secreto y desconectar (3694ms)
+    √ Correo: destinatario, estado y correo de prueba en modo demostración (717ms)
+    √ Configuración: cambios globales piden confirmación y datos inválidos se marcan (1883ms)
+    √ E2E-13/axe: pantallas sin violaciones serias y diálogos con foco atrapado y devuelto (10197ms)
+
+
+  8 passing (33s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        8                                                                                │
+  │ Passing:      8                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     33 seconds                                                                       │
+  │ Spec Ran:     panel-b/integraciones-a11y.cy.ts                                                 │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/capturas-contacto.cy.ts                                                (13 of 19)
+
+
+  Capturas del formulario de contacto
+    √ errores de validación y confirmación (4096ms)
+
+
+  1 passing (4s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      1                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  3                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     4 seconds                                                                        │
+  │ Spec Ran:     public/capturas-contacto.cy.ts                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x710)
+     eb\cypress\screenshots\public\capturas-contacto.cy.ts\contacto-1-validacion.png                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x710)
+     eb\cypress\screenshots\public\capturas-contacto.cy.ts\contacto-2-completo.png                  
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (1440x400)
+     eb\cypress\screenshots\public\capturas-contacto.cy.ts\contacto-3-confirmacion.pn               
+     g                                                                                              
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/capturas.cy.ts                                                         (14 of 19)
+
+
+  Capturas del sitio público
+    √ inicio 1440 (2289ms)
+    √ institucional 1440 (1481ms)
+    √ la-carrera 1440 (2575ms)
+    √ estudiantes 1440 (1395ms)
+    √ ingreso 1440 (1217ms)
+    √ inscripciones 1440 (1245ms)
+    √ novedades 1440 (1847ms)
+    √ inicio 390 (2361ms)
+    √ institucional 390 (1226ms)
+    √ la-carrera 390 (2684ms)
+    √ estudiantes 390 (1243ms)
+    √ ingreso 390 (850ms)
+    √ inscripciones 390 (866ms)
+    √ novedades 390 (2184ms)
+    √ menú móvil abierto (585ms)
+
+
+  15 passing (25s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        15                                                                               │
+  │ Passing:      15                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  15                                                                               │
+  │ Video:        false                                                                            │
+  │ Duration:     24 seconds                                                                       │
+  │ Spec Ran:     public/capturas.cy.ts                                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x2136)
+     eb\cypress\screenshots\public\capturas.cy.ts\inicio-1440.png                                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1594)
+     eb\cypress\screenshots\public\capturas.cy.ts\institucional-1440.png                            
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x3044)
+     eb\cypress\screenshots\public\capturas.cy.ts\la-carrera-1440.png                               
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1703)
+     eb\cypress\screenshots\public\capturas.cy.ts\estudiantes-1440.png                              
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1304)
+     eb\cypress\screenshots\public\capturas.cy.ts\ingreso-1440.png                                  
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x1261)
+     eb\cypress\screenshots\public\capturas.cy.ts\inscripciones-1440.png                            
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w    (1440x2033)
+     eb\cypress\screenshots\public\capturas.cy.ts\novedades-1440.png                                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x4256)
+     eb\cypress\screenshots\public\capturas.cy.ts\inicio-390.png                                    
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2519)
+     eb\cypress\screenshots\public\capturas.cy.ts\institucional-390.png                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x5638)
+     eb\cypress\screenshots\public\capturas.cy.ts\la-carrera-390.png                                
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x2498)
+     eb\cypress\screenshots\public\capturas.cy.ts\estudiantes-390.png                               
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x1573)
+     eb\cypress\screenshots\public\capturas.cy.ts\ingreso-390.png                                   
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x1389)
+     eb\cypress\screenshots\public\capturas.cy.ts\inscripciones-390.png                             
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w     (390x4639)
+     eb\cypress\screenshots\public\capturas.cy.ts\novedades-390.png                                 
+  -  C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\w      (390x844)
+     eb\cypress\screenshots\public\capturas.cy.ts\menu-movil-390.png                                
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/contacto.cy.ts                                                         (15 of 19)
+
+
+  Contacto (390 px)
+    √ el consentimiento es obligatorio y no se envía sin él (1267ms)
+    √ valida campos vacíos con mensajes claros (237ms)
+    √ envía con consentimiento y muestra la confirmación (1004ms)
+    √ muestra un error claro si el servidor falla y conserva el texto (925ms)
+    √ informa el límite de frecuencia (429) (920ms)
+    √ el campo señuelo no es accesible para personas (111ms)
+
+  Contacto (1440 px)
+    √ el consentimiento es obligatorio y no se envía sin él (864ms)
+    √ valida campos vacíos con mensajes claros (213ms)
+    √ envía con consentimiento y muestra la confirmación (933ms)
+    √ muestra un error claro si el servidor falla y conserva el texto (914ms)
+    √ informa el límite de frecuencia (429) (980ms)
+    √ el campo señuelo no es accesible para personas (105ms)
+
+  Contacto contra la API real
+    √ guarda el mensaje (201) (925ms)
+
+
+  13 passing (10s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        13                                                                               │
+  │ Passing:      13                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     9 seconds                                                                        │
+  │ Spec Ran:     public/contacto.cy.ts                                                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/degradacion.cy.ts                                                      (16 of 19)
+
+
+  Degradación sin API
+    √ / muestra su h1 y no se rompe (1287ms)
+    √ /institucional muestra su h1 y no se rompe (716ms)
+    √ /la-carrera muestra su h1 y no se rompe (465ms)
+    √ /estudiantes muestra su h1 y no se rompe (474ms)
+    √ /ingreso muestra su h1 y no se rompe (400ms)
+    √ /inscripciones muestra su h1 y no se rompe (399ms)
+    √ /novedades muestra su h1 y no se rompe (409ms)
+    √ Estudiantes explica el problema en lenguaje claro (99ms)
+
+
+  8 passing (7s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        8                                                                                │
+  │ Passing:      8                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     7 seconds                                                                        │
+  │ Spec Ran:     public/degradacion.cy.ts                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/estudiantes.cy.ts                                                      (17 of 19)
+
+
+  Estudiantes e Ingreso (390 px)
+    √ muestra solo el ciclo público vigente y la nota del archivo (651ms)
+    √ lista horarios por comisión con descarga y llamados con fechas (148ms)
+    √ los avisos urgentes van primero y los destacados se resaltan (142ms)
+    √ los enlaces de interés abren en pestaña nueva con rel seguro (105ms)
+    √ Inscripciones muestra los llamados con inscripción abierta (197ms)
+    √ Ingreso separa convocatoria y tres pasos (169ms)
+
+  Estudiantes e Ingreso (1440 px)
+    √ muestra solo el ciclo público vigente y la nota del archivo (132ms)
+    √ lista horarios por comisión con descarga y llamados con fechas (130ms)
+    √ los avisos urgentes van primero y los destacados se resaltan (99ms)
+    √ los enlaces de interés abren en pestaña nueva con rel seguro (115ms)
+    √ Inscripciones muestra los llamados con inscripción abierta (96ms)
+    √ Ingreso separa convocatoria y tres pasos (100ms)
+
+
+  12 passing (3s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        12                                                                               │
+  │ Passing:      12                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     2 seconds                                                                        │
+  │ Spec Ran:     public/estudiantes.cy.ts                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/novedades.cy.ts                                                        (18 of 19)
+
+
+  Novedades (390 px)
+    √ lista tarjetas y filtra por categoría (1106ms)
+    √ filtra por año y muestra el estado vacío con salida (401ms)
+    √ vista de archivo (317ms)
+    √ abre el detalle y vuelve (845ms)
+    √ un id inexistente muestra un 404 amable (466ms)
+    √ ignora parámetros inválidos sin romperse (193ms)
+
+  Novedades (1440 px)
+    √ lista tarjetas y filtra por categoría (523ms)
+    √ filtra por año y muestra el estado vacío con salida (280ms)
+    √ vista de archivo (472ms)
+    √ abre el detalle y vuelve (668ms)
+    √ un id inexistente muestra un 404 amable (511ms)
+    √ ignora parámetros inválidos sin romperse (143ms)
+
+
+  12 passing (6s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        12                                                                               │
+  │ Passing:      12                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     6 seconds                                                                        │
+  │ Spec Ran:     public/novedades.cy.ts                                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  public/recorrido.cy.ts                                                        (19 of 19)
+
+
+  Recorrido público (móvil 390)
+    √ /: un h1, landmarks, sin desborde y accesible (1164ms)
+    √ /institucional: un h1, landmarks, sin desborde y accesible (803ms)
+    √ /la-carrera: un h1, landmarks, sin desborde y accesible (534ms)
+    √ /estudiantes: un h1, landmarks, sin desborde y accesible (513ms)
+    √ /ingreso: un h1, landmarks, sin desborde y accesible (388ms)
+    √ /inscripciones: un h1, landmarks, sin desborde y accesible (450ms)
+    √ /novedades: un h1, landmarks, sin desborde y accesible (623ms)
+    √ el contenido viene de la API (frase ancla y pie, sin textos fijos) (121ms)
+    √ el menú hamburguesa se abre, expone el estado y navega (341ms)
+
+  Recorrido público (escritorio 1440)
+    √ /: un h1, landmarks, sin desborde y accesible (537ms)
+    √ /institucional: un h1, landmarks, sin desborde y accesible (476ms)
+    √ /la-carrera: un h1, landmarks, sin desborde y accesible (513ms)
+    √ /estudiantes: un h1, landmarks, sin desborde y accesible (509ms)
+    √ /ingreso: un h1, landmarks, sin desborde y accesible (420ms)
+    √ /inscripciones: un h1, landmarks, sin desborde y accesible (459ms)
+    √ /novedades: un h1, landmarks, sin desborde y accesible (523ms)
+    √ el contenido viene de la API (frase ancla y pie, sin textos fijos) (104ms)
+
+
+  17 passing (9s)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        17                                                                               │
+  │ Passing:      17                                                                               │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     9 seconds                                                                        │
+  │ Spec Ran:     public/recorrido.cy.ts                                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✔  smoke.cy.ts                              00:10        6        6        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  ui-kit.cy.ts                             00:06        6        6        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-a/avisos.cy.ts                     00:28       16       16        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-a/capturas-crud.cy.ts              00:24        4        4        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-a/capturas.cy.ts                   00:37        8        8        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-a/login.cy.ts                      01:08       18       18        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-a/publicaciones.cy.ts              00:23       10       10        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-a/roles-mensajes.cy.ts             00:10       10       10        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-b/capturas-manual.cy.ts            01:17        6        6        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-b/e2e-08-horarios.cy.ts            00:18       10       10        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-b/e2e-09-10-12-15.cy.ts            00:26       10       10        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  panel-b/integraciones-a11y.cy.ts         00:33        8        8        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  public/capturas-contacto.cy.ts           00:04        1        1        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  public/capturas.cy.ts                    00:24       15       15        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  public/contacto.cy.ts                    00:09       13       13        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  public/degradacion.cy.ts                 00:07        8        8        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  public/estudiantes.cy.ts                 00:02       12       12        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  public/novedades.cy.ts                   00:06       12       12        -        -        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  public/recorrido.cy.ts                   00:09       17       17        -        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✔  All specs passed!                        07:12      190      190        -        -        -  
+
+FINISHED
