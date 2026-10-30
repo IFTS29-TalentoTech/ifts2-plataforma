@@ -4,10 +4,20 @@
  * Cada prueba crea sus propios datos (publicaciones de redes de carga manual con título único) para poder
  * repetirse sin reiniciar la base. La falla de Instagram se fuerza interceptando /dashboard y /social/sync.
  */
-import { inDays, seedPendingPost, unique, VIEWPORTS } from '../../support/panel-a';
+import {
+  cleanupE2eSocial,
+  inDays,
+  seedPendingPost,
+  unique,
+  VIEWPORTS,
+} from '../../support/panel-a';
 
 for (const vp of VIEWPORTS) {
   describe(`Publicaciones · ${vp.name}px`, () => {
+    before(() => {
+      cy.loginAs('editor');
+      cleanupE2eSocial();
+    });
     beforeEach(() => {
       cy.viewport(vp.width, vp.height);
       cy.loginAs('editor');
@@ -63,16 +73,21 @@ for (const vp of VIEWPORTS) {
     });
 
     it('E2E-05: si Instagram falla se informa el motivo y la carga manual funciona', () => {
-      cy.intercept('GET', '/api/v1/dashboard', (req) => {
-        req.continue((res) => {
-          res.body.instagram = {
-            ...res.body.instagram,
-            mode: 'real',
-            status: 'error',
-            ok: false,
-            error: 'El acceso a Instagram venció. Volvé a conectar la cuenta.',
-          };
-        });
+      cy.intercept('GET', '/api/v1/dashboard', {
+        instagram: {
+          mode: 'real',
+          status: 'error',
+          ok: false,
+          lastSyncAt: null,
+          error: 'El acceso a Instagram venció. Volvé a conectar la cuenta.',
+          hashtag: '#ifts2web',
+        },
+        pendingPosts: 0,
+        activeNotices: 0,
+        noticesExpiringIn7Days: 0,
+        currentTerm: null,
+        examCallNext: null,
+        ingresoCycle: { year: 2027, derived: true },
       });
       cy.intercept('POST', '/api/v1/social/sync', {
         statusCode: 502,
@@ -80,7 +95,8 @@ for (const vp of VIEWPORTS) {
         body: {
           title: 'Bad Gateway',
           status: 502,
-          detail: 'Instagram no respondió. Probá de nuevo más tarde o cargá la publicación manualmente.',
+          detail:
+            'Instagram no respondió. Probá de nuevo más tarde o cargá la publicación manualmente.',
         },
       });
       cy.visit('/panel');
@@ -93,12 +109,12 @@ for (const vp of VIEWPORTS) {
       const title = unique('Carga manual');
       cy.get('[role="alert"]').contains('button', 'Cargar publicación manualmente').click();
       cy.get('[role="dialog"]').should('contain', 'Cargar publicación manualmente');
-      cy.contains('button', 'Cargar publicación').click();
+      cy.get('[role="dialog"] button[type="submit"]').click();
       cy.contains('El enlace a la publicación').should('exist'); // validación de campos vacíos
       cy.get('input[type="url"]').first().type(`https://www.instagram.com/p/manual-${Date.now()}/`);
       cy.get('textarea').type(`${title}. Texto cargado a mano. #ifts2web`);
       cy.get('input[type="url"]').last().type('https://example.invalid/manual.jpg');
-      cy.contains('button', 'Cargar publicación').click();
+      cy.get('[role="dialog"] button[type="submit"]').click();
       cy.contains('Publicación cargada').should('be.visible');
       cy.visit('/panel/publicaciones');
       cy.contains('h3', title).should('be.visible');

@@ -124,6 +124,40 @@ export function seedNotice(over: Record<string, unknown> = {}) {
     .then((r) => r.body as { id: string; title: string });
 }
 
+/** Aviso ya vencido (enero 2026): se crea vigente y se vence directo en la base (ver panelA:expireNotice). */
+export function seedExpiredNotice(title: string) {
+  return seedNotice({ title }).then((n) => cy.task('panelA:expireNotice', n.id).then(() => n));
+}
+
+/**
+ * Limpieza de los datos que crean estas pruebas, para que las listas (paginadas) no crezcan entre corridas.
+ * Solo toca lo que llevan marcas de prueba en el título/enlace. Usa los endpoints reales (pausar y eliminar).
+ */
+export function cleanupE2eData() {
+  const noticeRe = /^(Aviso e2e|Aviso con adjunto|Aviso con txt|Aviso vencido|Aviso a eliminar)/;
+  cy.api('GET', '/notices?status=ALL&pageSize=100').then((r) => {
+    for (const n of r.body.items as Array<{ id: string; title: string; viewStatus: string }>) {
+      if (!noticeRe.test(n.title)) continue;
+      if (n.viewStatus === 'ACTIVE') cy.api('POST', `/notices/${n.id}/pause`, undefined, false);
+      cy.api('DELETE', `/notices/${n.id}`, undefined, false);
+    }
+  });
+}
+
+export function cleanupE2eSocial() {
+  const isE2e = (p: string) => /\/p\/(e2e|manual)-/.test(p);
+  for (const status of ['DETECTED', 'DISCARDED']) {
+    cy.api('GET', `/social/posts?status=${status}&pageSize=100`).then((r) => {
+      for (const p of r.body.items as Array<{ id: string; permalink: string }>) {
+        if (!isE2e(p.permalink)) continue;
+        if (status === 'DETECTED')
+          cy.api('POST', `/social/posts/${p.id}/discard`, undefined, false);
+        cy.api('DELETE', `/social/posts/${p.id}`, undefined, false);
+      }
+    });
+  }
+}
+
 export const VIEWPORTS = [
   { name: '390', width: 390, height: 844 },
   { name: '1440', width: 1440, height: 900 },

@@ -12,6 +12,13 @@ import { loadEnvConfig } from '@next/env';
 
 const root = path.resolve(__dirname, '../../../..');
 
+/** Carga diferida: el cliente de Prisma vive en la raíz del monorepo. */
+function newPrisma() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { PrismaClient } = require(path.join(root, 'node_modules/@prisma/client'));
+  return new PrismaClient();
+}
+
 export function registerPanelATasks(on: Cypress.PluginEvents) {
   loadEnvConfig(root);
   on('task', {
@@ -22,11 +29,24 @@ export function registerPanelATasks(on: Cypress.PluginEvents) {
       fs.copyFileSync(src, dest);
       return null;
     },
+    /** Vence un aviso a mano: la API no permite crear avisos "nacidos vencidos" (422) y el tiempo no se adelanta. */
+    async 'panelA:expireNotice'(id: string) {
+      const prisma = newPrisma();
+      try {
+        await prisma.notice.update({
+          where: { id },
+          data: {
+            visibleFrom: new Date('2026-01-01T03:00:00Z'),
+            visibleUntil: new Date('2026-01-31T23:00:00Z'),
+          },
+        });
+        return null;
+      } finally {
+        await prisma.$disconnect();
+      }
+    },
     async 'panelA:createContactMessage'(subject: string) {
-      // Carga diferida: el cliente de Prisma vive en la raíz del monorepo.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { PrismaClient } = require(path.join(root, 'node_modules/@prisma/client'));
-      const prisma = new PrismaClient();
+      const prisma = newPrisma();
       try {
         const m = await prisma.contactMessage.create({
           data: {

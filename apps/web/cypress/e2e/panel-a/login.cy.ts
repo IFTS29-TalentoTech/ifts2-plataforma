@@ -41,7 +41,11 @@ for (const vp of VIEWPORTS) {
     });
 
     it('login incorrecto: mensaje genérico (no revela si el correo existe)', () => {
-      cy.intercept('POST', '/api/v1/auth/login', problem(401, 'No autorizado', 'Correo o contraseña incorrectos.')).as('login');
+      cy.intercept(
+        'POST',
+        '/api/v1/auth/login',
+        problem(401, 'No autorizado', 'Correo o contraseña incorrectos.'),
+      ).as('login');
       cy.visit('/panel/login');
       cy.get('input[name="email"]').type('nadie@ifts2.local');
       cy.get('input[name="password"]').type('clave-equivocada1');
@@ -65,7 +69,9 @@ for (const vp of VIEWPORTS) {
       cy.get('input[name="email"]').type('editor@ifts2.local');
       cy.get('input[name="password"]').type('mala-clave-123');
       for (let i = 0; i < 6; i++) cy.contains('button', 'Ingresar al panel').click();
-      cy.get('[role="alert"]').should('contain', 'Demasiados intentos fallidos').and('contain', '15 minutos');
+      cy.get('[role="alert"]')
+        .should('contain', 'Demasiados intentos fallidos')
+        .and('contain', '15 minutos');
       cy.a11y();
     });
 
