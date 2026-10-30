@@ -27,6 +27,8 @@ src/
                     storage/ (local, memory, s3 + upload.ts), mailer/, instagram/, integration-store.ts
   lib/              password (argon2id), pagination
   modules/<nombre>/ health, auth, users, audit, integrations, files, categories, publications, social, dashboard  (+ los que agreguen los demás)
+  modules/<nombre>/ health, auth, users, audit, integrations, files, notices, terms, schedules, exam-calls,
+                    documents, settings, content, links, contact, public  (+ los que agreguen los demás; cada uno tiene su README)
 test/               unit/ y api/ (Supertest), helpers/
 ```
 
@@ -134,3 +136,4 @@ it('401 sin sesión, 403 sin permiso, 201 feliz', async () => {
 ```
 
 Helpers (`test/helpers/`): `createTestApp()` (devuelve `{ app, ctx, mailer: FakeMailer, storage: InMemoryStorage, instagram: FakeInstagramClient }`; opción `useRealIntegrationResolution`), `resetDb()`, `testPrisma`, `loginAs(app, role)` -> `{ cookie, user }`, `loginWith`, factories (`createUser`, `createCategory`, `createTerm`, `createNotice`, `createPublication`; más en `social-factories.ts`: `createSocialPostRow`, `createPublicationRow`, `setSetting`...) y `InstagramMock` (`instagram-mock.ts`: servidor HTTP que simula la API de Instagram y la CDN de imágenes). Las pruebas corren en serie sobre `ifts2_test` (las migraciones se aplican solas en `global-setup`).
+Helpers (`test/helpers/`): `createTestApp()` (devuelve `{ app, ctx, mailer: FakeMailer, storage: InMemoryStorage, instagram: FakeInstagramClient }`; opción `useRealIntegrationResolution`), `resetDb()`, `testPrisma`, `loginAs(app, role)` -> `{ cookie, user }`, `loginWith`, factories (`createUser`, `createCategory`, `createTerm`, `createNotice`, `createPublication`) y las del bloque académico en `academic-factories.ts` (`createDocumentRow`, `createScheduleRow`, `createExamCallRow`, `createLinkRow`, `createSectionRow`, `createPublicationAt`, `PDF_BYTES`, `ago()`/`fromNow()`). Para probar bordes de vigencia: `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(...)` (iniciá sesión DESPUÉS de fijar el reloj o la sesión vencerá). Las pruebas corren en serie sobre `ifts2_test` (las migraciones se aplican solas en `global-setup`).

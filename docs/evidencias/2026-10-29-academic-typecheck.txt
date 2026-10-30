@@ -1,0 +1,11 @@
+$ pnpm -r typecheck
+Scope: 3 of 4 workspace projects
+packages/shared typecheck$ tsc --noEmit
+packages/shared typecheck: Done
+apps/web typecheck$ next typegen && tsc --noEmit
+apps/api typecheck$ tsc --noEmit
+apps/web typecheck: Generating route types...
+apps/web typecheck: ✓ Route types generated successfully
+apps/web typecheck: Done
+apps/api typecheck: Done
+exit=0

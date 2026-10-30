@@ -57,7 +57,8 @@ flowchart LR
   R --> AU[audit]
   R --> I[integrations]
   R --> F[files]
-  R -. "módulos de otros agentes" .-> P["publications, social, notices,<br/>schedules, exam-calls, documents,<br/>settings, content, links, contact, public"]
+  R --> ACA["notices · terms · schedules · exam-calls ·<br/>documents · settings · content · links ·<br/>contact · public (rama feat/academic)"]
+  R -. "módulos de otros agentes" .-> P["publications, social,<br/>categories, dashboard"]
 ```
 
 Cada carpeta exporta `{ mountPath, router }`; agregar un módulo no requiere editar archivos compartidos (`apps/api/README.md`).
@@ -84,6 +85,14 @@ flowchart LR
 ## Modelo de datos (resumen)
 
 `User`/`Session` (auth) · `Publication` ⇄ `SocialPost` (moderación de Instagram) · `Notice` · `Document` (archivo) · `AcademicTerm` -> `Schedule`/`ExamCall` (solo visibles si su ciclo es el público) · `SiteSetting`/`ContentSection`/`ExternalLink` (datos institucionales y contenido) · `ContactMessage` · `IntegrationConfig` · `AuditLog`. Esquema ejecutable: `prisma/schema.prisma`.
+
+### Bloque académico (avisos, ciclos, horarios, llamados, archivo, ajustes y sitio público)
+
+- `public` solo lee y aplica la vigencia en dos capas (filtro SQL + funciones de `@ifts2/shared`); responde con `Cache-Control` corto + `stale-while-revalidate` (RNF09).
+- `documents` es el único dueño de los archivos: avisos, horarios y llamados solo guardan `documentId`; la clave de almacenamiento no sale de la API y la descarga es por URL firmada.
+- `terms` garantiza un único ciclo público (índice parcial + transacción); `schedules`/`exam-calls` solo se ven si su ciclo es el público.
+- `contact` guarda siempre el mensaje antes de intentar el correo (RNF03).
+- Contrato de respuestas tipado en `packages/shared/src/academic.ts`; detalle por módulo en `apps/api/src/modules/<m>/README.md`.
 
 ## Reglas de negocio transversales
 
