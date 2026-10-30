@@ -2,7 +2,7 @@
  RUN  v5.0.5 C:/Users/zampa/Desktop/CURSOS/Tecnicatura/proyectos_2026/ifts2-plataforma/apps/api
 
  ✓ test/unit/crypto.test.ts > cifrado AES-256-GCM del token de Instagram > el valor descifrado coincide con el original 5ms
- ✓ test/unit/crypto.test.ts > cifrado AES-256-GCM del token de Instagram > cifrar dos veces el mismo valor produce resultados distintos (IV aleatorio) 2ms
+ ✓ test/unit/crypto.test.ts > cifrado AES-256-GCM del token de Instagram > cifrar dos veces el mismo valor produce resultados distintos (IV aleatorio) 1ms
  ✓ test/unit/crypto.test.ts > cifrado AES-256-GCM del token de Instagram > un token alterado falla al descifrar 2ms
  ✓ test/unit/crypto.test.ts > cifrado AES-256-GCM del token de Instagram > una clave distinta falla al descifrar 1ms
  ✓ test/unit/crypto.test.ts > cifrado AES-256-GCM del token de Instagram > exige una clave de 32 bytes 1ms
@@ -11,6 +11,6 @@
 
  Test Files  1 passed (1)
       Tests  7 passed (7)
-   Start at  07:27:28
-   Duration  5.81s (import 25%, setup 24%, transform 20%, tests 17%, worker 13%)
+   Start at  07:34:51
+   Duration  3.87s (setup 27%, import 26%, transform 17%, tests 16%, worker 13%, environment 1%)
 

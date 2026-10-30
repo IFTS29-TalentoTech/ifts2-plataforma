@@ -1,0 +1,14 @@
+
+ RUN  v5.0.5 C:/Users/zampa/Desktop/CURSOS/Tecnicatura/proyectos_2026/ifts2-plataforma/packages/shared
+
+ ✓ test/visibility.test.ts > isNoticeVisible > ACTIVE dentro de vigencia es visible 4ms
+ ✓ test/visibility.test.ts > isNoticeVisible > vencido (visibleUntil pasado) no es visible 0ms
+ ✓ test/visibility.test.ts > isNoticeVisible > PAUSED no es visible 0ms
+ ✓ test/visibility.test.ts > isNoticeVisible > aún no empezó: no es visible 0ms
+ ✓ test/visibility.test.ts > isNoticeVisible > un fin dado como día incluye todo el día en Buenos Aires 1ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed | 16 skipped (21)
+   Start at  07:34:45
+   Duration  456ms (import 59%, transform 28%, worker 7%, tests 6%)
+

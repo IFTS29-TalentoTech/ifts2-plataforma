@@ -844,7 +844,7 @@ Todo error de la API tiene el mismo formato (`application/problem+json`):
 ```json
 {
   "type": "about:blank#validation",
-  "title": "Datos inválidos",
+  "title": "Hay datos incorrectos",
   "status": 400,
   "code": "validation",
   "detail": "El título es obligatorio.",
