@@ -392,7 +392,7 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
               Cómo obtener estas credenciales
             </summary>
             <div className="mt-3">
-              <h4 className="font-display text-base font-bold text-accent-3">
+              <h4 className="font-display text-lg font-bold text-accent-3">
                 {INSTAGRAM_SETUP_GUIDE.title}
               </h4>
               <p className="mt-1 text-sm text-font-strong">{INSTAGRAM_SETUP_GUIDE.intro}</p>

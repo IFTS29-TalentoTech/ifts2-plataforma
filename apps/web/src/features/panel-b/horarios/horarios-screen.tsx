@@ -108,7 +108,7 @@ export function HorariosScreen({ role }: { role: Role }) {
             <Select
               className="flex-1"
               label="Ciclo que estás editando"
-              value={termId}
+              value={term?.id ?? termId}
               onValueChange={setTermId}
               options={termList.map((t) => ({
                 value: t.id,

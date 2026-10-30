@@ -27,7 +27,11 @@ declare global {
       /** Campo de formulario por el texto de su etiqueta visible (input, textarea o botón de select). */
       byLabel(label: string | RegExp): Chainable<JQuery<HTMLElement>>;
       /** Pedido a la API con la sesión actual; devuelve la respuesta (no falla por 4xx). */
-      api(method: string, path: string, body?: Cypress.RequestBody): Chainable<Cypress.Response<any>>;
+      api(
+        method: string,
+        path: string,
+        body?: Cypress.RequestBody,
+      ): Chainable<Cypress.Response<any>>;
     }
   }
 }

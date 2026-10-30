@@ -66,3 +66,15 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q46 | Frecuencia del contacto | 5 envíos por hora por IP + campo señuelo (sin captcha externo) | RNF08 |
 | Q47 | `GET /public/publications` con `archived=true` sin `year` | Usa el año en curso (hora de Buenos Aires); la "fecha" de una publicación es `visibleFrom` o, si no tiene, `createdAt` | RF03 |
 
+
+## Agregadas por el agente del Panel B (rama `feat/web-panel-b`)
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q100 | El Figma pide SMTP con "remitente", pero `PUT /integrations/mail` solo guarda `contactToEmail` y una cadena `smtpUrl` | La pantalla arma `smtp(s)://usuario:clave@host:puerto` desde host, puerto, usuario y contraseña; no hay campo "remitente" hasta que la API lo soporte | RF08, ADR-020 |
+| Q101 | "Período académico" del Figma (año lectivo y cuatrimestre visible) | En Configuración es solo lectura (muestra el ciclo público) con enlace a Horarios, donde se cambia con confirmación (`PUT /terms/:id/public-current`); un solo lugar para esa regla | RF06 |
+| Q102 | Quién puede crear ciclos: BEDELIA tiene `terms:manage` | BEDELIA puede crear ciclos (no públicos) pero no cambiar el público (solo ADMIN) | RF06 |
+| Q103 | Al subir una grilla o cronograma el documento queda en el Archivo con tipo SCHEDULE / EXAM_CALENDAR y el ciclo del horario | Si el segundo paso (crear el horario) falla, el documento queda subido y se puede reutilizar; no hay transacción entre ambos pasos | RF03 |
+| Q104 | "Próximo turno oficial" de Horarios | Primer llamado publicado del ciclo cuya fecha de fin no pasó | RF06 |
+| Q105 | La web (`next.config.ts`) no encuentra `API_ORIGIN` del `.env` raíz (el reenvío `/api/v1` cae en el puerto 4000) | Se levanta la web con `API_ORIGIN` exportado en el entorno; conviene que DevOps lo corrija (`loadEnvConfig` ya fue invocado antes por Next) | DevOps |
+| Q106 | Cypress (Electron) no ejecuta el clic nativo de Enter sobre un botón | La prueba E2E-13 enfoca y hace clic, y verifica con teclado real (`cy.press`) el foco atrapado y devuelto en diálogos | RNF07 |

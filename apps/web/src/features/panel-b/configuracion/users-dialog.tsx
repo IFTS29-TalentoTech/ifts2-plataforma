@@ -223,7 +223,7 @@ export function UsersDialog({
                         aria-label={`Restablecer contraseña de ${u.name}`}
                       >
                         <KeyRound className="h-4 w-4" aria-hidden="true" />
-                        Restablecer clave
+                        Restablecer contraseña
                       </Button>
                     )}
                     <Button
@@ -318,7 +318,7 @@ function TemporaryPassword({
         cambiarla al ingresar.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <code className="rounded-md bg-surface px-3 py-2 font-mono text-base text-accent-3">
+        <code className="rounded-md bg-surface px-3 py-2 font-mono text-lg text-accent-3">
           {secret.password}
         </code>
         <Button

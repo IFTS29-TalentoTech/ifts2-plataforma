@@ -49,7 +49,7 @@ export function MarkdownPreview({ source }: { source: string }) {
         const key = `b${bi}`;
         const heading = /^(#{1,3})\s+(.*)$/.exec(lines[0] ?? '');
         if (heading && lines.length === 1) {
-          const size = ['text-xl', 'text-lg', 'text-base'][(heading[1]?.length ?? 1) - 1];
+          const size = ['text-xl', 'text-lg', 'text-[1rem]'][(heading[1]?.length ?? 1) - 1];
           return (
             <p key={key} className={`font-display font-bold ${size}`}>
               {inline(heading[2] ?? '', key)}
