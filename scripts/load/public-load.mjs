@@ -149,6 +149,7 @@ const lines = [
   'Códigos de estado por escenario: ' +
     results.map((r) => `${r.name}: ${JSON.stringify(r.statuses)}`).join(' · '),
   '',
+  NOTE,
 ];
 const md = lines.join('\n');
 console.log('\n' + md);
