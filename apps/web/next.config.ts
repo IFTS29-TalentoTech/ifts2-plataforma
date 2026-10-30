@@ -3,11 +3,32 @@ import type { NextConfig } from 'next';
 import { loadEnvConfig } from '@next/env';
 
 // Un solo .env en la raíz del monorepo.
-loadEnvConfig(path.resolve(__dirname, '../..'));
+// `forceReload`: Next ya cargó el entorno de apps/web (sin archivos) y sin esta bandera devuelve esa
+// caché y NUNCA lee el .env de la raíz, así que API_ORIGIN y compañía quedaban en sus valores por defecto.
+loadEnvConfig(
+  path.resolve(__dirname, '../..'),
+  process.env.NODE_ENV !== 'production',
+  console,
+  true,
+);
 
 const apiOrigin = process.env.API_ORIGIN ?? 'http://localhost:4000';
 
+// Las portadas de las publicaciones las sirve la API (almacenamiento propio): next/image solo
+// optimiza imágenes de orígenes declarados acá (RNF05). Ver features/public/parts.tsx (Cover).
+const apiUrl = new URL(apiOrigin);
+
 const config: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: apiUrl.protocol.replace(':', '') as 'http' | 'https',
+        hostname: apiUrl.hostname,
+        port: apiUrl.port,
+      },
+    ],
+    formats: ['image/avif', 'image/webp'],
+  },
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true }, // el lint corre en la raíz (pnpm lint)
   outputFileTracingRoot: path.resolve(__dirname, '../..'),
