@@ -2,117 +2,177 @@ $ pnpm -r --filter @ifts2/shared --filter @ifts2/api --filter @ifts2/web build
 Scope: 3 of 4 workspace projects
 apps/api build$ tsup
 apps/web build$ next build
-apps/api build: [34mCLI[39m Building entry: src/server.ts, src/modules/audit/index.ts, src/modules/auth/index.ts, src/modules/categories/index.ts, src/modules/contact/index.ts, src/modules/content/index.ts, src/modules/dashboard/index.ts, src/modules/documents/index.ts, src/modules/exam-calls/index.ts, src/modules/files/index.ts, src/modules/health/index.ts, src/modules/integrations/index.ts, src/modules/links/index.ts, src/modules/notices/index.ts, src/modules/public/index.ts, src/modules/publications/index.ts, src/modules/schedules/index.ts, src/modules/settings/index.ts, src/modules/social/index.ts, src/modules/terms/index.ts, src/modules/users/index.ts
+apps/api build: [34mCLI[39m Building entry: src/server.ts, src/modules/audit/index.ts, src/modules/auth/index.ts, src/modules/categories/index.ts, src/modules/dashboard/index.ts, src/modules/contact/index.ts, src/modules/documents/index.ts, src/modules/exam-calls/index.ts, src/modules/health/index.ts, src/modules/integrations/index.ts, src/modules/content/index.ts, src/modules/links/index.ts, src/modules/notices/index.ts, src/modules/schedules/index.ts, src/modules/publications/index.ts, src/modules/files/index.ts, src/modules/social/index.ts, src/modules/settings/index.ts, src/modules/public/index.ts, src/modules/terms/index.ts, src/modules/users/index.ts
 apps/api build: [34mCLI[39m Using tsconfig: tsconfig.json
 apps/api build: [34mCLI[39m tsup v9.0.0
 apps/api build: [34mCLI[39m Using tsup config: C:\Users\zampa\Desktop\CURSOS\Tecnicatura\proyectos_2026\ifts2-plataforma\apps\api\tsup.config.ts
 apps/api build: [34mCLI[39m Target: node20
 apps/api build: [34mCLI[39m Cleaning output folder
 apps/api build: [34mESM[39m Build start
-apps/api build: [32mESM[39m [1mdist\modules\terms\index.js            [22m[32m5.11 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\schedules\index.js        [22m[32m8.38 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\settings\index.js         [22m[32m1.51 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\exam-calls\index.js       [22m[32m8.32 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\links\index.js            [22m[32m4.64 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\social\index.js           [22m[32m16.56 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\publications\index.js     [22m[32m11.08 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\terms\index.js            [22m[32m5.11 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\public\index.js           [22m[32m12.23 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\notices\index.js          [22m[32m10.86 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\content\index.js          [22m[32m3.64 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\contact\index.js          [22m[32m4.87 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\documents\index.js        [22m[32m10.71 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\dashboard\index.js        [22m[32m3.14 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\categories\index.js       [22m[32m4.54 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-35RE6JW4.js                 [22m[32m1.64 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\social\index.js           [22m[32m16.75 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\users\index.js            [22m[32m6.58 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\files\index.js            [22m[32m1.06 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\integrations\index.js     [22m[32m8.61 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-WOOHL5G4.js                 [22m[32m1.60 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\health\index.js           [22m[32m204.00 B[39m
-apps/api build: [32mESM[39m [1mdist\server.js                         [22m[32m17.08 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-OU4RKWJF.js                 [22m[32m2.02 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-NGD4Z42Z.js                 [22m[32m8.32 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-ZJFY3G7F.js                 [22m[32m1.01 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-CH7AMM2E.js                 [22m[32m9.95 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-2NHTVI4I.js                 [22m[32m1.08 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\auth\index.js             [22m[32m3.99 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-T7H7WDEN.js                 [22m[32m1.01 KB[39m
 apps/api build: [32mESM[39m [1mdist\chunk-M6I5TCV7.js                 [22m[32m845.00 B[39m
-apps/api build: [32mESM[39m [1mdist\chunk-SLQI5TE4.js                 [22m[32m3.33 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-OGAWJUEB.js                 [22m[32m365.00 B[39m
+apps/api build: [32mESM[39m [1mdist\modules\content\index.js          [22m[32m3.64 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-NQTT6Q4Y.js                 [22m[32m2.02 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\publications\index.js     [22m[32m11.08 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\files\index.js            [22m[32m1.06 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\audit\index.js            [22m[32m1.49 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-YFXOF3H6.js                 [22m[32m8.32 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-ZJFY3G7F.js                 [22m[32m1.01 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\schedules\index.js        [22m[32m8.38 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\notices\index.js          [22m[32m11.24 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-T7H7WDEN.js                 [22m[32m1.01 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-EMBJDX63.js                 [22m[32m3.33 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\auth\index.js             [22m[32m3.99 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\categories\index.js       [22m[32m4.54 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-3FKYV5V5.js                 [22m[32m9.95 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-APS7XEQ2.js                 [22m[32m1.08 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\dashboard\index.js        [22m[32m3.14 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\documents\index.js        [22m[32m10.71 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-SQP46P47.js                 [22m[32m365.00 B[39m
+apps/api build: [32mESM[39m [1mdist\modules\contact\index.js          [22m[32m4.87 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\exam-calls\index.js       [22m[32m8.32 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-AVZQL4WW.js                 [22m[32m7.62 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-H3U42XBP.js                 [22m[32m1.64 KB[39m
 apps/api build: [32mESM[39m [1mdist\chunk-PRW5JFVK.js                 [22m[32m290.00 B[39m
-apps/api build: [32mESM[39m [1mdist\chunk-LZLCI7O5.js                 [22m[32m7.62 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-QDCIBWZC.js                 [22m[32m1.60 KB[39m
 apps/api build: [32mESM[39m [1mdist\chunk-2JR2PUKT.js                 [22m[32m629.00 B[39m
-apps/api build: [32mESM[39m [1mdist\chunk-5HE4M6OB.js                 [22m[32m2.13 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-66R5IBIZ.js                 [22m[32m1.69 KB[39m
 apps/api build: [32mESM[39m [1mdist\chunk-5MCREJ7W.js                 [22m[32m591.00 B[39m
+apps/api build: [32mESM[39m [1mdist\server.js                         [22m[32m18.27 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\links\index.js            [22m[32m4.64 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-YGG3ZTYN.js                 [22m[32m30.13 KB[39m
 apps/api build: [32mESM[39m [1mdist\chunk-E3YL7DWK.js                 [22m[32m1.83 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-43CE5QB5.js                 [22m[32m28.77 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\settings\index.js.map     [22m[32m3.39 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\terms\index.js.map        [22m[32m9.89 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\links\index.js.map        [22m[32m9.20 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\exam-calls\index.js.map   [22m[32m16.01 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\publications\index.js.map [22m[32m22.79 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\social\index.js.map       [22m[32m35.35 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\notices\index.js.map      [22m[32m22.35 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\public\index.js.map       [22m[32m29.74 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\contact\index.js.map      [22m[32m11.09 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\dashboard\index.js.map    [22m[32m6.35 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\integrations\index.js.map [22m[32m15.90 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\social\index.js.map       [22m[32m35.92 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\health\index.js.map       [22m[32m222.00 B[39m
 apps/api build: [32mESM[39m [1mdist\modules\content\index.js.map      [22m[32m7.54 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\users\index.js.map        [22m[32m12.61 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\documents\index.js.map    [22m[32m22.82 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\schedules\index.js.map    [22m[32m16.20 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-35RE6JW4.js.map             [22m[32m4.85 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\files\index.js.map        [22m[32m1.90 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\integrations\index.js.map [22m[32m15.90 KB[39m
-apps/api build: [32mESM[39m [1mdist\server.js.map                     [22m[32m38.33 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\health\index.js.map       [22m[32m222.00 B[39m
-apps/api build: [32mESM[39m [1mdist\chunk-OU4RKWJF.js.map             [22m[32m5.03 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-CH7AMM2E.js.map             [22m[32m24.63 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-ZJFY3G7F.js.map             [22m[32m2.08 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-NGD4Z42Z.js.map             [22m[32m21.20 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-T7H7WDEN.js.map             [22m[32m2.17 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\categories\index.js.map   [22m[32m9.25 KB[39m
-apps/api build: [32mESM[39m [1mdist\modules\auth\index.js.map         [22m[32m7.76 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-2NHTVI4I.js.map             [22m[32m3.13 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-OGAWJUEB.js.map             [22m[32m817.00 B[39m
-apps/api build: [32mESM[39m [1mdist\chunk-SLQI5TE4.js.map             [22m[32m5.69 KB[39m
 apps/api build: [32mESM[39m [1mdist\modules\audit\index.js.map        [22m[32m2.73 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-PRW5JFVK.js.map             [22m[32m793.00 B[39m
-apps/api build: [32mESM[39m [1mdist\chunk-2JR2PUKT.js.map             [22m[32m1.66 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-5MCREJ7W.js.map             [22m[32m1.90 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-LZLCI7O5.js.map             [22m[32m16.12 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-5HE4M6OB.js.map             [22m[32m4.35 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-E3YL7DWK.js.map             [22m[32m3.75 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-43CE5QB5.js.map             [22m[32m70.03 KB[39m
 apps/api build: [32mESM[39m [1mdist\chunk-M6I5TCV7.js.map             [22m[32m2.76 KB[39m
-apps/api build: [32mESM[39m [1mdist\chunk-WOOHL5G4.js.map             [22m[32m4.62 KB[39m
-apps/api build: [32mESM[39m ⚡️ Build success in 225ms
+apps/api build: [32mESM[39m [1mdist\modules\schedules\index.js.map    [22m[32m16.20 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-NQTT6Q4Y.js.map             [22m[32m5.03 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-ZJFY3G7F.js.map             [22m[32m2.08 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\notices\index.js.map      [22m[32m23.26 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\auth\index.js.map         [22m[32m7.76 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\terms\index.js.map        [22m[32m9.89 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\categories\index.js.map   [22m[32m9.25 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-YFXOF3H6.js.map             [22m[32m21.20 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\dashboard\index.js.map    [22m[32m6.35 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\documents\index.js.map    [22m[32m22.82 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\exam-calls\index.js.map   [22m[32m16.01 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\contact\index.js.map      [22m[32m11.00 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-EMBJDX63.js.map             [22m[32m5.69 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-AVZQL4WW.js.map             [22m[32m16.12 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-SQP46P47.js.map             [22m[32m817.00 B[39m
+apps/api build: [32mESM[39m [1mdist\chunk-T7H7WDEN.js.map             [22m[32m2.17 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-PRW5JFVK.js.map             [22m[32m793.00 B[39m
+apps/api build: [32mESM[39m [1mdist\chunk-QDCIBWZC.js.map             [22m[32m4.62 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-APS7XEQ2.js.map             [22m[32m3.13 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-H3U42XBP.js.map             [22m[32m4.85 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-5MCREJ7W.js.map             [22m[32m1.90 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-2JR2PUKT.js.map             [22m[32m1.66 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-66R5IBIZ.js.map             [22m[32m4.03 KB[39m
+apps/api build: [32mESM[39m [1mdist\server.js.map                     [22m[32m41.81 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-3FKYV5V5.js.map             [22m[32m24.63 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\links\index.js.map        [22m[32m9.20 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-YGG3ZTYN.js.map             [22m[32m74.03 KB[39m
+apps/api build: [32mESM[39m [1mdist\chunk-E3YL7DWK.js.map             [22m[32m3.75 KB[39m
+apps/api build: [32mESM[39m [1mdist\modules\publications\index.js.map [22m[32m22.79 KB[39m
+apps/api build: [32mESM[39m ⚡️ Build success in 201ms
 apps/api build: Done
 apps/web build:    ▲ Next.js 15.5.28
 apps/web build:    - Environments: .env
 apps/web build:    Creating an optimized production build ...
-apps/web build:  ✓ Compiled successfully in 19.4s
+apps/web build:  ✓ Compiled successfully in 13.5s
 apps/web build:    Skipping linting
 apps/web build:    Checking validity of types ...
 apps/web build:    Collecting page data ...
 apps/web build:    Generating static pages (0/10) ...
-apps/web build: [public] no se pudo leer /content/ingreso: Sin conexión
-apps/web build: [public] no se pudo leer /students?audience=ASPIRANTS: Sin conexión
-apps/web build: [public] no se pudo leer /students: Sin conexión
-apps/web build: [public] no se pudo leer /content/institucional: Sin conexión
-apps/web build: [public] no se pudo leer /home: Sin conexión
-apps/web build: [public] no se pudo leer /content/carrera: Sin conexión
 apps/web build:    Generating static pages (2/10) 
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
 apps/web build:    Generating static pages (4/10) 
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
+apps/web build: [TypeError: fetch failed] {
+apps/web build:   [cause]: [AggregateError: ] { code: 'ECONNREFUSED' }
+apps/web build: }
 apps/web build:    Generating static pages (7/10) 
-apps/web build: [public] no se pudo leer /students: Sin conexión
 apps/web build:  ✓ Generating static pages (10/10)
 apps/web build:    Finalizing page optimization ...
 apps/web build:    Collecting build traces ...
 apps/web build: Route (app)                                 Size  First Load JS  Revalidate  Expire
 apps/web build: ┌ ○ /                                      239 B         167 kB          1m      1y
-apps/web build: ├ ○ /_not-found                            123 B         102 kB          1m      1y
+apps/web build: ├ ○ /_not-found                            127 B         102 kB          1m      1y
+apps/web build: ├ ƒ /api/revalidate                        127 B         102 kB
 apps/web build: ├ ○ /estudiantes                           239 B         167 kB          1m      1y
 apps/web build: ├ ○ /ingreso                               239 B         167 kB          1m      1y
 apps/web build: ├ ○ /inscripciones                         239 B         167 kB          1m      1y
@@ -120,15 +180,15 @@ apps/web build: ├ ○ /institucional                       3.29 kB         170
 apps/web build: ├ ○ /la-carrera                            239 B         167 kB          1m      1y
 apps/web build: ├ ƒ /novedades                           2.33 kB         169 kB
 apps/web build: ├ ƒ /novedades/[id]                        239 B         167 kB
-apps/web build: ├ ƒ /panel                               4.11 kB         194 kB
+apps/web build: ├ ƒ /panel                               4.11 kB         195 kB
 apps/web build: ├ ƒ /panel/archivo                       7.62 kB         186 kB
-apps/web build: ├ ƒ /panel/avisos                        4.67 kB         189 kB
+apps/web build: ├ ƒ /panel/avisos                        4.61 kB         189 kB
 apps/web build: ├ ƒ /panel/configuracion                 13.7 kB         195 kB
 apps/web build: ├ ƒ /panel/horarios                       8.7 kB         187 kB
 apps/web build: ├ ƒ /panel/login                         3.89 kB         165 kB
 apps/web build: ├ ƒ /panel/login/cambiar-clave           3.35 kB         165 kB
-apps/web build: ├ ƒ /panel/mensajes                      3.04 kB         184 kB
-apps/web build: ├ ƒ /panel/publicaciones                 5.65 kB         193 kB
+apps/web build: ├ ƒ /panel/mensajes                      3.04 kB         185 kB
+apps/web build: ├ ƒ /panel/publicaciones                 5.66 kB         193 kB
 apps/web build: └ ƒ /ui-kit                              3.57 kB         162 kB
 apps/web build: + First Load JS shared by all             102 kB
 apps/web build:   ├ chunks/738-67b157c7fdc71769.js       45.9 kB
