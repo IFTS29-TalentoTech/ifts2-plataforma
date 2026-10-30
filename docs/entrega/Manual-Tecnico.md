@@ -55,7 +55,7 @@ Aplicación completa y funcional (sitio público + panel + API + base de datos) 
 | **Git**                     | cualquiera    | —       | Solo si clonás el repositorio (con el `.zip` no hace falta)                  |
 | Internet                    | —             | —       | `pnpm install` y la compilación de la web (descarga la fuente de Google Fonts) |
 
-Funciona en Windows (Git Bash o PowerShell), macOS y Linux. Para las pruebas de punta a punta hace falta además Google Chrome o el Electron que trae Cypress (se descarga solo con `pnpm install`).
+Funciona en Windows (Git Bash o PowerShell), macOS y Linux. Para las pruebas de punta a punta se usa Cypress, que trae su propio navegador (Electron) y lo descarga la primera vez; para generar el PDF (`pnpm docs:pdf`) hace falta Google Chrome.
 
 ### 2.2 Obtener el proyecto
 
@@ -136,6 +136,7 @@ Los archivos subidos (PDF, imágenes) viven en la carpeta `uploads/` cuando `STO
 
 | Síntoma                                           | Causa y solución                                                                                                                                      |
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm db:up`: «container name "/ifts2-db" is already in use» | Ya existe un contenedor `ifts2-db` (de este u otro proyecto). Reutilizalo: `docker start ifts2-db` y, si querés una base propia, `docker exec ifts2-db psql -U ifts2 -c "CREATE DATABASE ifts2_mia"` con su `DATABASE_URL` en el `.env` (así se verificó la instalación en limpio). O eliminalo con `docker rm -f ifts2-db` si es tuyo y no tiene datos que quieras conservar. |
 | `EADDRINUSE :3000` (o `:4000`)                    | Otro programa usa el puerto. Cambiá los puertos como se explicó en 2.3.                                                                               |
 | `ECONNREFUSED` o `P1001` hacia la base            | Docker Desktop apagado o contenedor caído: `pnpm db:up`. El puerto es **5433**.                                                                       |
 | La API no arranca y lista variables               | Es a propósito: `.env` incompleto o proveedor mal configurado. Compará con `.env.example`.                                                            |
