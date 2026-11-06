@@ -11,10 +11,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN    // Rectoría / Dirección: acceso total
-  BEDELIA  // Bedelía Académica: horarios, mesas, avisos y cartelera
-  EDITOR   // Comunicación: publicaciones, redes y novedades
+// Los roles son datos (ADR-18 ampliada). El catálogo de permisos vive en packages/shared;
+// aquí se guarda qué permisos tiene cada rol. Roles del sistema creados por la semilla:
+//   SUPERADMIN  todo, incluido roles:manage (no editable ni eliminable; se resuelve en código)
+// Permisos iniciales de la semilla; el SUPERADMIN los edita casilla por casilla (roles:manage queda reservado):
+//   ADMIN       todo salvo roles:manage
+//   BEDELIA     horarios, mesas, avisos y cartelera
+//   EDITOR      publicaciones, redes y novedades
+model Role {
+  id          String           @id @default(uuid())
+  key         String           @unique // SUPERADMIN, ADMIN, BEDELIA, EDITOR o un identificador propio
+  name        String           @unique
+  description String?
+  isSystem    Boolean          @default(false) // los del sistema no se eliminan
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+  users       User[]
+}
+
+model RolePermission {
+  roleId     String
+  role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission String // acción del catálogo, por ejemplo "notices:manage"
+  @@id([roleId, permission])
 }
 
 enum PublicationKind { NEWS EVENT }
@@ -34,7 +54,8 @@ model User {
   email        String    @unique
   name         String
   passwordHash String
-  role         Role
+  roleId       String
+  role         Role      @relation(fields: [roleId], references: [id]) // no se elimina un rol con usuarios
   active       Boolean   @default(true)
   createdAt    DateTime  @default(now())
   lastLoginAt  DateTime?

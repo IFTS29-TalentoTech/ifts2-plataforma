@@ -34,7 +34,7 @@ Cada eliminación abre el diálogo de confirmación único (ADR-11), registra en
 - [ ] Proyecto completo comprimido (.zip) generado desde el repositorio, sin secretos ni `node_modules`.
 - [ ] PDF único con: Manual Técnico, Manual de Usuario, evidencias de pruebas unitarias y de integración, capturas del CRUD, sección de instalación y puesta en marcha.
 - [ ] Scripts de creación de la base: migraciones de Prisma y `seed.ts` (semilla de demostración).
-- [ ] Credenciales de prueba por rol (ADMIN, BEDELIA, EDITOR), solo para el entorno de demostración.
+- [ ] Credenciales de prueba por rol (SUPERADMIN, ADMIN, BEDELIA, EDITOR), solo para el entorno de demostración.
 - [ ] Enlace a la aplicación desplegada (sitio y panel) y a la API.
 - [ ] Presentación grabada con demostración en vivo (la consigna general de la cátedra la pide como defensa).
 - [ ] Verificación de instalación en una máquina limpia siguiendo solo el PDF.

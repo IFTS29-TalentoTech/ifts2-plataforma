@@ -17,7 +17,8 @@ Reemplazar el sitio actual por una plataforma propia que el personal del institu
 | Visitante | Aspirantes, alumnos, egresados, comunidad | Conocer la carrera, ver novedades, horarios y mesas vigentes, ingresar a SIU, Aula virtual y Mi Argentina |
 | Editor | Comunicación (Matías Peláez, María del Carmen Canobi) | Moderar publicaciones de redes y cargar novedades |
 | Bedelía | Bedelía Académica | Gestionar avisos, horarios y llamados a examen |
-| Administrador | Rectoría / Dirección | Acceso total: configuración, usuarios y roles, archivo |
+| Administrador | Rectoría / Dirección | Configuración, usuarios (puede crear otros administradores), archivo y todo el contenido; no define roles ni permisos |
+| Superadministrador | Persona designada por la institución (a definir) | Todo lo del administrador, más **crear roles y asignarles permisos** (ADR-18) |
 
 ## Alcance del MVP (MoSCoW)
 

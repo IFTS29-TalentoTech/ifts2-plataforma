@@ -10,7 +10,8 @@ Formato pedido por la cátedra: **Como [tipo de usuario], quiero [acción] para 
 | Alumno | Estudiante que cursa la carrera |
 | Editor | Docente de comunicación que maneja las redes del instituto |
 | Bedelía | Personal de la Oficina de Alumnos |
-| Administrador | Rectoría o Dirección, con acceso total |
+| Administrador | Rectoría o Dirección: gestiona contenido, usuarios y configuración |
+| Superadministrador | Persona designada por la institución: además crea roles y define sus permisos |
 
 ## Prioridad alta (primera versión)
 
@@ -56,10 +57,10 @@ Como **aspirante**, quiero **conocer la carrera, el plan de estudios y los pasos
 
 ## Prioridad media
 
-**H9 · Gestionar usuarios y roles**
-Como **administrador**, quiero **crear usuarios con un rol y desactivarlos** para **que cada persona acceda solo a lo que le corresponde**.
-- RF05, RNF06 · US-04, US-05, US-26 · Pantalla 12 (modal de usuarios) y 13.
-- *Criterio:* un usuario de bedelía no ve ni puede usar las opciones de redes ni de usuarios; un usuario desactivado no puede ingresar; el correo no se puede duplicar.
+**H9 · Gestionar usuarios, roles y permisos**
+Como **administrador**, quiero **crear usuarios con un rol y desactivarlos** para **que cada persona acceda solo a lo que le corresponde**. Como **superadministrador**, quiero **crear roles y elegir qué puede hacer cada uno** para **adaptar los accesos a cómo se organiza el instituto**.
+- RF05, RF11, RNF06 · US-04, US-05, US-26, US-36 · Pantalla 12 (modal de usuarios y nueva sección Roles y permisos, Q123) y 13.
+- *Criterio:* un usuario de bedelía no ve ni puede usar las opciones de redes ni de usuarios; un usuario desactivado no puede ingresar; el correo no se puede duplicar; un rol creado por el superadministrador limita lo que ve y puede hacer quien lo recibe; un rol con usuarios no se elimina; siempre queda un superadministrador activo; el superadministrador tilda exactamente los permisos de cada rol y el administrador puede crear otros administradores, pero no superadministradores.
 
 **H10 · Ordenar el archivo documental**
 Como **personal autorizado**, quiero **archivar, buscar, restaurar y eliminar documentos antiguos con confirmación** para **mantener ordenado el repositorio sin perder información por error**.

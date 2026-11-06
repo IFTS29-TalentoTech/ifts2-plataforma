@@ -11,7 +11,7 @@ Prioridad M / S / C como en `01-requerimientos.md`. Una historia = una rama = un
 | 2. Contenido dinámico | Publicaciones, moderación, avisos (con eliminación manual confirmada, US-33) | Flujo de moderación de punta a punta (con doble) | US-07 a US-12 |
 | 3. Académico y archivo | Horarios, llamados, ciclo público, documentos, archivo | Estudiantes muestra solo el ciclo público | US-13 a US-18 |
 | 4. Sitio público | Las seis páginas, responsive y accesibles | Lighthouse en umbral | US-19 a US-24 |
-| 5. Configuración | Datos institucionales, usuarios y roles | Administración completa | US-25, US-26 |
+| 5. Configuración | Datos institucionales, usuarios, roles y permisos (SUPERADMIN) | Administración completa | US-25, US-26, US-36 |
 | 6. Should y Could | Contacto, plantel, plan con correlatividades, galería | Según tiempo disponible | US-27 a US-30 |
 | 7. Endurecimiento | Seguridad, degradación, rendimiento, respaldos, documentación | Hito de la semana 13 cumplido | US-31, US-32 |
 | 8. Entrega a la cátedra | Eliminación con confirmación, evidencias, manuales, instalación y empaquetado | PDF, repositorio, .zip, scripts de base y enlace desplegado | US-33, US-34, US-35 |
@@ -46,7 +46,7 @@ Prioridad M / S / C como en `01-requerimientos.md`. Una historia = una rama = un
 | US-23 | Como visitante quiero ver Ingreso | M | RF02 | Pantalla 05 |
 | US-24 | Como visitante quiero ver Novedades con filtros y archivo del año | M | RF03 | Pantalla 06 |
 | US-25 | Como administrador quiero editar datos institucionales y ajustes | M | RF01 | Pantalla 12 |
-| US-26 | Como administrador quiero gestionar usuarios y roles | M | RF05 | E2E-12 |
+| US-26 | Como administrador quiero gestionar usuarios (incluso crear otros administradores) y asignarles un rol | M | RF05 | E2E-12 |
 | US-27 | Como visitante quiero enviar una consulta | S | RF08 | E2E-14 |
 | US-28 | Como bedelía quiero leer y marcar mensajes de contacto | S | RF08 | Bandeja con estados |
 | US-29 | Como editor quiero gestionar el plantel docente y mostrar el plan con correlatividades | S | RF10 | Alta, baja lógica y visibilidad |
@@ -56,6 +56,7 @@ Prioridad M / S / C como en `01-requerimientos.md`. Una historia = una rama = un
 | US-33 | Como usuario autorizado quiero eliminar contenido no vigente con confirmación | M | Consigna | E2E-16; auditoría; 409 si está vigente o referenciado |
 | US-34 | Como equipo quiero evidencias de pruebas unitarias e integración documentadas | M | Consigna | Sección 6 de `10-entregables-etapa-3.md` |
 | US-35 | Como docente quiero instalar y ejecutar el proyecto solo con la documentación | M | Consigna | Manual Técnico con pasos verificados en una máquina limpia |
+| US-36 | Como superadministrador quiero crear roles y definir sus permisos para que cada persona use solo lo que le corresponde | M | RF11 | E2E-18 a E2E-20; pruebas de API 403 y 409 y de "toda ruta declara permiso"; `GET /auth/me` con permisos |
 
 ## Orden sugerido dentro de una fase
 

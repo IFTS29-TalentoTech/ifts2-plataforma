@@ -21,7 +21,7 @@ Cada decisión indica **estado**: *Cerrada* (decidida por la cátedra o el clien
 | 15 | Hosting y base gratuitos | A validar (DevOps) |
 | 16 | Correo transaccional por SMTP | A validar |
 | 17 | Zona horaria y localización | Propuesta |
-| 18 | Roles y permisos | A validar con el cliente |
+| 18 | Roles y permisos (ampliada con SUPERADMIN y roles configurables) | Propuesta; a validar con el equipo y el cliente |
 | 19 | Observabilidad mínima | Propuesta |
 
 ## ADR-01 · Desarrollo a medida
@@ -108,6 +108,16 @@ Idioma único `es-AR`. Fechas almacenadas en UTC y presentadas en `America/Argen
 ## ADR-18 · Roles y permisos
 
 Tres roles (matriz en `04-api.md`). El Figma define "Rectoría / Dirección: acceso total" y "Bedelía Académica: gestión de horarios y cartelera"; el rol **Editor** (comunicación) sale de la etapa de relevamiento (Matías Peláez y María del Carmen Canobi cargan contenido). **A validar con el cliente** si Editor y Bedelía son roles separados o uno solo.
+
+**Ampliación (06/11/2026): roles configurables y Superadministrador.** Se agrega el rol **SUPERADMIN**, el único que puede crear, editar y eliminar roles y asignarles permisos. Decisiones:
+- **Catálogo fijo, roles como datos.** Los permisos (`resource:action`, por ejemplo `notices:manage`) son un catálogo definido en `packages/shared`, porque cada uno corresponde a código. Los roles y sus permisos pasan a la base: tablas `Role` y `RolePermission`; `User.roleId` reemplaza al enum `Role`.
+- **Roles del sistema** (`isSystem`): SUPERADMIN, ADMIN, BEDELIA y EDITOR se crean en la semilla y no se eliminan. ADMIN, BEDELIA y EDITOR arrancan con la matriz de `04-api.md`, pero el Superadministrador **define exactamente sus permisos, casilla por casilla** (confirmado con el cliente). SUPERADMIN no se edita y siempre tiene todos los permisos (se resuelve en código, no en filas). `roles:manage` está reservado a SUPERADMIN: no figura entre las casillas y la API rechaza guardarlo en otro rol (400).
+- **Sin bloqueo del sistema:** siempre debe existir al menos un SUPERADMIN activo (409 al intentar desactivarlo o cambiarle el rol).
+- **Quién crea usuarios (confirmado):** SUPERADMIN y ADMIN (`users:manage`) crean usuarios, **incluidos otros administradores**. Anti-escalada: un ADMIN solo asigna roles cuyos permisos son un subconjunto de los suyos y nunca SUPERADMIN (403); el SUPERADMIN asigna cualquiera. Solo el SUPERADMIN gestiona roles.
+- **Defensa en capas contra accesos indebidos, denegando por defecto:** (1) **API**: toda ruta fuera de `/public` y `/auth` exige sesión y un permiso declarado (`requirePermission`); una prueba automática recorre las rutas y falla si alguna no lo declara. (2) **Web**: el middleware exige sesión, cada página consulta los permisos de la sesión (`GET /auth/me`) y muestra "sin acceso", y el menú y los botones ofrecen solo lo permitido. (3) **Proteger y ocultar son obligatorios los dos**: la API es la que decide, y ocultar una opción nunca es la protección; pero la interfaz también debe no mostrar lo que la persona no puede usar. Una prueba de cada lado: sin permiso, la opción no aparece y, si se fuerza, la API responde 403. (4) Los permisos se leen en cada pedido, así que quitar un permiso rige de inmediato.
+- **Eliminar un rol** sigue la regla general del proyecto: manual, con confirmación, auditado y solo si no tiene usuarios asignados (409 si los tiene).
+- **Vigencia de los permisos:** se leen de la base en cada pedido (o con caché corta invalidada al guardar), de modo que un cambio rige de inmediato.
+- **Sin más complejidad:** sin permisos por registro ni jerarquías de roles. Cada rol es una lista de permisos del catálogo, lo que un instituto con pocos usuarios puede entender y administrar.
 
 ## ADR-19 · Observabilidad
 

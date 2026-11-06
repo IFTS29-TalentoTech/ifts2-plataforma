@@ -57,7 +57,7 @@ Las integraciones externas están aisladas en módulos propios (`social`, `stora
 | `STORAGE_PROVIDER` (`local` / `supabase` / `cloudinary`) y credenciales del proveedor | Archivos |
 | `SMTP_URL`, `CONTACT_TO_EMAIL` | Correo de contacto |
 | `REVALIDATE_SECRET` | Revalidación bajo demanda del sitio |
-| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Primer administrador (solo desarrollo y primer despliegue) |
+| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Superadministrador inicial (lo crea la semilla; en desarrollo con clave de demostración, en producción con cambio de clave obligatorio) |
 
 Ningún secreto se versiona. `.env.example` tiene valores de ejemplo no sensibles.
 

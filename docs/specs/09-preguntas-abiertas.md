@@ -113,3 +113,11 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q120 | ¿En qué año y cuatrimestre se cursa cada instancia curricular? Ni la ficha ni la resolución MEGC 1202/07 lo indican (solo el régimen cuatrimestral/anual y las horas) | La página La carrera muestra el plan por **área formativa**; la sección "Plan por año" dice `[a confirmar con el cliente]`. Se necesita la grilla de cursada del instituto | 08-contenido, RF02 |
 | Q121 | La resolución nombra distinto a algunas instancias en la tabla de correlatividades que en el plan ("Química" / Elementos de Química, "Panadería" / Elaboraciones de Panadería, "Taller de producción escrita" / Taller de comunicación escrita, "Práctica 2 – Producción gastronómica" / Organización de la producción) y la ficha tiene la tabla de horas desalineada | Se transcribieron los nombres de la resolución tal cual; las horas salen de la tabla de la resolución, cuyos totales por área (256, 1378, 778, 346) y el de la carrera (2758) cierran. Confirmar con el instituto los nombres vigentes | 08-contenido |
 | Q122 | Fechas de inscripción a la tecnicatura, documentación a presentar y modo de preinscripción no figuran en ningún documento del cliente | Texto `[a confirmar con el cliente]` en Ingreso; el único requisito cargado es secundario completo | RF02 |
+
+## Agregadas por el equipo (06/11/2026): roles y permisos
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q123 | **Resuelta (06/11/2026):** roles configurables y Superadministrador confirmados con el cliente. La pantalla "Roles y permisos" **no va a estar en el Figma**: se arma con los componentes existentes (tabla, diálogo y casillas agrupadas por recurso). El Superadministrador local lo crea la semilla; **a quién se le entregan las credenciales en producción se decide al pasar a producción**. | Ver ADR-18 | RF11, pantalla 12 |
+| Q124 | **Resuelta (06/11/2026):** los permisos de ADMIN, BEDELIA y EDITOR **se editan** en la pantalla de roles, casilla por casilla; SUPERADMIN no se edita. | Ver ADR-18 | RF11 |
+| Q125 | **Resuelta (06/11/2026):** SUPERADMIN y ADMIN crean usuarios, también otros administradores. Un ADMIN asigna solo roles cuyos permisos incluye y nunca SUPERADMIN (regla de seguridad que agrega el equipo; se puede relajar si el cliente lo pide). | Ver ADR-18 | RF05, RF11 |

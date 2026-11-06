@@ -53,7 +53,7 @@ El correo `ifts2@bue.edu.ar` y el teléfono `(011) 4601-2345` que aparecen en el
 
 Ciclo público 2026-2.º; turno extraordinario de mesas en diciembre de 2026 con inscripción abierta; avisos de ejemplo ("Inscripción al turno extraordinario de Diciembre 2026" vigente hasta el 25/11/2026; "Reentrega de Libreta Sanitaria y Apto Físico" como aviso urgente); publicaciones sociales de ejemplo ("Jornada gastronómica", "Mateada Patria" como ejemplo histórico de 2025, y un saludo de efeméride como contenido no prioritario). Ejemplos de contenido institucionalmente relevante según el cliente: Mateada Patria (25 de mayo), cierre de cuatrimestre, colación, Jornada de Gastronomía de octubre, Noche de los Museos, eventos de Práctica Profesional II. Ejemplo de contenido interno menor que no va al sitio: "Día de la Secretaria".
 
-**Los datos de demostración nunca se cargan en producción.** La semilla de producción solo incluye el administrador inicial, los ajustes de esta tabla y los enlaces confirmados.
+**Los datos de demostración nunca se cargan en producción.** La semilla de producción solo incluye los roles del sistema, el **superadministrador inicial** (con cambio de clave obligatorio; a quién se le entregan las credenciales se decide al pasar a producción), los ajustes de esta tabla y los enlaces confirmados.
 
 ## Imágenes y marca
 
