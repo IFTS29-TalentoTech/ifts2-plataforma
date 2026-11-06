@@ -108,6 +108,31 @@ Tareas de redes: `CRON_SECRET` (cron externo -> `POST /social/cron`) y `SOCIAL_S
 
 ## Escribir pruebas de API
 
+Las unitarias se ejecutan con `pnpm --filter @ifts2/api test:unit`, sin PostgreSQL ni `.env`.
+Las de integración (`pnpm --filter @ifts2/api exec vitest run --project integration`) exigen
+`TEST_DATABASE_URL` explícita en el entorno o en `.env`, con credenciales, puerto `5433`,
+host `localhost`, `127.0.0.1` o `[::1]` y base `ifts2_test`. Solo se admite el parámetro
+opcional `schema=public`; nunca se utiliza `DATABASE_URL` como alternativa.
+
+Además, PostgreSQL debe devolver el nombre `ifts2_test` y el comentario
+`ifts2:disposable-test-database`. Docker lo configura al crear el volumen; CI marca su
+servicio efímero antes de las pruebas. Para un volumen local existente, verificá primero
+que `ifts2_test` sea exclusivamente descartable y luego autorizala explícitamente:
+
+```sh
+psql -h localhost -p 5433 -U ifts2 -d ifts2_test -v ON_ERROR_STOP=1 \
+  -c "COMMENT ON DATABASE ifts2_test IS 'ifts2:disposable-test-database'"
+```
+
+La marca se comprueba mediante una consulta de lectura antes de migrar y de habilitar
+el cliente compartido, y nuevamente dentro de cada transacción de `resetDb()`.
+Si falta configuración o no se puede verificar la autorización, la suite se bloquea.
+El proyecto de integración desactiva la caché persistente de módulos de Vitest 5:
+su lector de caché entrega un `Buffer` al formateador de source maps de Vite y puede
+ocultar el diagnóstico del setup con `code.charCodeAt is not a function`.
+`pnpm test` conserva ambas suites. Los comandos manuales `db:*`, semilla y E2E mantienen
+su comportamiento y requieren verificar su propio destino antes de ejecutarlos.
+
 ```ts
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
