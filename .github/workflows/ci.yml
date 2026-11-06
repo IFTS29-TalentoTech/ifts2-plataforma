@@ -87,6 +87,7 @@ jobs:
       - run: pnpm build
       - name: Levantar API y web
         run: |
+          touch .env
           pnpm --filter @ifts2/api start &
           ENABLE_UI_KIT=true pnpm --filter @ifts2/web start &
           npx --yes wait-on http://localhost:4000/health http://localhost:3000
