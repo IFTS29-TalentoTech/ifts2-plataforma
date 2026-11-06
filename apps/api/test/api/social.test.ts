@@ -5,6 +5,7 @@
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { loadConfig } from '../../src/config';
+import { assertPublicHttpUrl, MediaDownloadError } from '../../src/infra/media-download';
 import { InstagramApiError, InstagramNotConfiguredError } from '../../src/infra/instagram';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { loginAs } from '../helpers/auth';
@@ -25,7 +26,16 @@ const day = (n: number) => new Date(Date.now() + n * 86_400_000);
 const CRON = 'secreto-del-cron-0123456789';
 
 async function boot(over: Parameters<typeof createTestApp>[0] = {}) {
-  t = await createTestApp({ fetch: mock.fetch, ...over });
+  t = await createTestApp({
+    fetch: mock.fetch,
+    downloadImage: async (url) => {
+      assertPublicHttpUrl(url);
+      const response = await mock.fetch(url);
+      if (!response.ok) throw new MediaDownloadError('No pudimos descargar la imagen.');
+      return Buffer.from(await response.arrayBuffer());
+    },
+    ...over,
+  });
   cookie = (await loginAs(t.app, 'EDITOR')).cookie;
 }
 
@@ -566,6 +576,36 @@ describe('POST /social/posts/:id/approve', () => {
       'DETECTED',
     );
   });
+
+  it.each([
+    ['manual-dns-bloqueado', 422],
+    ['instagram-dns-bloqueado', 502],
+  ])(
+    'un destino rechazado conserva pendiente %s y permite reintentar',
+    async (externalId, status) => {
+      const p = await createSocialPostRow({
+        externalId: String(externalId),
+        mediaUrl: 'https://scontent.cdninstagram.com/img/reintento.jpg',
+      });
+      const downloader = t.ctx.downloadImage;
+      t.ctx.downloadImage = async () => {
+        throw new MediaDownloadError('La dirección de la imagen apunta a una red no permitida.');
+      };
+      const failed = await approve(p.id);
+      expect(failed.status).toBe(status);
+      expect(failed.body.detail).toMatch(/red no permitida/);
+      expect(await testPrisma.publication.count()).toBe(0);
+      expect(await audited('social.approve')).toBe(0);
+      expect((await testPrisma.socialPost.findUniqueOrThrow({ where: { id: p.id } })).status).toBe(
+        'DETECTED',
+      );
+      expect((await list()).status).toBe(200);
+      expect(mock.calls).toHaveLength(0);
+      t.ctx.downloadImage = downloader;
+      expect((await approve(p.id)).status).toBe(201);
+      expect(await testPrisma.publication.count()).toBe(1);
+    },
+  );
 
   it('una imagen inválida (no es JPG/PNG/WebP) da 422', async () => {
     const p = await createSocialPostRow({
