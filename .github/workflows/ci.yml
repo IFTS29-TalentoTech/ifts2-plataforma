@@ -44,6 +44,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+      - name: Autorizar la base descartable del servicio de pruebas
+        env:
+          PGPASSWORD: ifts2
+        run: psql -h localhost -p 5433 -U ifts2 -d ifts2_test -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE ifts2_test IS 'ifts2:disposable-test-database'"
       - run: pnpm test
       - run: pnpm build
 
