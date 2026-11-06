@@ -12,6 +12,8 @@ export default defineConfig({
       {
         test: {
           name: 'integration',
+          // Evita un fallo de Vitest 5 al reconstruir errores del setup desde la caché.
+          fsModuleCache: false,
           include: ['test/api/**/*.test.ts'],
           globalSetup: ['test/helpers/global-setup.ts'],
           setupFiles: ['test/helpers/setup-env.ts'],

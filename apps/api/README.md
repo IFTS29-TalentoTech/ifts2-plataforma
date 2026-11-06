@@ -127,6 +127,9 @@ psql -h localhost -p 5433 -U ifts2 -d ifts2_test -v ON_ERROR_STOP=1 \
 La marca se comprueba mediante una consulta de lectura antes de migrar y de habilitar
 el cliente compartido, y nuevamente dentro de cada transacción de `resetDb()`.
 Si falta configuración o no se puede verificar la autorización, la suite se bloquea.
+El proyecto de integración desactiva la caché persistente de módulos de Vitest 5:
+su lector de caché entrega un `Buffer` al formateador de source maps de Vite y puede
+ocultar el diagnóstico del setup con `code.charCodeAt is not a function`.
 `pnpm test` conserva ambas suites. Los comandos manuales `db:*`, semilla y E2E mantienen
 su comportamiento y requieren verificar su propio destino antes de ejecutarlos.
 
