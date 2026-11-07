@@ -9,12 +9,24 @@ const loaded = ($img: JQuery<HTMLElement>) => {
   expect(el.naturalWidth, 'la imagen no está rota').to.be.greaterThan(0);
 };
 
-/** Recorre las imágenes de `main`, las acerca a la vista (hay carga diferida) y comprueba que cargaron. */
+/**
+ * Recorre las imágenes del sitio dentro de `selector`, las acerca a la vista (hay carga diferida) y
+ * comprueba que cargaron. Solo cuenta las del propio origen (rutas /img/... y /_next/image): otras
+ * specs cargan publicaciones de prueba con portadas a direcciones externas inexistentes
+ * (example.invalid), que no son parte de este contrato y tardan en fallar.
+ */
 const imagesLoaded = (selector: string, min: number) => {
-  cy.get(selector).should('have.length.at.least', min);
+  const own = (_: number, el: HTMLElement) =>
+    new URL((el as HTMLImageElement).currentSrc || (el as HTMLImageElement).src, location.href)
+      .origin === location.origin;
+  cy.get(selector).should(($imgs) => {
+    expect($imgs.filter(own).length).to.be.at.least(min);
+  });
   cy.get(selector).each(($img) => {
+    if (!own(0, $img[0]!)) return;
     cy.wrap($img).scrollIntoView();
-    cy.wrap($img).should(loaded);
+    // 20 s: la primera vez que se pide cada imagen next/image la optimiza (sharp) y tarda en frío.
+    cy.wrap($img, { timeout: 20000 }).should(loaded);
   });
 };
 
