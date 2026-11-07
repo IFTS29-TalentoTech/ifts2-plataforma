@@ -4,6 +4,14 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-07 · Pantallas públicas fieles al Figma (rama `feat/publico-fiel-al-figma`)
+
+**Hecho.** Fotos del Figma como **provisorias** (ADR-035, Q63): 13 imágenes webp (472 KB) en `apps/web/public/img/provisorio/`. Inicio: titular corto + frase ancla como subtítulo (resuelve Q64) y las dos fotos del encabezado; La carrera: foto junto al perfil; Estudiantes: galería "Vida en la cocina" (grilla estática); Ingreso: foto en el encabezado; Novedades: portadas de demostración y bloque neutro sin portada; logo configurable en el encabezado. Todo sale de ajustes nuevos de `SiteSetting` (`hero_title`, `hero_eyebrow`, `logo_url`, `hero_image_1/2`, `career_image`, `ingreso_image`, `student_gallery`) editables en Configuración; los valores del IFTS están solo en la semilla (hay que correr `pnpm db:seed`, idempotente).
+
+**Pruebas.** `shared` (esquema y `parseGallery`), API (guardar, rechazar y publicar los ajustes; portadas con ruta propia), unitaria de `toSiteInfo` y el spec Cypress `public/imagenes-figma.cy.ts` (390 y 1440 px: ninguna imagen rota).
+
+**Pendiente / decisiones.** Q134 (plan por año del Figma sin datos), Q135 (carrusel vs. grilla), Q136 (descripciones de los pasos de Ingreso) y Q137 (logo). Las fotos tienen personas sin consentimiento documentado: reemplazarlas antes de producción.
+
 ### 2026-11-07 · Tarjeta "Ingreso" del Resumen con datos verificables (A14)
 
 **Hecho.** Rama `fix/indicador-ingreso` desde `develop` (`f0c236f`). `GET /dashboard` agrega

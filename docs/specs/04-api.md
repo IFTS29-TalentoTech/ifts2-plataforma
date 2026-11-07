@@ -43,7 +43,7 @@ Esta matriz es el **punto de partida de la semilla**. La API no pregunta "¿sos 
 | `GET /public/publications/:id?archived=` | Detalle de una publicación vigente (o del histórico con `archived=true`) |
 | `GET /public/students?audience=ALL|STUDENTS|ASPIRANTS|GRADUATES` | Ciclo público, `examEnrollmentOpen`, horarios y llamados publicados, avisos vigentes (con `audience` devuelve los de "todos" y los de ese destinatario) y enlaces de interés. Lo usan tres pantallas: **Estudiantes**, **Inscripciones** (alumnos: llamados con `enrollmentOpen` y enlaces con `enrollment`). `enrollmentOpen` de cada llamado es el estado **efectivo**: interruptor general + casilla del llamado + llamado no terminado (A08, ADR-033) e **Ingreso** (aspirantes, con `audience=ASPIRANTS`) |
 | `GET /public/content/:page` | Secciones visibles de `institucional`, `carrera` o `ingreso` (Markdown ya sanitizado); otra página: 404. No existen `/public/ingreso` ni `/public/inscripciones`: Ingreso usa `content/ingreso` más `students?audience=ASPIRANTS`, e Inscripciones usa `students` |
-| `GET /public/settings` | Datos institucionales visibles (nombre, sigla, pie, dirección, correos, teléfono, redes, frase ancla; ADR-22) |
+| `GET /public/settings` | Datos institucionales visibles (nombre, sigla, pie, dirección, correos, teléfono, redes, frase ancla; ADR-22) y la presentación del sitio: `hero_title`, `hero_eyebrow`, `logo_url`, `hero_image_1`, `hero_image_2`, `career_image`, `ingreso_image` y `student_gallery` (ADR-035). Solo salen las claves con valor |
 | `POST /public/contact` | (Should) `{ name, email, subject, message, consent, website? }`; 201 `{ received: true }`; el consentimiento es obligatorio; anti-spam con campo señuelo `website` y 5 envíos por hora por IP (429), sin captcha externo (Q46); el mensaje se guarda siempre aunque falle el correo |
 
 Cabecera de caché de todo `/public/*`: ver la última sección. Los ids y filtros inválidos responden 400 (Problem Details).
@@ -80,7 +80,7 @@ Cabecera de caché de todo `/public/*`: ver la última sección. Los ids y filtr
 - `POST /documents/:id/archive`, `POST /documents/:id/restore`
 
 **Configuración y usuarios**
-- `GET/PUT /settings` (sede, correos, teléfono, hashtag de Instagram, inscripciones a mesas habilitadas)
+- `GET/PUT /settings` (sede, correos, teléfono, hashtag de Instagram, inscripciones a mesas habilitadas, titular y rótulo de Inicio, logo e imágenes del sitio y galería de Estudiantes). Las imágenes son una ruta del sitio (`/img/...`) o una dirección https; vacío = quitar. `student_gallery`: una tarjeta por línea `ruta | título | descripción` (hasta 6). 400 con `errors.<clave>` si la ruta no es válida
 - `GET/PUT /content/:page/:slug`
 - `GET/POST/PATCH /links` (`enrollment: boolean`: enlace de inscripción de alumnos, el único que muestra `/inscripciones`; A07)
 - `GET/POST/PATCH /users` (con `roleId`), `POST /users/:id/deactivate`, `POST /users/:id/reset-password`
