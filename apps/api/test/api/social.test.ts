@@ -3,7 +3,7 @@
  * cuando falla Instagram. La API de Instagram y la CDN de imágenes se simulan con un servidor HTTP local.
  */
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadConfig } from '../../src/config';
 import { assertPublicHttpUrl, MediaDownloadError } from '../../src/infra/media-download';
 import { InstagramApiError, InstagramNotConfiguredError } from '../../src/infra/instagram';
@@ -782,5 +782,82 @@ describe('POST /social/cron (cron externo)', () => {
       const res = await cron({ 'x-cron-secret': CRON });
       expect(res.body.sync).toEqual({ status: 'skipped', reason: 'no-hashtag' });
     });
+  });
+});
+
+/**
+ * Auditoría A10: una falla en cualquier etapa de la aprobación no puede dejar una publicación
+ * guardada con la portada borrada. Se verifica registro Y archivo en cada caso.
+ */
+describe('aprobación ante fallas parciales (A10)', () => {
+  const storedKeys = () => [
+    ...(t.storage as unknown as { files: Map<string, unknown> }).files.keys(),
+  ];
+  afterEach(() => vi.restoreAllMocks());
+
+  async function detected() {
+    return createSocialPostRow({ mediaUrl: 'https://scontent.cdninstagram.com/img/a10.jpg' });
+  }
+
+  it('falla al copiar la imagen: no se crea nada y no queda ningún archivo', async () => {
+    mock.goneImages.add('/img/a10.jpg');
+    const p = await detected();
+    expect((await approve(p.id)).status).toBe(502);
+    expect(await testPrisma.publication.count()).toBe(0);
+    expect(storedKeys()).toEqual([]);
+  });
+
+  it('falla dentro de la transacción: no se guarda nada y la imagen copiada se borra', async () => {
+    const p = await detected();
+    vi.spyOn(testPrisma, '$transaction').mockRejectedValueOnce(
+      new Error('falla en la transacción'),
+    );
+    expect((await approve(p.id)).status).toBe(500);
+    expect(await testPrisma.publication.count()).toBe(0);
+    expect((await testPrisma.socialPost.findUniqueOrThrow({ where: { id: p.id } })).status).toBe(
+      'DETECTED',
+    );
+    expect(storedKeys()).toEqual([]);
+  });
+
+  it('confirmación ambigua (se guardó pero informó error): la portada NO se borra', async () => {
+    const p = await detected();
+    const original = testPrisma.$transaction.bind(testPrisma);
+    vi.spyOn(testPrisma, '$transaction').mockImplementationOnce((async (
+      operation: Parameters<typeof original>[0],
+      options?: Parameters<typeof original>[1],
+    ) => {
+      await original(operation as never, options);
+      throw new Error('se cortó la conexión al confirmar');
+    }) as never);
+    expect((await approve(p.id)).status).toBe(500);
+    const pub = await testPrisma.publication.findFirstOrThrow();
+    expect(storedKeys()).toEqual([pub.coverUrl]);
+  });
+
+  it('falla después de confirmar (relectura de la base): la publicación queda con su portada intacta', async () => {
+    const p = await detected();
+    // loadPost lee el post dos veces: antes de aprobar y al armar la respuesta. Falla la segunda.
+    // (La URL firmada no sirve para provocarlo: resolveCoverSrc ya tolera que falle el almacenamiento.)
+    const findUnique = testPrisma.socialPost.findUnique.bind(testPrisma.socialPost);
+    let reads = 0;
+    vi.spyOn(testPrisma.socialPost, 'findUnique').mockImplementation(((
+      args: Parameters<typeof findUnique>[0],
+    ) => {
+      if (++reads === 2) return Promise.reject(new Error('se cayó la conexión'));
+      return findUnique(args);
+    }) as never);
+    const res = await approve(p.id);
+    expect(reads).toBeGreaterThanOrEqual(2);
+    expect(res.status).toBe(500);
+    vi.restoreAllMocks();
+    const pub = await testPrisma.publication.findFirstOrThrow({ include: { socialPost: true } });
+    expect(pub.status).toBe('PUBLISHED');
+    expect(pub.socialPost?.status).toBe('LINKED');
+    expect(storedKeys()).toEqual([pub.coverUrl]);
+    expect(await t.storage.exists(pub.coverUrl!)).toBe(true);
+    // Reintentar no duplica: la aprobación ya ocurrió.
+    expect((await approve(p.id)).status).toBe(409);
+    expect(await testPrisma.publication.count()).toBe(1);
   });
 });
