@@ -74,7 +74,17 @@ for (const width of [390, 1440]) {
             .should('contain', 'rel=preload; as="image"');
         } else {
           cy.get('article img').should('have.attr', 'sizes', '(min-width: 768px) 768px, 100vw');
-          cy.get('head link[rel="preload"][as="image"]').should('have.attr', 'imagesrcset');
+          // React/Next puede consumir el hint al hidratar o reutilizar una imagen ya cargada.
+          // El contrato de optimización es el HTML enviado, no su persistencia en el DOM hidratado.
+          cy.get('article img').then(($img) => {
+            cy.request(`/novedades/${id}`).then(({ body }) => {
+              const doc = new DOMParser().parseFromString(body, 'text/html');
+              const preload = doc.head.querySelector('link[rel="preload"][as="image"]');
+              expect(preload, 'preload de imagen en la respuesta SSR').not.to.eq(null);
+              expect(preload!.getAttribute('imagesrcset')).to.eq($img.attr('srcset'));
+              expect(preload!.getAttribute('imagesizes')).to.eq($img.attr('sizes'));
+            });
+          });
         }
         cy.contains('Contenido de la publicación.').should('be.visible');
       });
