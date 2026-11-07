@@ -31,6 +31,7 @@ import {
   assertCanManageUser,
   countOtherActiveSuperadmins,
 } from '../roles/roles.service';
+import { userTransaction } from './transaction';
 
 export const mountPath = '/users';
 export const router = Router();
@@ -126,29 +127,33 @@ router.post('/', validate({ body: userCreateInput }), async (req, res) => {
   }
 });
 
+/*
+ * PATCH y deactivate corren en una transacción SERIALIZABLE (userTransaction): la regla "siempre queda
+ * al menos un Superadministrador activo" es un conteo + escritura, y sin aislamiento serializable dos
+ * pedidos simultáneos podrían dejar el sistema sin ninguno (escritura sesgada). Ver transaction.ts.
+ */
 router.patch('/:id', validate({ params: idParam, body: userUpdateInput }), async (req, res) => {
   const { id } = req.valid.params as { id: string };
   const body = valid<UserUpdateInput>(req, 'body');
   const { prisma } = req.ctx;
-  const current = await assertCanManageUser(prisma, req.auth!.user, id);
-
-  if (body.email && body.email !== current.email) {
-    if (await prisma.user.findUnique({ where: { email: body.email } })) {
-      throw errors.conflict('Ya existe un usuario con ese correo.', DUP_EMAIL);
+  const user = await userTransaction(prisma, async (tx) => {
+    const current = await assertCanManageUser(tx, req.auth!.user, id);
+    if (body.email && body.email !== current.email) {
+      if (await tx.user.findUnique({ where: { email: body.email } })) {
+        throw errors.conflict('Ya existe un usuario con ese correo.', DUP_EMAIL);
+      }
     }
-  }
-  const roleChanges = body.roleId !== undefined && body.roleId !== current.roleId;
-  if (roleChanges) {
-    await assertAssignableRole(prisma, req.auth!.user, body.roleId!);
-    if (
-      current.role.key === SUPERADMIN_KEY &&
-      current.active &&
-      (await countOtherActiveSuperadmins(prisma, id)) === 0
-    ) {
-      throw errors.conflict(LAST_SUPERADMIN);
+    const roleChanges = body.roleId !== undefined && body.roleId !== current.roleId;
+    if (roleChanges) {
+      await assertAssignableRole(tx, req.auth!.user, body.roleId!);
+      if (
+        current.role.key === SUPERADMIN_KEY &&
+        current.active &&
+        (await countOtherActiveSuperadmins(tx, id)) === 0
+      ) {
+        throw errors.conflict(LAST_SUPERADMIN);
+      }
     }
-  }
-  const user = await prisma.$transaction(async (tx) => {
     const u = await tx.user.update({ where: { id }, data: body, select });
     await audit.fromReq(
       req,
@@ -164,6 +169,11 @@ router.patch('/:id', validate({ params: idParam, body: userUpdateInput }), async
     // (Los permisos igual se leen en cada pedido: esto solo evita pantallas abiertas desactualizadas.)
     if (roleChanges) await tx.session.deleteMany({ where: { userId: id } });
     return u;
+  }).catch((error: unknown) => {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      throw errors.conflict('Ya existe un usuario con ese correo.', DUP_EMAIL);
+    }
+    throw error;
   });
   res.json(toDto(user));
 });
@@ -171,17 +181,17 @@ router.patch('/:id', validate({ params: idParam, body: userUpdateInput }), async
 router.post('/:id/deactivate', validate({ params: idParam }), async (req, res) => {
   const { id } = req.valid.params as { id: string };
   const { prisma } = req.ctx;
-  if (id === req.auth!.user.id)
-    throw errors.unprocessable('No podés desactivar tu propio usuario.');
-  const current = await assertCanManageUser(prisma, req.auth!.user, id);
-  if (
-    current.role.key === SUPERADMIN_KEY &&
-    current.active &&
-    (await countOtherActiveSuperadmins(prisma, id)) === 0
-  ) {
-    throw errors.conflict(LAST_SUPERADMIN);
-  }
-  const user = await prisma.$transaction(async (tx) => {
+  const user = await userTransaction(prisma, async (tx) => {
+    if (id === req.auth!.user.id)
+      throw errors.unprocessable('No podés desactivar tu propio usuario.');
+    const current = await assertCanManageUser(tx, req.auth!.user, id);
+    if (
+      current.role.key === SUPERADMIN_KEY &&
+      current.active &&
+      (await countOtherActiveSuperadmins(tx, id)) === 0
+    ) {
+      throw errors.conflict(LAST_SUPERADMIN);
+    }
     const u = await tx.user.update({ where: { id }, data: { active: false }, select });
     await tx.session.deleteMany({ where: { userId: id } }); // revoca sesiones: no puede seguir entrando
     await audit.fromReq(req, { action: 'user.deactivate', entity: 'User', entityId: id }, tx);
