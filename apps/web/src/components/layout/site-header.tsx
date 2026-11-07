@@ -1,12 +1,13 @@
 'use client';
 
-import { Menu, User, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { PUBLIC_NAV } from '@/lib/nav';
 import type { SiteInfo } from '@/lib/site';
 import { cn } from '@/lib/cn';
+import { AccountMenu } from './account-menu';
 import { LogoutButton } from './logout-button';
 
 export interface MobilePanelItem {
@@ -21,6 +22,8 @@ interface Props {
   panelItems?: MobilePanelItem[];
   /** Nombre del usuario autenticado (muestra el icono de cuenta con su nombre accesible). */
   userName?: string | null;
+  /** Nombre visible del rol del usuario (se muestra en el menú de cuenta). */
+  userRole?: string | null;
 }
 
 /**
@@ -29,20 +32,27 @@ interface Props {
  * `/api/session` desde el navegador. `undefined` = todavía no se sabe (no se muestra ni el botón de
  * ingreso ni "Administración", para que no parpadeen); `null` = sin sesión.
  */
-function useSessionName(initial: string | null | undefined): string | null | undefined {
-  const [fetched, setFetched] = useState<string | null | undefined>(undefined);
+function useSessionUser(
+  initialName: string | null | undefined,
+  initialRole: string | null | undefined,
+): { name: string | null; roleName: string | null } | undefined {
+  const [fetched, setFetched] = useState<{ name: string | null; roleName: string | null }>();
   useEffect(() => {
-    if (initial !== undefined) return;
+    if (initialName !== undefined) return;
     let alive = true;
     fetch('/api/session', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : { name: null }))
-      .then((d: { name?: string | null }) => alive && setFetched(d.name ?? null))
-      .catch(() => alive && setFetched(null));
+      .then((r) => (r.ok ? r.json() : { name: null, roleName: null }))
+      .then(
+        (d: { name?: string | null; roleName?: string | null }) =>
+          alive && setFetched({ name: d.name ?? null, roleName: d.roleName ?? null }),
+      )
+      .catch(() => alive && setFetched({ name: null, roleName: null }));
     return () => {
       alive = false;
     };
-  }, [initial]);
-  return initial !== undefined ? initial : fetched;
+  }, [initialName]);
+  if (initialName !== undefined) return { name: initialName, roleName: initialRole ?? null };
+  return fetched;
 }
 
 function isActive(pathname: string, href: string) {
@@ -53,9 +63,10 @@ function isActive(pathname: string, href: string) {
  * Barra superior institucional (público y panel). Menú hamburguesa a 390 px.
  * El nombre y la sigla vienen de la configuración del sitio (SiteSetting), no del código.
  */
-export function SiteHeader({ site, panelItems, userName: userNameProp }: Props) {
+export function SiteHeader({ site, panelItems, userName: userNameProp, userRole }: Props) {
   const pathname = usePathname();
-  const userName = useSessionName(userNameProp);
+  const user = useSessionUser(userNameProp, userRole);
+  const userName = user?.name;
   // El menú móvil se cierra solo al navegar: el estado recuerda en qué ruta se abrió.
   const [openAt, setOpenAt] = useState<string | null>(null);
   const open = openAt === pathname;
@@ -104,13 +115,7 @@ export function SiteHeader({ site, panelItems, userName: userNameProp }: Props) 
             </Link>
           )}
           {userName ? (
-            <Link
-              href="/panel"
-              aria-label={`Cuenta de ${userName}`}
-              className="flex h-9 w-9 items-center justify-center rounded-pill border border-accent-2 text-accent-3 hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus"
-            >
-              <User className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            <AccountMenu name={userName} roleName={user?.roleName} inPanel={inPanel} />
           ) : userName === null ? (
             <Link
               href="/panel/login"

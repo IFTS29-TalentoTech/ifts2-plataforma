@@ -40,7 +40,12 @@ export function PanelShell({ session, site, counts = {}, demoMode, children }: P
       >
         Saltar al contenido
       </a>
-      <SiteHeader site={site} panelItems={items} userName={session.name} />
+      <SiteHeader
+        site={site}
+        panelItems={items}
+        userName={session.name}
+        userRole={session.roleName}
+      />
       <div className="flex flex-1 lg:min-h-0">
         <aside className="hidden w-sidebar shrink-0 flex-col justify-between overflow-y-auto bg-accent p-5 lg:flex">
           <div>
