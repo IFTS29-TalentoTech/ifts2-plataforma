@@ -4,7 +4,8 @@ import '../../support/panel-b';
  * Ventana "Usuarios y roles" (US-26, RF11), 390 y 1440 px:
  * - el rol se cambia con un formulario y una confirmación (no al tocar el desplegable);
  * - sobre el propio usuario no se ofrecen acciones;
- * - el Superadministrador tiene el acceso a "Roles y permisos".
+ * - el Superadministrador tiene el acceso a "Roles y permisos";
+ * - en la tarjeta de Configuración, tocar a una persona abre su menú de acciones.
  */
 const viewports = [
   { name: 'móvil 390', width: 390, height: 844 },
@@ -28,7 +29,7 @@ for (const vp of viewports) {
         });
       });
       cy.visit('/panel/configuracion');
-      cy.contains('button', 'Administrar usuarios y roles').click();
+      cy.contains('button', 'Gestionar usuarios').click();
       cy.get('[role="dialog"]').within(() => {
         cy.contains('a', 'Ver qué puede hacer cada rol').should(
           'have.attr',
@@ -50,9 +51,11 @@ for (const vp of viewports) {
           .invoke('attr', 'for')
           .then((id) => cy.get(`[id="${id}"]`).click());
       });
-      // force: con muchos roles en la base (los specs de roles crean uno por corrida) la opción
-      // puede quedar recortada por el desplegable y Cypress no la considera visible.
-      cy.contains('[role="option"]', 'Bedelía Académica').click({ force: true });
+      // Con muchos roles la lista tiene scroll y sus flechas pueden tapar una opción: se elige con
+      // el teclado (escribir el comienzo del nombre y Enter), como en una lista larga real.
+      cy.get('[role="listbox"]').should('be.visible');
+      cy.focused().type('Bedel');
+      cy.focused().should('contain', 'Bedelía Académica').type('{enter}');
       cy.contains('[role="dialog"]', 'Rol actual').contains('button', 'Guardar').click();
       cy.get('[role="alertdialog"]').within(() => {
         cy.contains('¿Cambiar el rol?');
@@ -63,6 +66,29 @@ for (const vp of viewports) {
       cy.api('GET', `/users?q=${encodeURIComponent(email)}`)
         .its('body.items.0.role')
         .should('eq', 'BEDELIA');
+    });
+
+    it('tarjeta de Configuración: tocar a una persona abre su menú; la propia no tiene menú', () => {
+      cy.loginAsApi('SUPERADMIN');
+      cy.visit('/panel/configuracion');
+      cy.contains('h2', 'Usuarios del panel');
+      cy.contains('a', 'Roles y permisos').should('have.attr', 'href', '/panel/roles');
+      // Mi ficha: sin botón (no hay acciones sobre uno mismo).
+      cy.contains('[data-testid="card-user"]', '· vos').find('button').should('not.exist');
+      // La editora de demostración: su ficha abre el menú con las acciones.
+      cy.contains('[data-testid="card-user"] button', 'Editora de prueba').click();
+      cy.get('[role="menu"]').within(() => {
+        cy.contains('editor@ifts2.local');
+        cy.contains('[role="menuitem"]', 'Restablecer contraseña');
+        cy.contains('[role="menuitem"]', 'Desactivar');
+        cy.contains('[role="menuitem"]', 'Cambiar rol').click();
+      });
+      cy.contains('[role="dialog"]', 'Rol actual').within(() => {
+        cy.contains('Comunicación');
+        cy.contains('button', 'Cancelar').click();
+      });
+      cy.get('[role="dialog"]').should('not.exist');
+      cy.a11y();
     });
   });
 }

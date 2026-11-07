@@ -106,12 +106,12 @@ for (const vp of viewports) {
       cy.visit('/panel/configuracion');
       // Espera a que React hidrate: el teclado se simula sobre el botón ya interactivo.
       cy.wait(1000);
-      cy.contains('button', 'Administrar usuarios y roles').focus().click();
+      cy.contains('button', 'Gestionar usuarios').focus().click();
       cy.get('[role="dialog"]').should('be.visible');
       cy.get('[data-testid="user-row"]').should('have.length.at.least', 1);
       cy.a11y();
       cy.get('body').type('{esc}');
-      cy.focused().should('contain', 'Administrar usuarios y roles');
+      cy.focused().should('contain', 'Gestionar usuarios');
 
       cy.visit('/panel/horarios');
       // Espera a que React hidrate: el teclado se simula sobre el botón ya interactivo.

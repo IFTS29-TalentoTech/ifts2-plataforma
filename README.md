@@ -100,28 +100,28 @@ La cuenta inicial se crea solo si no hay usuarios. Si el correo configurado ya e
 
 ## 6. Comandos útiles
 
-| Comando                                              | Qué hace                                                                                                                           |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                                           | API y web en modo desarrollo                                                                                                       |
-| `pnpm build`                                         | Compila todo                                                                                                                       |
-| `pnpm lint`                                          | ESLint + Prettier + regla de "sin colores ni fuentes escritos a mano" + `tokens.css` sincronizado                                  |
-| `pnpm format`                                        | Formatea con Prettier                                                                                                              |
-| `pnpm typecheck`                                     | TypeScript estricto en los tres paquetes                                                                                           |
-| `pnpm test`                                          | Pruebas de `shared` y de la API                                                                                                    |
-| `pnpm test:api`                                      | Solo API (Supertest sobre `ifts2_test`)                                                                                            |
-| `pnpm test:e2e`                                      | Cypress (390 y 1440 px, axe) contra una web ya levantada                                                                           |
-| `pnpm e2e`                                           | Levanta API y web de producción, corre la suite Cypress (sin los specs de capturas) y cierra todo (`--build`, `--reset`, `--spec`) |
-| `pnpm e2e:capturas`                                  | Solo los specs `capturas*.cy.ts`: regenera `docs/capturas/` y `cypress/screenshots` (correr antes de mergear a `main`)             |
-| `pnpm load`                                          | Prueba de carga del sitio público (400 usuarios virtuales, autocannon); `--users`, `--duration`, `--out`                           |
-| `pnpm lighthouse`                                    | Lighthouse móvil (Inicio, Estudiantes, Novedades, login del panel); rendimiento >= 80, accesibilidad >= 90                         |
-| `pnpm db:up` / `db:migrate` / `db:seed` / `db:reset` | Base: levantar, migrar, sembrar, reiniciar (borra y resiembra)                                                                     |
-| `pnpm db:migrate:dev`                                | Crear una migración nueva tras editar `prisma/schema.prisma`                                                                       |
-| `pnpm tokens`                                        | Regenera `apps/web/src/styles/tokens.css` desde `docs/specs/design-tokens.json`                                                    |
-| `pnpm contrast`                                      | Calcula contrastes WCAG de la paleta                                                                                               |
-| `pnpm verify`                                        | Flujos de negocio y seguridad de punta a punta contra el build de producción (33 comprobaciones)                                   |
-| `pnpm docs:pdf`                                      | Regenera el PDF único de la entrega (`docs/entrega/`); necesita Google Chrome                                                      |
-| `pnpm docs:der`                                      | Regenera el DER (`.mmd`) y las tablas de campos del Manual Técnico desde `prisma/schema.prisma`                                    |
-| `pnpm package`                                       | Genera `dist-entrega/ifts2-plataforma-<fecha>.zip` desde `HEAD` (sin `node_modules`, `.env` ni secretos)                           |
+| Comando                                              | Qué hace                                                                                                                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm dev`                                           | API y web en modo desarrollo                                                                                                         |
+| `pnpm build`                                         | Compila todo                                                                                                                         |
+| `pnpm lint`                                          | ESLint + Prettier + regla de "sin colores ni fuentes escritos a mano" + `tokens.css` sincronizado                                    |
+| `pnpm format`                                        | Formatea con Prettier                                                                                                                |
+| `pnpm typecheck`                                     | TypeScript estricto en los tres paquetes                                                                                             |
+| `pnpm test`                                          | Pruebas de `shared` y de la API                                                                                                      |
+| `pnpm test:api`                                      | Solo API (Supertest sobre `ifts2_test`)                                                                                              |
+| `pnpm test:e2e`                                      | Cypress (390 y 1440 px, axe) contra una web ya levantada                                                                             |
+| `pnpm e2e`                                           | Levanta API y web de producción, corre la suite Cypress (sin los specs de capturas) y cierra todo (`--build`, `--keep-db`, `--spec`) |
+| `pnpm e2e:capturas`                                  | Solo los specs `capturas*.cy.ts`: regenera `docs/capturas/` y `cypress/screenshots` (correr antes de mergear a `main`)               |
+| `pnpm load`                                          | Prueba de carga del sitio público (400 usuarios virtuales, autocannon); `--users`, `--duration`, `--out`                             |
+| `pnpm lighthouse`                                    | Lighthouse móvil (Inicio, Estudiantes, Novedades, login del panel); rendimiento >= 80, accesibilidad >= 90                           |
+| `pnpm db:up` / `db:migrate` / `db:seed` / `db:reset` | Base: levantar, migrar, sembrar, reiniciar (borra y resiembra)                                                                       |
+| `pnpm db:migrate:dev`                                | Crear una migración nueva tras editar `prisma/schema.prisma`                                                                         |
+| `pnpm tokens`                                        | Regenera `apps/web/src/styles/tokens.css` desde `docs/specs/design-tokens.json`                                                      |
+| `pnpm contrast`                                      | Calcula contrastes WCAG de la paleta                                                                                                 |
+| `pnpm verify`                                        | Flujos de negocio y seguridad de punta a punta contra el build de producción (33 comprobaciones)                                     |
+| `pnpm docs:pdf`                                      | Regenera el PDF único de la entrega (`docs/entrega/`); necesita Google Chrome                                                        |
+| `pnpm docs:der`                                      | Regenera el DER (`.mmd`) y las tablas de campos del Manual Técnico desde `prisma/schema.prisma`                                      |
+| `pnpm package`                                       | Genera `dist-entrega/ifts2-plataforma-<fecha>.zip` desde `HEAD` (sin `node_modules`, `.env` ni secretos)                             |
 
 ## 7. Pruebas
 
@@ -132,7 +132,7 @@ pnpm dev            # en otra terminal, y luego:
 pnpm test:e2e       # Cypress contra http://localhost:3000 (CYPRESS_BASE_URL para otro puerto)
 ```
 
-**Una sola orden para la suite completa de punta a punta:** `pnpm e2e --build` compila, levanta la API (con `LOGIN_MAX_ATTEMPTS` alto para que los inicios de sesión repetidos de los specs no activen el bloqueo por IP) y la web de producción en los puertos 4000 y 3100 (`E2E_API_PORT`, `E2E_WEB_PORT`), corre todos los specs —incluida la web degradada sin API— y cierra todo. `pnpm e2e --reset` antes recrea la base de desarrollo con la semilla demo (borra datos: la ejecuta una persona, no un agente). Los registros de los procesos quedan en `.e2e-logs/`.
+**Una sola orden para la suite completa de punta a punta:** `pnpm e2e --build` compila, levanta la API (con `LOGIN_MAX_ATTEMPTS` alto para que los inicios de sesión repetidos de los specs no activen el bloqueo por IP) y la web de producción en los puertos 4000 y 3100 (`E2E_API_PORT`, `E2E_WEB_PORT`), corre todos los specs —incluida la web degradada sin API— y cierra todo. La suite usa una **base propia, `ifts2_e2e`**, en el mismo contenedor: antes de cada corrida la vacía, aplica las migraciones y carga la semilla demo, así siempre arranca del mismo estado (como en CI) y **la base de desarrollo no se toca**. Antes las pruebas dejaban usuarios y roles de prueba en `ifts2`. Por seguridad, el script solo vacía una base llamada `ifts2_e2e` en `localhost:5433` (`E2E_DATABASE_URL` para cambiar usuario o clave). `--keep-db` reutiliza la base E2E como quedó, para repetir un spec rápido. `pnpm test:e2e` contra `pnpm dev` sigue escribiendo en la base de desarrollo: preferí `pnpm e2e`. Los registros de los procesos quedan en `.e2e-logs/`.
 
 **Capturas del Manual de Usuario:** los specs `capturas*.cy.ts` no corren en `pnpm e2e` (tardan y reescriben archivos versionados). Regeneralas con `pnpm e2e:capturas` solo cuando vayas a mergear a `main` o a actualizar el manual, y commiteá las imágenes que cambien con sentido. Los pasos de GitHub Actions tampoco corren Cypress en cada pull request: el job `e2e` es manual (Actions → Run workflow).
 

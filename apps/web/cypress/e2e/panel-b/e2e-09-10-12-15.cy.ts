@@ -102,7 +102,7 @@ for (const vp of viewports) {
       cy.loginAsApi('ADMIN');
       const email = `prueba.${vp.width}.${Date.now()}@ifts2.local`;
       cy.visit('/panel/configuracion');
-      cy.contains('button', 'Administrar usuarios y roles').click();
+      cy.contains('button', 'Gestionar usuarios').click();
       cy.get('[role="dialog"]').within(() => {
         cy.byLabel('Nombre y apellido').type('Usuaria de Prueba');
         cy.byLabel('Correo electrónico').type(email);

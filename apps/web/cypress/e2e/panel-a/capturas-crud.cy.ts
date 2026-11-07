@@ -160,7 +160,7 @@ describe('CRUD con la interfaz real · 1440px', () => {
     const email = `crud.${Date.now().toString(36)}@ifts2.local`;
     cy.loginAs('admin');
     cy.visit('/panel/configuracion');
-    cy.contains('button', 'Administrar usuarios y roles').click();
+    cy.contains('button', 'Gestionar usuarios').click();
 
     // C · Crear: campos obligatorios y correo duplicado
     cy.get('[role="dialog"]').within(() => {
@@ -186,7 +186,10 @@ describe('CRUD con la interfaz real · 1440px', () => {
         .invoke('attr', 'for')
         .then((id) => cy.get(`[id="${id}"]`).click());
     });
-    cy.get('[role="option"]').contains('Comunicación').click();
+    // Lista de roles con scroll: se elige con el teclado (comienzo del nombre y Enter).
+    cy.get('[role="listbox"]').should('be.visible');
+    cy.focused().type('Comunic');
+    cy.focused().should('contain', 'Comunicación').type('{enter}');
     cy.contains('[role="dialog"]', 'Rol actual').contains('button', 'Guardar').click();
     cy.get('[role="alertdialog"]').should('contain', '¿Cambiar el rol?');
     cy.get('[role="alertdialog"]').contains('button', 'Cambiar rol').click();
