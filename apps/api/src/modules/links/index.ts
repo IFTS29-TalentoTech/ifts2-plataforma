@@ -34,6 +34,7 @@ const toDto = (l: LinkDto): LinkDto => ({
   group: l.group,
   order: l.order,
   visible: l.visible,
+  enrollment: l.enrollment,
 });
 
 /** ¿Es la dirección provisoria de un enlace pendiente de confirmar? */

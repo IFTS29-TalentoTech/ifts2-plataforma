@@ -30,6 +30,8 @@ export interface LinkSeed {
   group: string;
   order: number;
   visible: boolean;
+  /** A07: enlace donde se inscriben los alumnos (página /inscripciones). */
+  enrollment?: boolean;
 }
 
 /** Los enlaces "a confirmar" quedan visible=false hasta tener la URL oficial (Q6). */
@@ -50,6 +52,9 @@ export const LINKS: LinkSeed[] = [
     group: 'academico',
     order: 2,
     visible: false,
+    // A07: es el destino de /inscripciones. Sigue oculto hasta tener la URL oficial (Q6), así que
+    // mientras tanto la página muestra "enlace pendiente" y el contacto de Bedelía.
+    enrollment: true,
   },
   {
     title: 'SIU Guaraní — Gestión académica',

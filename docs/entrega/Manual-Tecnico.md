@@ -655,6 +655,7 @@ Enlaces de interés (SIU Guaraní, Aulas Virtuales, etc.).
 | `group` | String | obligatorio, por defecto "academico" | Grupo donde se agrupa (por defecto «academico»). |
 | `order` | Int | obligatorio, por defecto 0 | Posición dentro del grupo. |
 | `visible` | Boolean | obligatorio, por defecto true | Si se muestra en el sitio. |
+| `enrollment` | Boolean | obligatorio, por defecto false | Si es el enlace donde se inscriben los alumnos (el único que muestra la página Inscripciones; A07). |
 
 #### ContactMessage
 

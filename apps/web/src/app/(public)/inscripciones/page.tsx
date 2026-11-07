@@ -4,10 +4,14 @@
  * (Q60): se arma con las tarjetas del sistema.
  *
  * Datos: GET /public/students (RF06).
- * - Llamados con `enrollmentOpen` = inscripción abierta; el interruptor general es
- *   `examEnrollmentOpen` (ajuste del panel "Inscripciones a mesas habilitadas").
- * - El trámite en sí se hace en el sistema de gestión académica (SIU): se enlaza el que cargó el
- *   cliente (enlaces cuyo título menciona SIU; si ninguno, todos los de interés).
+ * - A08: `enrollmentOpen` de cada llamado ya llega como estado EFECTIVO desde la API (interruptor
+ *   general `examEnrollmentOpen` + casilla del llamado + llamado no terminado; ver
+ *   `effectiveExamEnrollmentOpen` en @ifts2/shared). Por eso la insignia general y las tarjetas no
+ *   pueden contradecirse: con el interruptor apagado no hay ningún llamado "abierto".
+ * - A07: el trámite se hace en el sistema de gestión académica. Se enlazan SOLO los enlaces marcados
+ *   en el panel como "Enlace de inscripción de alumnos" (`enrollment`). Nunca se deduce por el título
+ *   ("SIU Guaraní" también existe para profesores y secretaría) ni se cae a "todos los enlaces".
+ *   Si no hay ninguno publicado, se avisa que está pendiente y se ofrece el contacto de Bedelía.
  */
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -25,8 +29,7 @@ export default async function Page() {
   const [site, res] = await Promise.all([getSiteInfo(), loadStudents()]);
   const d = res.ok ? res.data : null;
   const open = d ? d.examCalls.filter((c) => c.enrollmentOpen) : [];
-  const siu = d ? d.links.filter((l) => /siu|guaran/i.test(l.title)) : [];
-  const links = d ? (siu.length > 0 ? siu : d.links) : [];
+  const links = d ? d.links.filter((l) => l.enrollment) : [];
 
   return (
     <>
@@ -82,7 +85,10 @@ export default async function Page() {
                 ))}
               </ul>
             ) : (
-              <EmptyState title="Todavía no hay un enlace de inscripción cargado" />
+              <EmptyState
+                title="El enlace de inscripción todavía no está publicado"
+                description="Mientras tanto, consultá con Bedelía cómo inscribirte."
+              />
             )}
             {site.emailBedelia && (
               <Card className="mt-6">

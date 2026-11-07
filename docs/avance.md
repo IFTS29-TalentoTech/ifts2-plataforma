@@ -4,6 +4,24 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-07 · Inscripciones: enlace de alumnos y estado efectivo (A07, A08)
+
+**Hecho.** Rama `fix/inscripciones-siu-y-estado` desde `develop` (`f0c236f`). **A07:** los enlaces
+tienen la marca `enrollment` ("Enlace de inscripción de alumnos" en el panel; migración
+`20261107030216_enlace_inscripcion`). `/inscripciones` muestra solo esos enlaces. Ya no busca "SIU"
+en el título ni ofrece todos los enlaces; si no hay ninguno, avisa que está pendiente y muestra el
+correo de Bedelía. **A08:** `effectiveExamEnrollmentOpen` (`@ifts2/shared`) combina el interruptor
+general, la casilla del llamado y `now < endsOn`. La API lo entrega en `/public/home` y
+`/public/students`, así que la insignia general y las tarjetas ya no se contradicen.
+
+**Pruebas.** 2 unitarias de shared, 4 de integración nuevas y 2 ajustadas, y un caso E2E a 390 y
+1440 px. Resultados en `docs/evidencias/2026-11-07-inscripciones-a07-a08.md`; decisión en ADR-033.
+
+**Pendiente / dificultades.** Q131 (¿el interruptor general es un bloqueo?) y Q132 (enlace oficial
+de alumnos) para confirmar con el instituto. En instalaciones existentes hay que marcar el enlace
+de alumnos a mano. `pnpm test` de la API falla por configuración de Vitest (problema anterior;
+ver la evidencia).
+
 ### 2026-11-06 · Compatibilidad de portadas externas (A06)
 
 **Hecho.** Rama `fix/portadas-externas` creada desde `develop` actualizado, con A05

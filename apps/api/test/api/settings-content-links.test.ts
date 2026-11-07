@@ -205,6 +205,7 @@ describe('/links', () => {
       group: 'academico',
       order: 2,
       visible: true,
+      enrollment: false,
     });
     await createLinkRow({ title: 'Primero', order: 1 });
     await createLinkRow({ title: 'Oculto', order: 3, visible: false });
@@ -217,6 +218,21 @@ describe('/links', () => {
     expect(list.body.total).toBe(3);
     expect((await as(admin.cookie).get('/api/v1/links?visible=false')).body.total).toBe(1);
     expect(await testPrisma.auditLog.count({ where: { action: 'link.create' } })).toBe(1);
+  });
+
+  it('A07: el panel marca y desmarca el enlace de inscripción de alumnos', async () => {
+    const res = await as(admin.cookie).post('/api/v1/links', {
+      title: 'Sistema de alumnos',
+      url: 'https://alumnos.test/',
+      enrollment: true,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.enrollment).toBe(true);
+    const off = await as(admin.cookie).patch(`/api/v1/links/${res.body.id}`, {
+      enrollment: false,
+    });
+    expect(off.body.enrollment).toBe(false);
+    expect((await as(admin.cookie).post('/api/v1/links', { enrollment: 'si' })).status).toBe(400);
   });
 
   it('valida: título/URL obligatorios y bien formados; título duplicado => 409', async () => {
