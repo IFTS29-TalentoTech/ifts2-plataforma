@@ -3,7 +3,7 @@
 import { Menu, User, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PUBLIC_NAV } from '@/lib/nav';
 import type { SiteInfo } from '@/lib/site';
 import { cn } from '@/lib/cn';
@@ -23,6 +23,28 @@ interface Props {
   userName?: string | null;
 }
 
+/**
+ * Nombre de quien tiene la sesión iniciada. En el panel viene resuelto desde el servidor (`userName`).
+ * En el sitio público las páginas son estáticas y no pueden leer cookies, así que se consulta
+ * `/api/session` desde el navegador. `undefined` = todavía no se sabe (no se muestra ni el botón de
+ * ingreso ni "Administración", para que no parpadeen); `null` = sin sesión.
+ */
+function useSessionName(initial: string | null | undefined): string | null | undefined {
+  const [fetched, setFetched] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (initial !== undefined) return;
+    let alive = true;
+    fetch('/api/session', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : { name: null }))
+      .then((d: { name?: string | null }) => alive && setFetched(d.name ?? null))
+      .catch(() => alive && setFetched(null));
+    return () => {
+      alive = false;
+    };
+  }, [initial]);
+  return initial !== undefined ? initial : fetched;
+}
+
 function isActive(pathname: string, href: string) {
   return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -31,8 +53,9 @@ function isActive(pathname: string, href: string) {
  * Barra superior institucional (público y panel). Menú hamburguesa a 390 px.
  * El nombre y la sigla vienen de la configuración del sitio (SiteSetting), no del código.
  */
-export function SiteHeader({ site, panelItems, userName }: Props) {
+export function SiteHeader({ site, panelItems, userName: userNameProp }: Props) {
   const pathname = usePathname();
+  const userName = useSessionName(userNameProp);
   // El menú móvil se cierra solo al navegar: el estado recuerda en qué ruta se abrió.
   const [openAt, setOpenAt] = useState<string | null>(null);
   const open = openAt === pathname;
@@ -68,23 +91,34 @@ export function SiteHeader({ site, panelItems, userName }: Props) {
               {item.label}
             </Link>
           ))}
-          <Link
-            href="/panel"
-            aria-current={inPanel ? 'page' : undefined}
-            className={cn(
-              'rounded-sm border-b-2 border-transparent py-1 text-sm font-semibold text-accent hover:text-accent-3 focus-visible:outline-none focus-visible:shadow-focus',
-              inPanel && 'border-accent',
-            )}
-          >
-            Administración
-          </Link>
-          <Link
-            href={userName ? '/panel' : '/panel/login'}
-            aria-label={userName ? `Cuenta de ${userName}` : 'Ingresar al panel'}
-            className="flex h-9 w-9 items-center justify-center rounded-pill border border-accent-2 text-accent-3 hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus"
-          >
-            <User className="h-4 w-4" aria-hidden="true" />
-          </Link>
+          {userName && (
+            <Link
+              href="/panel"
+              aria-current={inPanel ? 'page' : undefined}
+              className={cn(
+                'rounded-sm border-b-2 border-transparent py-1 text-sm font-semibold text-accent hover:text-accent-3 focus-visible:outline-none focus-visible:shadow-focus',
+                inPanel && 'border-accent',
+              )}
+            >
+              Administración
+            </Link>
+          )}
+          {userName ? (
+            <Link
+              href="/panel"
+              aria-label={`Cuenta de ${userName}`}
+              className="flex h-9 w-9 items-center justify-center rounded-pill border border-accent-2 text-accent-3 hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus"
+            >
+              <User className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          ) : userName === null ? (
+            <Link
+              href="/panel/login"
+              className="rounded-md px-3 py-1.5 text-sm font-semibold text-accent-3 hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus"
+            >
+              Iniciar sesión
+            </Link>
+          ) : null}
         </nav>
 
         <button
@@ -122,15 +156,24 @@ export function SiteHeader({ site, panelItems, userName }: Props) {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/panel"
-              className={cn(
-                'rounded-md px-4 py-3 text-sm font-semibold text-accent hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus',
-                inPanel && 'bg-accent-2',
-              )}
-            >
-              Administración
-            </Link>
+            {userName ? (
+              <Link
+                href="/panel"
+                className={cn(
+                  'rounded-md px-4 py-3 text-sm font-semibold text-accent hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus',
+                  inPanel && 'bg-accent-2',
+                )}
+              >
+                Administración
+              </Link>
+            ) : userName === null ? (
+              <Link
+                href="/panel/login"
+                className="rounded-md px-4 py-3 text-sm font-semibold text-accent hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus"
+              >
+                Iniciar sesión
+              </Link>
+            ) : null}
           </nav>
           {panelItems && panelItems.length > 0 && (
             <nav aria-label="Gestión del sitio (móvil)" className="bg-accent p-3">

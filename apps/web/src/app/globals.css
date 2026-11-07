@@ -8,6 +8,31 @@
   html {
     -webkit-text-size-adjust: 100%;
   }
+  /* Barra de scroll fina, redondeada y con los colores del tema (solo variables, ADR-021).
+     Chrome/Edge/Safari usan ::-webkit-scrollbar; Firefox usa scrollbar-color. No se declaran las dos
+     a la vez porque Chrome moderno ignoraría el redondeo si ve `scrollbar-color`. */
+  * {
+    scrollbar-width: thin;
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-color: var(--color-accent) transparent;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-accent);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-accent-3);
+  }
   body {
     @apply bg-base font-sans text-accent-3 antialiased;
   }
