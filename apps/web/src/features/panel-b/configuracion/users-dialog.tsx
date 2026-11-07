@@ -1,35 +1,29 @@
 /**
- * Configuración · modal "Administrar usuarios y roles" (Figma 210:1011, US-25/26, RF01, RF11).
+ * Configuración · ventana "Usuarios y roles" (Figma 210:1011, US-25/26, RF01, RF11).
  *
  * Cómo se reparte el trabajo entre pantallas:
  * - QUÉ PUEDE HACER cada rol se define en Panel → Roles y permisos (solo SUPERADMIN).
- * - QUÉ ROL TIENE cada persona se asigna acá.
+ * - QUÉ ROL TIENE cada persona se asigna acá o desde el menú de cada persona en la tarjeta
+ *   "Usuarios del panel". Las acciones sobre un usuario viven en `user-actions.tsx` (mismas reglas
+ *   en los dos lugares).
  *
- * Reglas (04-api.md "Usuarios"):
- * - Permiso `users:manage` (SUPERADMIN y ADMIN). Los usuarios NO se eliminan: se DESACTIVAN (se
- *   conserva la auditoría) y un usuario desactivado no puede ingresar.
- * - Los roles salen de `GET /roles`. El selector ofrece solo los roles con `assignable: true`: quien no
- *   es SUPERADMIN ve solo roles cuyos permisos también tiene, y nunca Superadministrador. A los
- *   usuarios con un rol que no puede asignar no los puede administrar (la API igual responde 403).
- * - Cambiar el rol pasa por un formulario y una confirmación (regla general del proyecto): no se
- *   guarda al tocar el desplegable. Al cambiarlo, la API cierra las sesiones abiertas de esa persona.
- * - Sobre el propio usuario no se ofrecen acciones: no se puede desactivar a uno mismo (422) y
- *   cambiarse el rol podría dejar al sistema sin Superadministrador (409).
- * - Alta con un rol. Sin clave, la API genera una TEMPORAL y obliga a cambiarla: se muestra UNA sola
- *   vez (al cerrar el modal desaparece de la pantalla) y nunca se vuelve a pedir. Restablecer la
- *   contraseña sigue la misma regla.
+ * Reglas propias de esta ventana (04-api.md "Usuarios"):
+ * - Permiso `users:manage` (SUPERADMIN y ADMIN). Los usuarios NO se eliminan: se DESACTIVAN.
+ * - Alta con un rol: el selector ofrece solo los roles con `assignable: true` (quien no es
+ *   SUPERADMIN ve solo roles cuyos permisos también tiene, y nunca Superadministrador).
+ * - Sin clave, la API genera una TEMPORAL y obliga a cambiarla: se muestra UNA sola vez (al cerrar la
+ *   ventana desaparece) y nunca se vuelve a pedir.
  * - Correo único: la API responde 409 con `errors.email` y se muestra bajo el campo.
  */
 'use client';
 
-import { can, formatDateAR, type Action, type Page } from '@ifts2/shared';
-import { Copy, KeyRound, ShieldCheck, UserPlus } from 'lucide-react';
+import { can, formatDateAR, type Page } from '@ifts2/shared';
+import { KeyRound, ShieldCheck, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import {
   Badge,
   Button,
-  ConfirmDialog,
   Dialog,
   ErrorState,
   Input,
@@ -42,34 +36,9 @@ import { api } from '@/lib/api';
 import { errorText, fieldErrors } from '../lib/format';
 import { useResetOn } from '../lib/use-reset-on';
 import { useResource } from '../lib/use-resource';
+import { TemporaryPassword, useUserActions, type PanelUser } from './user-actions';
 
-export interface PanelUser {
-  id: string;
-  email: string;
-  name: string;
-  /** Clave del rol (SUPERADMIN, ADMIN, BEDELIA, EDITOR o una propia). */
-  role: string;
-  roleId: string;
-  roleName: string;
-  active: boolean;
-  mustChangePassword: boolean;
-  createdAt: string;
-  lastLoginAt: string | null;
-}
-
-/** Lo que el diálogo necesita de `GET /roles`. */
-interface RoleOption {
-  id: string;
-  key: string;
-  name: string;
-  description: string | null;
-  assignable: boolean;
-}
-
-type Pending =
-  | { type: 'deactivate' | 'activate' | 'reset'; user: PanelUser }
-  | { type: 'role'; user: PanelUser; role: RoleOption }
-  | null;
+export type { PanelUser } from './user-actions';
 
 export function UsersDialog({
   open,
@@ -78,19 +47,19 @@ export function UsersDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Avisa a la pantalla para que refresque el resumen de la tarjeta. */
+  /** Avisa a la pantalla para que refresque la tarjeta. */
   onChanged: () => void;
 }) {
   const { toast } = useToast();
   const users = useResource<Page<PanelUser>>(open ? '/users?pageSize=100' : null);
-  const roles = useResource<{ items: RoleOption[] }>(open ? '/roles' : null);
-  // Quién soy: para no ofrecer acciones sobre mi propio usuario y saber si veo "Roles y permisos".
-  const me = useResource<{ id: string; permissions: Action[] }>(open ? '/auth/me' : null);
-
-  const allRoles = roles.data?.items ?? [];
-  const assignable = allRoles.filter((r) => r.assignable);
-  const roleOptions = assignable.map((r) => ({ value: r.id, label: r.name }));
-  const canAssignId = new Set(assignable.map((r) => r.id));
+  const actions = useUserActions({
+    enabled: open,
+    onChanged: () => {
+      users.reload();
+      onChanged();
+    },
+  });
+  const { allRoles, assignable, roleOptions } = actions;
   /** Hay roles que esta persona no puede asignar: se le explica por qué no los ve. */
   const restricted = allRoles.length > assignable.length;
   const describe = (id: string) => allRoles.find((r) => r.id === id)?.description ?? undefined;
@@ -104,22 +73,16 @@ export function UsersDialog({
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [pending, setPending] = useState<Pending>(null);
-  const [lastPending, setLastPending] = useState<Pending>(null);
-  /** Formulario "Cambiar rol": a quién y qué rol está eligiendo. */
-  const [roleEdit, setRoleEdit] = useState<{ user: PanelUser; roleId: string } | null>(null);
-  /** Clave temporal visible una sola vez: { para quién, clave }. */
+  /** Clave temporal del usuario recién creado, visible una sola vez. */
   const [secret, setSecret] = useState<{ who: string; password: string } | null>(null);
 
   useResetOn(open, () => {
     if (!open) {
-      setSecret(null); // al cerrar el modal la clave temporal desaparece
+      setSecret(null); // al cerrar la ventana la clave temporal desaparece
       setErrors({});
       setFormError(null);
-      setRoleEdit(null);
     }
   });
-  if (pending && pending !== lastPending) setLastPending(pending);
 
   async function create(e: FormEvent) {
     e.preventDefault();
@@ -147,9 +110,6 @@ export function UsersDialog({
       setSaving(false);
     }
   }
-
-  const p = pending ?? lastPending;
-  const editingRole = roleEdit ? allRoles.find((r) => r.id === roleEdit.roleId) : undefined;
 
   return (
     <>
@@ -211,7 +171,7 @@ export function UsersDialog({
                 asigna únicamente otro Superadministrador.
               </p>
             )}
-            {can(me.data?.permissions, 'roles:manage') && (
+            {can(actions.me.data?.permissions, 'roles:manage') && (
               <Link
                 href="/panel/roles"
                 className="inline-flex items-center gap-1 self-start text-sm font-semibold text-accent underline focus-visible:outline-none focus-visible:shadow-focus"
@@ -242,8 +202,7 @@ export function UsersDialog({
             )}
             <ul className="flex flex-col gap-2">
               {users.data?.items.map((u) => {
-                const isMe = u.id === me.data?.id;
-                const manageable = !isMe && canAssignId.has(u.roleId);
+                const blocked = actions.blockedReason(u);
                 return (
                   <li
                     key={u.id}
@@ -255,7 +214,9 @@ export function UsersDialog({
                       <div className="min-w-0">
                         <p className="flex flex-wrap items-center gap-2 font-semibold text-accent-3">
                           {u.name}
-                          {isMe && <span className="font-normal text-font-strong">(vos)</span>}
+                          {actions.isMe(u) && (
+                            <span className="font-normal text-font-strong">(vos)</span>
+                          )}
                           <Badge tone={u.active ? 'success' : 'neutral'}>
                             {u.active ? 'Activo' : 'Desactivado'}
                           </Badge>
@@ -273,13 +234,17 @@ export function UsersDialog({
                       </p>
                     </div>
 
-                    {manageable ? (
+                    {blocked ? (
+                      <p className="border-t border-accent-2 pt-3 text-xs text-font-strong">
+                        {blocked}
+                      </p>
+                    ) : (
                       <div className="flex flex-wrap gap-2 border-t border-accent-2 pt-3">
                         {u.active && (
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => setRoleEdit({ user: u, roleId: u.roleId })}
+                            onClick={() => actions.start('role', u)}
                             aria-label={`Cambiar rol de ${u.name}`}
                           >
                             Cambiar rol
@@ -289,7 +254,7 @@ export function UsersDialog({
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => setPending({ type: 'reset', user: u })}
+                            onClick={() => actions.start('reset', u)}
                             aria-label={`Restablecer contraseña de ${u.name}`}
                           >
                             <KeyRound className="h-4 w-4" aria-hidden="true" />
@@ -299,20 +264,12 @@ export function UsersDialog({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() =>
-                            setPending({ type: u.active ? 'deactivate' : 'activate', user: u })
-                          }
+                          onClick={() => actions.start(u.active ? 'deactivate' : 'activate', u)}
                           aria-label={`${u.active ? 'Desactivar' : 'Reactivar'} a ${u.name}`}
                         >
                           {u.active ? 'Desactivar' : 'Reactivar'}
                         </Button>
                       </div>
-                    ) : (
-                      <p className="border-t border-accent-2 pt-3 text-xs text-font-strong">
-                        {isMe
-                          ? 'Es tu usuario: no podés desactivarte ni cambiarte el rol desde acá.'
-                          : 'Tiene más permisos que vos: solo lo administra un Superadministrador.'}
-                      </p>
                     )}
                   </li>
                 );
@@ -322,155 +279,7 @@ export function UsersDialog({
         </div>
       </Dialog>
 
-      {/* Formulario "Cambiar rol": elegir y ver qué implica; guardar pide confirmación. */}
-      {roleEdit && (
-        <Dialog
-          open
-          onOpenChange={(o) => !o && setRoleEdit(null)}
-          size="sm"
-          title="Cambiar rol"
-          description={`${roleEdit.user.name} · ${roleEdit.user.email}`}
-          footer={
-            <>
-              <Button variant="ghost" onClick={() => setRoleEdit(null)}>
-                Cancelar
-              </Button>
-              <Button
-                disabled={!editingRole || roleEdit.roleId === roleEdit.user.roleId}
-                onClick={() => {
-                  if (!editingRole) return;
-                  setPending({ type: 'role', user: roleEdit.user, role: editingRole });
-                }}
-              >
-                Guardar
-              </Button>
-            </>
-          }
-        >
-          <div className="flex flex-col gap-3">
-            <p className="text-sm text-font-strong">
-              Rol actual: <strong className="text-accent-3">{roleEdit.user.roleName}</strong>
-            </p>
-            <Select
-              label="Nuevo rol"
-              value={roleEdit.roleId}
-              onValueChange={(v) => setRoleEdit({ ...roleEdit, roleId: v })}
-              options={roleOptions}
-              hint={editingRole?.description ?? undefined}
-            />
-          </div>
-        </Dialog>
-      )}
-
-      {p && (
-        <ConfirmDialog
-          open={!!pending}
-          onOpenChange={(o) => !o && setPending(null)}
-          tone={p.type === 'deactivate' ? 'danger' : 'primary'}
-          title={
-            p.type === 'role'
-              ? '¿Cambiar el rol?'
-              : p.type === 'deactivate'
-                ? '¿Desactivar este usuario?'
-                : p.type === 'activate'
-                  ? '¿Reactivar este usuario?'
-                  : '¿Restablecer la contraseña?'
-          }
-          description={
-            p.type === 'role'
-              ? `Pasa de ${p.user.roleName} a ${p.role.name}. Se cierran sus sesiones abiertas y al volver a entrar ve solo lo que permite el rol nuevo. Queda en la auditoría.`
-              : p.type === 'deactivate'
-                ? 'No va a poder ingresar al panel. Sus datos y su historial se conservan.'
-                : p.type === 'activate'
-                  ? 'Vuelve a poder ingresar al panel con su contraseña.'
-                  : 'Se genera una clave temporal que se muestra una sola vez. La persona tendrá que cambiarla al ingresar.'
-          }
-          details={
-            <>
-              <strong>{p.user.name}</strong> · {p.user.email}
-            </>
-          }
-          confirmLabel={
-            p.type === 'role'
-              ? 'Cambiar rol'
-              : p.type === 'deactivate'
-                ? 'Desactivar'
-                : p.type === 'activate'
-                  ? 'Reactivar'
-                  : 'Restablecer'
-          }
-          onConfirm={async () => {
-            if (p.type === 'role') {
-              await api.patch(`/users/${p.user.id}`, { roleId: p.role.id });
-              setRoleEdit(null);
-              toast({
-                tone: 'success',
-                title: `Ahora ${p.user.name} tiene el rol ${p.role.name}.`,
-              });
-            } else if (p.type === 'reset') {
-              const r = await api.post<{ temporaryPassword: string }>(
-                `/users/${p.user.id}/reset-password`,
-              );
-              setSecret({ who: p.user.email, password: r.temporaryPassword });
-            } else {
-              await api.post(`/users/${p.user.id}/${p.type}`);
-              toast({
-                tone: 'success',
-                title: p.type === 'deactivate' ? 'Usuario desactivado.' : 'Usuario reactivado.',
-              });
-            }
-            users.reload();
-            onChanged();
-          }}
-        />
-      )}
+      {actions.element}
     </>
-  );
-}
-
-/** Muestra la clave temporal una sola vez, con botón "Copiar". */
-function TemporaryPassword({
-  secret,
-  onDismiss,
-}: {
-  secret: { who: string; password: string };
-  onDismiss: () => void;
-}) {
-  const { toast } = useToast();
-  return (
-    <div
-      role="status"
-      data-testid="temp-password"
-      className="rounded-lg border border-warning-strong bg-warning-back p-4 text-sm text-warning-strong"
-    >
-      <p className="font-semibold">Clave temporal para {secret.who}</p>
-      <p className="mt-1">
-        Anotala o copiala ahora: <strong>no se vuelve a mostrar</strong>. La persona deberá
-        cambiarla al ingresar.
-      </p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <code className="rounded-md bg-surface px-3 py-2 font-mono text-lg text-accent-3">
-          {secret.password}
-        </code>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() =>
-            navigator.clipboard
-              .writeText(secret.password)
-              .then(() => toast({ tone: 'success', title: 'Clave copiada.' }))
-              .catch(() =>
-                toast({ tone: 'error', title: 'No pudimos copiar. Seleccionala a mano.' }),
-              )
-          }
-        >
-          <Copy className="h-4 w-4" aria-hidden="true" />
-          Copiar
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onDismiss}>
-          Ya la anoté
-        </Button>
-      </div>
-    </div>
   );
 }

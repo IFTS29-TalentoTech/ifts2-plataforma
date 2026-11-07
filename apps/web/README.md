@@ -10,7 +10,7 @@ Cada agente edita **solo** el `page.tsx` (y archivos nuevos en su carpeta) de su
 
 ## Kit de UI (`@/components/ui`)
 
-`Button` (primary/secondary/danger/ghost, `loading`, `asChild`), `Badge` (success/warning/danger/neutral/urgent), `Card` (`accentBar`), `Eyebrow`, `Table`/`THead`/`TBody`/`TR`/`TH`/`TD`, `Input`/`Textarea`/`Select`/`Checkbox`/`Switch` (etiqueta, ayuda y error asociados), **`ConfirmDialog`** (único para todas las confirmaciones; controlado o `useConfirm()`), `Dialog` (modales con formulario), `useToast()`, `Skeleton`/`LoadingRegion`, `EmptyState`, `ErrorState` (con "Reintentar"), `Tabs`, `Pagination`.
+`Button` (primary/secondary/danger/ghost, `loading`, `asChild`), `Badge` (success/warning/danger/neutral/urgent), `Card` (`accentBar`), `Eyebrow`, `Table`/`THead`/`TBody`/`TR`/`TH`/`TD`, `Input`/`Textarea`/`Select`/`Checkbox`/`Switch` (etiqueta, ayuda y error asociados), **`ConfirmDialog`** (único para todas las confirmaciones; controlado o `useConfirm()`), `Dialog` (modales con formulario), `useToast()`, `Skeleton`/`LoadingRegion`, `EmptyState`, `ErrorState` (con "Reintentar"), `Tabs`, `Pagination`, `DropdownMenu` (menú de acciones sobre un elemento, Radix; las acciones que cambian datos igual pasan por `ConfirmDialog`).
 
 Layout: `PageHeader` (título, descripción, acción) y `Placeholder` en `@/components/layout/page-header`.
 

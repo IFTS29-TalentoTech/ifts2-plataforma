@@ -76,7 +76,7 @@ for (const vp of viewports) {
       cy.contains('button', 'Guardar cambios').click();
       shot('configuracion-confirmar-cambios');
       cy.contains('button', 'Cancelar').click();
-      cy.contains('button', 'Administrar usuarios y roles').click();
+      cy.contains('button', 'Gestionar usuarios').click();
       cy.get('[data-testid="user-row"]').should('exist');
       shot('configuracion-usuarios');
       cy.get('body').type('{esc}');
