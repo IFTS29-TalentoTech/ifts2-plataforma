@@ -296,6 +296,9 @@ model ExternalLink {
   group       String  @default("academico")
   order       Int     @default(0)
   visible     Boolean @default(true)
+  // A07: marca explícita del enlace donde los ALUMNOS se inscriben (página /inscripciones).
+  // No se deduce del título: "SIU Guaraní" existe para alumnos y para profesores/secretaría.
+  enrollment  Boolean @default(false)
 }
 
 // Should (RF08)

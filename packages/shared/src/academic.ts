@@ -351,6 +351,8 @@ export interface LinkDto {
   group: string;
   order: number;
   visible: boolean;
+  /** A07: enlace de inscripción de ALUMNOS (lo único que se ofrece en /inscripciones). */
+  enrollment: boolean;
 }
 
 export interface ContactMessageDto {
@@ -373,6 +375,8 @@ export interface PublicQuickLinkDto {
   url: string;
   description: string | null;
   group: string;
+  /** A07: enlace de inscripción de alumnos. /inscripciones muestra solo estos, nunca "todos". */
+  enrollment: boolean;
 }
 
 export interface PublicPublicationCardDto {

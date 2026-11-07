@@ -77,6 +77,30 @@ export function isExamCallVisible(c: PublishableLike, term: TermLike): boolean {
   return c.published && term.publicCurrent;
 }
 
+/**
+ * A08 — Estado EFECTIVO de la inscripción a un llamado, el único que ve el sitio público.
+ *
+ * Abierta solo si se cumplen las tres condiciones:
+ * 1. El interruptor general del panel ("Inscripciones a mesas habilitadas", `exam_enrollment_open`)
+ *    está encendido: funciona como bloqueo general. Si está apagado, ningún llamado figura abierto,
+ *    aunque tenga su casilla marcada (así el sitio nunca dice "cerrada" y "abierta" a la vez).
+ * 2. El llamado tiene marcada su propia casilla `enrollmentOpen`.
+ * 3. El llamado no terminó (`now < endsOn`): un llamado vencido no puede seguir "abierto" aunque
+ *    nadie haya desmarcado la casilla. Se calcula al consultar, sin tareas programadas (regla 3).
+ *
+ * La precedencia del interruptor general quedó registrada como pregunta abierta para confirmar
+ * con el instituto (docs/specs/09-preguntas-abiertas.md).
+ *
+ * @example effectiveExamEnrollmentOpen(true, { enrollmentOpen: true, endsOn }, now) // true si no terminó
+ */
+export function effectiveExamEnrollmentOpen(
+  generalOpen: boolean,
+  call: { enrollmentOpen: boolean; endsOn: Date },
+  now: Date,
+): boolean {
+  return generalOpen && call.enrollmentOpen && now.getTime() < call.endsOn.getTime();
+}
+
 /** Verifica la regla "exactamente un ciclo público". */
 export function hasSinglePublicTerm(terms: TermLike[]): boolean {
   return terms.filter((t) => t.publicCurrent).length === 1;

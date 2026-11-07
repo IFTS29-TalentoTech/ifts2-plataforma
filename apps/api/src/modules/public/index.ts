@@ -121,7 +121,9 @@ router.get('/home', async (req, res) => {
     ),
     highlightedExamCalls: term
       ? await Promise.all(
-          onlyVisibleExamCalls(calls, term).map((c) => toPublicExamCall(storage, c, now)),
+          onlyVisibleExamCalls(calls, term).map((c) =>
+            toPublicExamCall(storage, c, now, asBool(settings.exam_enrollment_open)),
+          ),
         )
       : [],
   };
@@ -286,7 +288,9 @@ router.get('/students', validate({ query: publicStudentsQuery }), async (req, re
       : [],
     examCalls: term
       ? await Promise.all(
-          onlyVisibleExamCalls(calls, term).map((c) => toPublicExamCall(storage, c, now)),
+          onlyVisibleExamCalls(calls, term).map((c) =>
+            toPublicExamCall(storage, c, now, asBool(settings.exam_enrollment_open)),
+          ),
         )
       : [],
     notices: await Promise.all(
