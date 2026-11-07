@@ -9,6 +9,7 @@ import type { SiteInfo } from '@/lib/site';
 import { cn } from '@/lib/cn';
 import { AccountMenu } from './account-menu';
 import { LogoutButton } from './logout-button';
+import { SiteLogo } from './site-logo';
 
 export interface MobilePanelItem {
   href: string;
@@ -79,12 +80,7 @@ export function SiteHeader({ site, panelItems, userName: userNameProp, userRole 
           href="/"
           className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:shadow-focus"
         >
-          <span
-            aria-hidden="true"
-            className="flex h-10 w-10 items-center justify-center rounded-md bg-accent-3 font-display text-sm font-extrabold text-base"
-          >
-            {site.short.replace(/[^\p{L}\p{N}]/gu, '').slice(0, 4)}
-          </span>
+          <SiteLogo short={site.short} src={site.logoUrl || undefined} />
           <span className="font-display text-lg font-bold text-accent-3">{site.short}</span>
         </Link>
 
