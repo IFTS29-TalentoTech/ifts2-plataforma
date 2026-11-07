@@ -479,9 +479,19 @@ async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
     categoryId: string;
     section?: 'HOME' | 'NEWS' | 'BOTH';
     status?: 'DRAFT' | 'PUBLISHED' | 'PAUSED';
+    /** Ruta de una imagen provisoria de la web (ver ADR-035); no pisa una portada ya cargada. */
+    coverUrl?: string;
   }) => {
     const found = await prisma.publication.findFirst({ where: { title: p.title } });
-    if (found) return;
+    if (found) {
+      if (!found.coverUrl && p.coverUrl) {
+        await prisma.publication.update({
+          where: { id: found.id },
+          data: { coverUrl: p.coverUrl },
+        });
+      }
+      return;
+    }
     await prisma.publication.create({
       data: {
         kind: 'NEWS',
@@ -498,29 +508,34 @@ async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
     summary: 'Actividades de las prácticas profesionalizantes. Imagen pendiente de autorización.',
     kind: 'EVENT',
     categoryId: cEvento.id,
+    coverUrl: '/img/provisorio/novedad-comunidad.webp',
   });
   await pub({
     title: 'Avisos académicos',
     summary: 'Consultá las fechas y los comunicados del cuatrimestre.',
     categoryId: cAviso.id,
     section: 'HOME',
+    coverUrl: '/img/provisorio/novedad-avisos.webp',
   });
   await pub({
     title: 'Comunidad IFTS',
     summary: 'Conocé las experiencias de nuestros estudiantes.',
     categoryId: cInst.id,
+    coverUrl: '/img/provisorio/novedad-practicas.webp',
   });
   await pub({
     title: 'Mateada Patria 2025',
     summary: 'Ejemplo histórico: la celebración del 25 de mayo con toda la comunidad.',
     categoryId: cInst.id,
     section: 'NEWS',
+    coverUrl: '/img/provisorio/novedad-historia.webp',
   });
   await pub({
     title: 'Práctica Profesional II: nueva edición',
     summary: 'Borrador de demostración sin publicar.',
     categoryId: cPracticas.id,
     status: 'DRAFT',
+    coverUrl: '/img/provisorio/novedad-jornada.webp',
   });
 
   // Un mensaje de contacto de ejemplo

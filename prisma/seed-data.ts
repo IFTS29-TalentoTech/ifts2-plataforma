@@ -20,6 +20,22 @@ export const SETTINGS: Record<string, string> = {
   instagram_url: 'https://www.instagram.com/ifts_2_ok/',
   facebook_url: 'https://www.facebook.com/iftsn2/',
   exam_enrollment_open: 'false',
+  // Presentación del sitio público (Figma). Q64: titular corto + frase ancla (`tagline`) como subtítulo.
+  hero_title: 'Formamos emprendedores gastronómicos',
+  hero_eyebrow: 'Educación pública · Formación técnica',
+  // Imágenes PROVISORIAS exportadas del Figma (ADR-035, Q63): el instituto las reemplaza desde
+  // Configuración (ruta /img/... o dirección https) cuando entregue las suyas con consentimiento (RNF08).
+  logo_url: '/img/provisorio/logo.webp',
+  hero_image_1: '/img/provisorio/inicio-plato.webp',
+  hero_image_2: '/img/provisorio/inicio-sarten.webp',
+  career_image: '/img/provisorio/la-carrera-perfil.webp',
+  ingreso_image: '/img/provisorio/ingreso-hero.webp',
+  // Una tarjeta por línea: ruta | título | descripción.
+  student_gallery: [
+    '/img/provisorio/vida-cocina-1.webp | Cocina compartida | Prácticas en equipo y aprendizaje colaborativo.',
+    '/img/provisorio/vida-cocina-2.webp | Ingredientes frescos | Selección y preparación de materia prima local.',
+    '/img/provisorio/vida-cocina-3.webp | Presentación final | Técnica, sabor y presentación en cada plato.',
+  ].join('\n'),
   // instagram_hashtag: [definir con el cliente] (Q1). Solo se carga en la semilla demo.
 };
 

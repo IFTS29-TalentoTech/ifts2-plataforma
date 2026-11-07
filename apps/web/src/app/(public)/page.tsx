@@ -1,7 +1,9 @@
 /**
  * Inicio (Figma 01, nodo 1:2). Datos: GET /public/home + GET /public/settings (vía getSiteInfo).
  *
- * - El titular es la frase ancla que carga el cliente (`tagline`): no se escribe en el código (ADR-22).
+ * - Titular corto (`hero_title`, Q64) y, debajo, la frase ancla del cliente (`tagline`) como subtítulo;
+ *   sin titular corto, la frase ancla hace de titular. Nada institucional está escrito en el código
+ *   (ADR-22). Las dos fotos del encabezado salen de `hero_image_1/2` (provisorias, ADR-035).
  * - Accesos rápidos: tarjetas hacia secciones del propio sitio (estructura de navegación) y, debajo,
  *   los enlaces externos que cargó el cliente (SIU, Aula virtual, Mi Argentina, Tutoría: RF07).
  * - "Actualidad institucional": publicaciones de sección HOME/BOTH aprobadas por una persona (RF04).
@@ -12,6 +14,7 @@ import { Button, EmptyState } from '@/components/ui';
 import { ExamCallCard, NoticeCard } from '@/features/public/academic-parts';
 import { loadHome } from '@/features/public/data';
 import {
+  HeroPhotos,
   LinkCard,
   PageHero,
   PublicationCard,
@@ -50,13 +53,18 @@ const QUICK_SECTIONS = [
 export default async function Page() {
   const [site, home] = await Promise.all([getSiteInfo(), loadHome()]);
   const data = home.ok ? home.data : null;
-  const tagline = data?.tagline || site.tagline || site.name;
+  const tagline = data?.tagline || site.tagline || '';
+  // Con titular corto, la frase ancla pasa a subtítulo; sin él, es el titular (como antes).
+  const title = site.heroTitle || tagline || site.name;
+  const subtitle = site.heroTitle ? tagline : '';
 
   return (
     <>
       <PageHero
-        eyebrow={site.subtitle || undefined}
-        title={tagline}
+        eyebrow={site.heroEyebrow || site.subtitle || undefined}
+        title={title}
+        description={subtitle || undefined}
+        aside={<HeroPhotos first={site.heroImage1} second={site.heroImage2} />}
         actions={
           <>
             <Button asChild variant="secondary">

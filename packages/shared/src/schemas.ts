@@ -155,6 +155,53 @@ export const url = (label: string, gender?: Gender) => {
     }, `${label} debe ser una dirección web completa que empiece con http:// o https://.`);
 };
 
+/**
+ * Imagen del sitio público: ruta propia (`/img/...`) o dirección http(s) completa. Vacía = quitarla.
+ * Se aceptan rutas porque las imágenes provisorias viajan con la web; las definitivas pueden ser
+ * direcciones de un CDN o del almacenamiento del instituto.
+ */
+export const IMAGE_REF_RE = /^(\/(?!\/)[^\s?#]+|https?:\/\/\S+)$/i;
+const LINE_BREAK = /\r?\n/;
+export const imageRef = (label: string, gender?: Gender) => {
+  const w = agree(label, gender);
+  return z
+    .string({ invalid_type_error: `${label} no ${w.es} ${w.valido}.` })
+    .trim()
+    .max(500, `${label} ${w.es} ${w.demasiadoLargo}.`)
+    .refine(
+      (v) => v === '' || IMAGE_REF_RE.test(v),
+      `${label} debe ser una ruta del sitio (que empiece con /) o una dirección web completa.`,
+    );
+};
+
+/** Máximo de tarjetas de la galería "Vida en la cocina". */
+export const GALLERY_MAX_ITEMS = 6;
+
+/** Una tarjeta de la galería: imagen, título y descripción (los dos últimos opcionales). */
+export interface GalleryItem {
+  src: string;
+  title: string;
+  description: string;
+}
+
+/**
+ * Galería de Estudiantes (`student_gallery`): una tarjeta por línea con el formato
+ * `ruta | título | descripción`. Las líneas vacías o con una ruta inválida se ignoran.
+ */
+export function parseGallery(raw: string | null | undefined): GalleryItem[] {
+  if (!raw) return [];
+  return raw
+    .split(LINE_BREAK)
+    .map((line) => line.split('|').map((part) => part.trim()))
+    .filter(([src]) => !!src && IMAGE_REF_RE.test(src))
+    .slice(0, GALLERY_MAX_ITEMS)
+    .map(([src, title, description]) => ({
+      src: src!,
+      title: title ?? '',
+      description: description ?? '',
+    }));
+}
+
 const password = (label = 'La contraseña') =>
   z
     .string({ required_error: `${label} es obligatoria.` })
@@ -571,6 +618,15 @@ export const documentListQuery = paginationQuery.extend({
 
 // ---------- ajustes, enlaces, contenido ----------
 
+/** Texto de ajuste que se puede vaciar (vacío = usar el valor por defecto de la pantalla). */
+const optionalSetting = (label: string, max: number) => {
+  const w = agree(label);
+  return z
+    .string({ invalid_type_error: `${label} no ${w.es} ${w.valido}.` })
+    .trim()
+    .max(max, `${label} no ${w.puede} superar los ${max} caracteres.`);
+};
+
 export const settingsUpdateInput = z
   .object({
     phone: text('El teléfono', 60),
@@ -595,6 +651,26 @@ export const settingsUpdateInput = z
     institution_subtitle: text('El subtítulo institucional', 200),
     footer_text: text('El texto del pie', 300),
     career_name: text('El nombre de la carrera', 200),
+    hero_title: optionalSetting('El titular de Inicio', 120),
+    hero_eyebrow: optionalSetting('El rótulo del encabezado de Inicio', 120),
+    logo_url: imageRef('El logo'),
+    hero_image_1: imageRef('La primera imagen de Inicio', 'f'),
+    hero_image_2: imageRef('La segunda imagen de Inicio', 'f'),
+    career_image: imageRef('La imagen de La carrera', 'f'),
+    ingreso_image: imageRef('La imagen de Ingreso', 'f'),
+    student_gallery: z
+      .string({ invalid_type_error: 'La galería no es válida.' })
+      .trim()
+      .max(2000, 'La galería es demasiado larga.')
+      .refine(
+        (v) =>
+          v === '' ||
+          v
+            .split(LINE_BREAK)
+            .filter((l) => l.trim())
+            .every((l) => IMAGE_REF_RE.test((l.split('|')[0] ?? '').trim())),
+        'Cada línea de la galería debe empezar con una ruta del sitio (/...) o una dirección web, y luego título y descripción separados por |.',
+      ),
   })
   .partial()
   .strict('Hay ajustes que no existen.')

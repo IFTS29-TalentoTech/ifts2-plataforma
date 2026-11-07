@@ -83,6 +83,16 @@ export const SETTING_KEYS = [
   'institution_subtitle',
   'footer_text',
   'career_name',
+  // Presentación del sitio público (Figma): titular corto, rótulo del hero, logo e imágenes.
+  // Las imágenes son rutas del sitio (/img/...) o direcciones https; vacías = sin imagen.
+  'hero_title',
+  'hero_eyebrow',
+  'logo_url',
+  'hero_image_1',
+  'hero_image_2',
+  'career_image',
+  'ingreso_image',
+  'student_gallery',
 ] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
