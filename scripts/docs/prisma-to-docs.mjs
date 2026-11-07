@@ -94,11 +94,11 @@ const DESC = {
   'GalleryItem.caption': 'Descripción visible debajo de la imagen (opcional).',
   'GalleryItem.alt': 'Texto alternativo de la imagen para lectores de pantalla.',
   'GalleryItem.category':
-    'Categoría opcional (por ejemplo \"Prácticas\"); alimenta el filtro del carrusel de Estudiantes.',
+    'Categoría opcional (por ejemplo «Prácticas»); alimenta el filtro del carrusel de Estudiantes.',
   'GalleryItem.image':
     'Ruta propia del sitio (/img/...) o clave del almacenamiento (gallery/<uuid>.webp); nunca una URL firmada.',
   'Teacher.name': 'Nombre y apellido que se muestra en el sitio.',
-  'Teacher.role': 'Cargo o rol libre (por ejemplo \"Profesora\"); vacío si no se cargó.',
+  'Teacher.role': 'Cargo o rol libre (por ejemplo «Profesora»); vacío si no se cargó.',
   'Teacher.subjects': 'Materias a cargo (texto libre; el plan de estudios vive en ContentSection).',
   'Teacher.photo':
     'Foto opcional (ruta propia o clave del almacenamiento); vacío = sin foto. Requiere consentimiento (Ley 25.326).',

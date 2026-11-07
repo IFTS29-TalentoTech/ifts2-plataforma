@@ -689,7 +689,7 @@ Diapositivas editables de los carruseles del sitio (Estudiantes y La carrera).
 | `title` | String | obligatorio, por defecto "" | Título de la diapositiva (opcional). |
 | `caption` | String | obligatorio, por defecto "" | Descripción visible debajo de la imagen (opcional). |
 | `alt` | String | obligatorio, por defecto "" | Texto alternativo de la imagen para lectores de pantalla. |
-| `category` | String | obligatorio, por defecto "" | Categoría opcional (por ejemplo "Prácticas"); alimenta el filtro del carrusel de Estudiantes. |
+| `category` | String | obligatorio, por defecto "" | Categoría opcional (por ejemplo «Prácticas»); alimenta el filtro del carrusel de Estudiantes. |
 | `image` | String | obligatorio | Ruta propia del sitio (/img/...) o clave del almacenamiento (gallery/<uuid>.webp); nunca una URL firmada. |
 | `createdAt` | DateTime | obligatorio, por defecto now() | Fecha y hora de creación del registro. |
 | `updatedAt` | DateTime | obligatorio | Fecha y hora de la última modificación (la actualiza Prisma sola). |
@@ -745,7 +745,7 @@ Plantel docente y materias a cargo (con baja lógica).
 |---|---|---|---|
 | `id` | String | PK, obligatorio, por defecto uuid() | Identificador único (UUID generado por la aplicación). |
 | `name` | String | obligatorio | Nombre y apellido que se muestra en el sitio. |
-| `role` | String | obligatorio, por defecto "" | Cargo o rol libre (por ejemplo "Profesora"); vacío si no se cargó. |
+| `role` | String | obligatorio, por defecto "" | Cargo o rol libre (por ejemplo «Profesora»); vacío si no se cargó. |
 | `subjects` | String[] | obligatorio, por defecto [] | Materias a cargo (texto libre; el plan de estudios vive en ContentSection). |
 | `photo` | String | obligatorio, por defecto "" | Foto opcional (ruta propia o clave del almacenamiento); vacío = sin foto. Requiere consentimiento (Ley 25.326). |
 | `order` | Int | obligatorio, por defecto 0 | Posición en la lista del sitio. |
