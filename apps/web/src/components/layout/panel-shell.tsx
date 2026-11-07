@@ -30,8 +30,10 @@ export function PanelShell({ session, site, counts = {}, demoMode, children }: P
     count: i.countKey ? counts[i.countKey] : undefined,
   }));
 
+  // En escritorio (lg) el panel ocupa la ventana: cabecera y pie siempre visibles, menú lateral fijo
+  // y solo el contenido central hace scroll. En móvil la página scrollea completa.
   return (
-    <div className="flex min-h-dvh flex-col bg-base">
+    <div className="flex min-h-dvh flex-col bg-base lg:h-dvh lg:min-h-0 lg:overflow-hidden">
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:shadow-focus"
@@ -39,8 +41,8 @@ export function PanelShell({ session, site, counts = {}, demoMode, children }: P
         Saltar al contenido
       </a>
       <SiteHeader site={site} panelItems={items} userName={session.name} />
-      <div className="flex flex-1">
-        <aside className="hidden w-sidebar shrink-0 flex-col justify-between bg-accent p-5 lg:flex">
+      <div className="flex flex-1 lg:min-h-0">
+        <aside className="hidden w-sidebar shrink-0 flex-col justify-between overflow-y-auto bg-accent p-5 lg:flex">
           <div>
             <p className="mb-4 mt-2 text-xs font-semibold uppercase tracking-wider text-accent-2">
               Gestión del sitio
@@ -55,7 +57,10 @@ export function PanelShell({ session, site, counts = {}, demoMode, children }: P
             <p>{site.short}</p>
           </div>
         </aside>
-        <main id="contenido" className="min-w-0 flex-1 px-gutter py-8 lg:px-gutter-lg">
+        <main
+          id="contenido"
+          className="min-w-0 flex-1 px-gutter py-8 lg:overflow-y-auto lg:px-gutter-lg"
+        >
           {demoMode && (
             <p
               role="status"
@@ -68,7 +73,9 @@ export function PanelShell({ session, site, counts = {}, demoMode, children }: P
           <div className="mx-auto max-w-5xl">{children}</div>
         </main>
       </div>
-      <SiteFooter site={site} />
+      <div className="lg:shrink-0">
+        <SiteFooter site={site} />
+      </div>
     </div>
   );
 }
