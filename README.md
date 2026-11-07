@@ -96,6 +96,8 @@ Los permisos de ADMIN, BEDELIA y EDITOR son los iniciales: el Superadministrador
 
 La semilla **demo** crea ciclo 2026-2.º público, avisos (vigente, urgente y vencido), publicaciones de redes detectadas, documentos archivados, llamado "Turno extraordinario de Diciembre 2026", contenido de páginas y enlaces. La semilla **prod** (`SEED_MODE=prod`) crea solo los roles del sistema, el superadministrador (con cambio de clave obligatorio), ajustes y enlaces reales; **nunca** datos de demostración. Ambas son idempotentes (se pueden repetir).
 
+La cuenta inicial se crea solo si no hay usuarios. Si el correo configurado ya existe, debe ser un SUPERADMIN activo; la semilla no cambia su contraseña, estado ni rol. Para instalaciones con usuarios sin acceso administrativo, seguir el [procedimiento de recuperación de SUPERADMIN](docs/operaciones/recuperacion-superadmin.md).
+
 ## 6. Comandos útiles
 
 | Comando                                              | Qué hace                                                                                                    |
