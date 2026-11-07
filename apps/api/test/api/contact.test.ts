@@ -1,4 +1,5 @@
 import request from 'supertest';
+import { loadConfig } from '../../src/config';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { loginAs } from '../helpers/auth';
@@ -47,6 +48,35 @@ describe('POST /public/contact', () => {
       replyTo: 'ana@correo.test',
     });
     expect(t.mailer.sent[0]!.text).toContain('¿Cuándo abre la inscripción?');
+  });
+
+  it('con destino configurado y proveedor consola conserva mailSent=false (A11)', async () => {
+    await setDestination();
+    const demo = await createTestApp({
+      useRealIntegrationResolution: true,
+      config: loadConfig({
+        ...process.env,
+        MAILER_PROVIDER: 'console',
+        SMTP_URL: '',
+        CONTACT_TO_EMAIL: '',
+        REVALIDATE_SECRET: '',
+      }),
+    });
+    expect((await demo.ctx.getMailer()).mailer.kind).toBe('console');
+
+    const res = await send(valid, demo.app);
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({ received: true });
+
+    const row = await testPrisma.contactMessage.findFirstOrThrow();
+    expect(row).toMatchObject({ message: valid.message, mailSent: false });
+
+    const admin = await loginAs(demo.app, 'ADMIN');
+    const panel = await request(demo.app)
+      .get('/api/v1/contact-messages')
+      .set('Cookie', admin.cookie);
+    expect(panel.status).toBe(200);
+    expect(panel.body.items[0].mailSent).toBe(false);
   });
 
   it('exige el consentimiento (Ley 25.326) y los campos, con mensajes en español', async () => {
