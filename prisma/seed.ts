@@ -19,7 +19,7 @@ import { encryptJson } from '../apps/api/src/infra/crypto';
 import { FAKE_MEDIA } from '../apps/api/src/infra/instagram/fake';
 import { userTransaction } from '../apps/api/src/modules/users/transaction';
 import { DEFAULT_ROLE_PERMISSIONS } from '../packages/shared/src/permissions';
-import { CONTENT, LINKS, SETTINGS, SYSTEM_ROLES } from './seed-data';
+import { CONTENT, GALLERY, LINKS, SETTINGS, SYSTEM_ROLES } from './seed-data';
 
 export const DEMO_PASSWORD = 'Demo-2026-ifts2';
 
@@ -137,6 +137,19 @@ async function seedSettingsAndLinks() {
  * todavía tienen el texto provisorio de versiones anteriores de la semilla ([completar] /
  * [provisorio]), que se reemplazan por el contenido real.
  */
+/**
+ * Galerías editables (RF09, ADR-036). Idempotente y respetuosa: solo carga las diapositivas iniciales
+ * (imágenes provisorias, ADR-035) si el área NO tiene ninguna; nunca pisa lo que el instituto editó.
+ */
+async function seedGallery() {
+  for (const area of ['STUDENTS', 'CAREER'] as const) {
+    if ((await prisma.galleryItem.count({ where: { area } })) > 0) continue;
+    const items = GALLERY.filter((g) => g.area === area);
+    await prisma.galleryItem.createMany({ data: items.map((g, order) => ({ ...g, order })) });
+    log(`galería ${area}: ${items.length} diapositivas provisorias`);
+  }
+}
+
 async function seedContent() {
   for (const s of CONTENT) {
     await prisma.contentSection.upsert({
@@ -584,6 +597,7 @@ async function main() {
   const admin = await seedAdmin(roles.SUPERADMIN!);
   await seedSettingsAndLinks();
   await seedContent();
+  await seedGallery();
   if (mode === 'demo') await seedDemo(admin.id, roles as Record<SystemKey, string>);
   log('listo');
 }

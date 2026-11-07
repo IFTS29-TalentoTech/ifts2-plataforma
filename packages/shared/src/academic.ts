@@ -461,6 +461,36 @@ export interface PublicPublicationsDto extends Page<PublicPublicationCardDto> {
   availableYears: number[];
 }
 
+/** Una diapositiva de una galería, como la ve el panel (GET /gallery). */
+export interface GalleryItemDto {
+  id: string;
+  area: 'STUDENTS' | 'CAREER';
+  order: number;
+  title: string;
+  caption: string;
+  alt: string;
+  /** Lo guardado: ruta propia (`/img/...`) o clave del almacenamiento. */
+  image: string;
+  /** URL lista para mostrar (firmada si es una clave); `null` si el almacenamiento no responde. */
+  src: string | null;
+  updatedAt: string;
+}
+
+/** Una diapositiva pública: solo lo necesario para mostrarla (las sin imagen utilizable se omiten). */
+export interface PublicGalleryItemDto {
+  id: string;
+  src: string;
+  title: string;
+  caption: string;
+  alt: string;
+}
+
+/** GET /public/gallery?area=STUDENTS|CAREER */
+export interface PublicGalleryDto {
+  area: 'STUDENTS' | 'CAREER';
+  items: PublicGalleryItemDto[];
+}
+
 /** GET /public/students */
 export interface PublicStudentsDto {
   /** Ciclo público actual; null si todavía no se definió. */

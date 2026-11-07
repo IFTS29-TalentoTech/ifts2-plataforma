@@ -5,6 +5,53 @@ import { CORRELATIVIDADES, PLAN } from './seed-plan';
 
 export const PLACEHOLDER_URL = 'https://pendiente.invalid/a-confirmar';
 
+/**
+ * Diapositivas iniciales de las galerías editables (RF09, ADR-036). Son las imágenes PROVISORIAS del
+ * Figma (ADR-035, Q63); el instituto las cambia desde Configuración -> Galerías.
+ */
+export interface GallerySeed {
+  area: 'STUDENTS' | 'CAREER';
+  image: string;
+  title: string;
+  caption: string;
+  alt: string;
+}
+
+const STUDENT_GALLERY: GallerySeed[] = [
+  {
+    area: 'STUDENTS',
+    image: '/img/provisorio/vida-cocina-1.webp',
+    title: 'Cocina compartida',
+    caption: 'Prácticas en equipo y aprendizaje colaborativo.',
+    alt: '',
+  },
+  {
+    area: 'STUDENTS',
+    image: '/img/provisorio/vida-cocina-2.webp',
+    title: 'Ingredientes frescos',
+    caption: 'Selección y preparación de materia prima local.',
+    alt: '',
+  },
+  {
+    area: 'STUDENTS',
+    image: '/img/provisorio/vida-cocina-3.webp',
+    title: 'Presentación final',
+    caption: 'Técnica, sabor y presentación en cada plato.',
+    alt: '',
+  },
+];
+
+export const GALLERY: GallerySeed[] = [
+  ...STUDENT_GALLERY,
+  {
+    area: 'CAREER',
+    image: '/img/provisorio/la-carrera-perfil.webp',
+    title: '',
+    caption: '',
+    alt: '',
+  },
+];
+
 export const SETTINGS: Record<string, string> = {
   institution_name: 'Instituto de Formación Técnica Superior N.° 2 DE 20',
   institution_short: 'IFTS N.° 2',
@@ -30,12 +77,9 @@ export const SETTINGS: Record<string, string> = {
   hero_image_2: '/img/provisorio/inicio-sarten.webp',
   career_image: '/img/provisorio/la-carrera-perfil.webp',
   ingreso_image: '/img/provisorio/ingreso-hero.webp',
+  // Respaldo (ADR-036): se usa solo si no hay diapositivas cargadas en la galería editable.
   // Una tarjeta por línea: ruta | título | descripción.
-  student_gallery: [
-    '/img/provisorio/vida-cocina-1.webp | Cocina compartida | Prácticas en equipo y aprendizaje colaborativo.',
-    '/img/provisorio/vida-cocina-2.webp | Ingredientes frescos | Selección y preparación de materia prima local.',
-    '/img/provisorio/vida-cocina-3.webp | Presentación final | Técnica, sabor y presentación en cada plato.',
-  ].join('\n'),
+  student_gallery: STUDENT_GALLERY.map((g) => `${g.image} | ${g.title} | ${g.caption}`).join('\n'),
   // instagram_hashtag: [definir con el cliente] (Q1). Solo se carga en la semilla demo.
 };
 

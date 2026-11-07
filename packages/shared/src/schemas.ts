@@ -3,6 +3,8 @@ import {
   CATEGORY_KINDS,
   CONTENT_PAGES,
   DOCUMENT_KINDS,
+  GALLERY_AREAS,
+  GALLERY_MAX_PER_AREA,
   NOTICE_AUDIENCES,
   NOTICE_VIEW_STATUSES,
   PUBLICATION_ORIGINS,
@@ -693,6 +695,48 @@ export type LinkInput = z.infer<typeof linkInput>;
 export const linkUpdateInput = linkInput
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+
+// ---------- galerías (RF09, ADR-036) ----------
+
+const galleryText = (label: string, max: number) =>
+  z
+    .string({ invalid_type_error: `${label} no es válido.` })
+    .trim()
+    .max(max, `${label} no puede superar los ${max} caracteres.`);
+
+/** Campos de texto de una diapositiva (también llegan como campos del multipart al subir la imagen). */
+export const galleryTextFields = z.object({
+  title: galleryText('El título', 80).default(''),
+  caption: galleryText('La descripción', 200).default(''),
+  /** Texto alternativo de la foto; vacío = decorativa (el texto de la tarjeta ya la describe). */
+  alt: galleryText('El texto alternativo', 200).default(''),
+});
+
+/** Alta de una diapositiva: el archivo va aparte (campo `file`); acá el área y los textos. */
+export const galleryCreateFields = galleryTextFields.extend({
+  area: enumOf('El área', GALLERY_AREAS),
+});
+export type GalleryCreateFields = z.infer<typeof galleryCreateFields>;
+
+export const galleryUpdateInput = galleryTextFields
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+export type GalleryUpdateInput = z.infer<typeof galleryUpdateInput>;
+
+/** GET /public/gallery: el área es obligatoria. */
+export const publicGalleryQuery = z.object({ area: enumOf('El área', GALLERY_AREAS) });
+
+export const galleryListQuery = z.object({ area: enumOf('El área', GALLERY_AREAS).optional() });
+
+/** Nuevo orden de una galería: los ids de TODAS sus diapositivas, en el orden deseado. */
+export const galleryOrderInput = z.object({
+  area: enumOf('El área', GALLERY_AREAS),
+  ids: z
+    .array(uuid('El identificador'))
+    .min(1, 'Indicá el orden de las diapositivas.')
+    .max(GALLERY_MAX_PER_AREA, `Una galería admite hasta ${GALLERY_MAX_PER_AREA} diapositivas.`),
+});
+export type GalleryOrderInput = z.infer<typeof galleryOrderInput>;
 
 export const contentPageParam = enumOf('La página', CONTENT_PAGES);
 

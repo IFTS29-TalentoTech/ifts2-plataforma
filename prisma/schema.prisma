@@ -315,6 +315,29 @@ model ContactMessage {
 }
 
 // Una sola fila (id = 1)
+// Galerías editables del sitio público (RF09, ADR-036): carrusel "Vida en la cocina" de Estudiantes y
+// fotos de La carrera. `image` es una ruta propia del sitio (`/img/...`, la deja la semilla) o una CLAVE
+// del almacenamiento (`gallery/<uuid>.webp`, la deja la subida desde el panel); nunca una URL firmada,
+// porque vence (se resuelve al responder, ver apps/api/src/lib/cover.ts).
+enum GalleryArea {
+  STUDENTS
+  CAREER
+}
+
+model GalleryItem {
+  id        String      @id @default(uuid())
+  area      GalleryArea
+  order     Int         @default(0)
+  title     String      @default("")
+  caption   String      @default("")
+  alt       String      @default("")
+  image     String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([area, order])
+}
+
 model InstagramToken {
   id          Int       @id @default(1)
   tokenEnc    String    // AES-256-GCM con APP_ENCRYPTION_KEY

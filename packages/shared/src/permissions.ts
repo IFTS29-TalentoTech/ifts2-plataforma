@@ -27,6 +27,7 @@ export const ACTIONS = [
   'examCalls:delete',
   'documents:manage',
   'documents:delete',
+  'gallery:manage',
   'terms:manage',
   'terms:setPublic',
   'settings:manage',
@@ -85,6 +86,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<
     'publications:delete',
     'social:moderate',
     'social:delete',
+    'gallery:manage',
     'categories:manage',
   ],
 };
@@ -207,6 +209,12 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'documents:manage', label: 'Gestionar' },
           { action: 'documents:delete', label: 'Eliminar' },
         ],
+      },
+      {
+        resource: 'gallery',
+        label: 'Galerías',
+        description: 'Fotos del carrusel de Estudiantes y de La carrera.',
+        permissions: [{ action: 'gallery:manage', label: 'Gestionar' }],
       },
     ],
   },
