@@ -61,6 +61,7 @@ export async function startStack({
   webPort = 3100,
   degraded = false,
   extraApiEnv = {},
+  webDistDir = '',
 } = {}) {
   const web = `http://localhost:${webPort}`;
   const env = {
@@ -74,7 +75,12 @@ export async function startStack({
     ...extraApiEnv,
     NODE_ENV: 'production',
   });
-  start('web', 'npx', ['next', 'start', '-p', String(webPort)], path.join(root, 'apps/web'), env);
+  // `webDistDir` permite servir un build propio (p. ej. `.next-e2e`) sin pisar el `.next` que usa
+  // `pnpm dev`: dos servidores de Next no pueden compartir esa carpeta.
+  start('web', 'npx', ['next', 'start', '-p', String(webPort)], path.join(root, 'apps/web'), {
+    ...env,
+    ...(webDistDir ? { NEXT_DIST_DIR: webDistDir } : {}),
+  });
   if (degraded) {
     start(
       'web-degradada',

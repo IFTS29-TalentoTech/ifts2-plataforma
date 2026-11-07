@@ -4,7 +4,11 @@ import { registerPanelATasks } from './cypress/support/panel-a-tasks';
 export default defineConfig({
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'http://localhost:3000',
-    specPattern: 'cypress/e2e/**/*.cy.ts',
+    // Los specs `capturas*.cy.ts` generan las imágenes del Manual de Usuario (docs/capturas/ y
+    // cypress/screenshots, ambas versionadas). Tardan y reescriben archivos del repo, así que NO
+    // corren en la suite normal: se piden con `pnpm e2e:capturas` (CAPTURAS=1), antes de mergear a main.
+    specPattern: process.env.CAPTURAS ? 'cypress/e2e/**/capturas*.cy.ts' : 'cypress/e2e/**/*.cy.ts',
+    excludeSpecPattern: process.env.CAPTURAS ? [] : ['**/capturas*.cy.ts'],
     supportFile: 'cypress/support/e2e.ts',
     video: false,
     // URL de una web sin API para el spec de degradacion (RNF03); sin ella ese spec se omite.

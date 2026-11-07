@@ -20,7 +20,8 @@
     "tailwind.config.ts",
     "next.config.ts",
     ".next/types/**/*.ts",
-    ".next-degraded/types/**/*.ts"
+    ".next-degraded/types/**/*.ts",
+    ".next-e2e/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
