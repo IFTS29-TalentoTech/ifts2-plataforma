@@ -242,7 +242,7 @@ model Schedule {
   term           AcademicTerm @relation(fields: [termId], references: [id])
   commissionName String       // "Comisión A y B", "Comisión Única", "Prácticas Finales"
   documentId     String?
-  document       Document?    @relation(fields: [documentId], references: [id])
+  document       Document?    @relation(fields: [documentId], references: [id], onDelete: Restrict)
   notes          String?
   published      Boolean      @default(false)
   updatedBy      String
