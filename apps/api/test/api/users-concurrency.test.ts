@@ -4,12 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loginAs } from '../helpers/auth';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { resetDb, testPrisma } from '../helpers/db';
+import { ensureRole } from '../helpers/factories';
 
 let t: TestApp;
 beforeEach(async () => {
   await resetDb();
   t = await createTestApp();
-  EDITOR_ID = (await testPrisma.role.findUniqueOrThrow({ where: { key: 'EDITOR' } })).id;
+  EDITOR_ID = await ensureRole('EDITOR');
 });
 afterEach(() => vi.restoreAllMocks());
 
