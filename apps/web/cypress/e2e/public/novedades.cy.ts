@@ -35,6 +35,9 @@ for (const width of [390, 1440]) {
       cy.get('[data-testid=novedades] a').first().click();
       cy.location('pathname').should('match', /^\/novedades\/.+/);
       cy.get('main h1').should('be.visible');
+      // Next 15 agrega el <title> de las páginas dinámicas un instante después del contenido: se espera
+      // a que esté antes de revisar la accesibilidad (si no, axe marca "document-title" según la velocidad).
+      cy.title().should('not.be.empty');
       cy.a11y();
       cy.contains('a', 'Volver a novedades').click();
       cy.location('pathname').should('eq', '/novedades');
