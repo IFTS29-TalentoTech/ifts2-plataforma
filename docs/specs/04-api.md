@@ -61,7 +61,7 @@ Cabecera de caché de todo `/public/*`: ver la última sección. Los ids y filtr
 - `POST /social/posts/:id/discard`, `POST /social/posts/:id/restore`
 - `POST /social/manual` → carga manual equivalente (contingencia).
 - `GET /publications?status=&origin=&page=`, `POST /publications`, `GET/PATCH /publications/:id`
-- `POST /publications/:id/pause`, `/publish`, `/schedule`, `/reactivate` (con nueva vigencia), `POST /publications/:id/cover` (multipart, sube la portada). Transiciones inválidas: 409. Cada publicación trae `visible` y `expired` (calculados con las reglas de vigencia) y `coverSrc` (URL lista para mostrar).
+- `POST /publications/:id/pause`, `/publish`, `/schedule`, `/reactivate` (con nueva vigencia), `POST /publications/:id/cover` (multipart, sube la portada; campo opcional `expectedCoverUrl` con la portada que vio el cliente, vacío = sin portada). `PATCH /publications/:id` acepta también `expectedCoverUrl`. Si la portada cambió en el medio responde 409 sin guardar nada; si la publicación ya no existe, 404 (A10). Transiciones inválidas: 409. Cada publicación trae `visible` y `expired` (calculados con las reglas de vigencia) y `coverSrc` (URL lista para mostrar).
 - `GET/POST /categories`, `PATCH/DELETE /categories/:id` (único por nombre y tipo; `DELETE` 409 si está en uso).
 
 **Avisos académicos**
