@@ -74,7 +74,17 @@ for (const width of [390, 1440]) {
             .should('contain', 'rel=preload; as="image"');
         } else {
           cy.get('article img').should('have.attr', 'sizes', '(min-width: 768px) 768px, 100vw');
-          cy.get('head link[rel="preload"][as="image"]').should('have.attr', 'imagesrcset');
+          // Con streaming, React/Next puede emitir el preload en body después de cerrar head.
+          // Verificamos el hint SSR y su correspondencia con la imagen realmente cargada.
+          cy.get('article img').then(($img) => {
+            cy.request(`/novedades/${id}`).then(({ body }) => {
+              const doc = new DOMParser().parseFromString(body, 'text/html');
+              const preload = doc.querySelector('link[rel="preload"][as="image"]');
+              expect(preload, 'preload de imagen en la respuesta SSR').not.to.eq(null);
+              expect(preload!.getAttribute('imagesrcset')).to.eq($img.attr('srcset'));
+              expect(preload!.getAttribute('imagesizes')).to.eq($img.attr('sizes'));
+            });
+          });
         }
         cy.contains('Contenido de la publicación.').should('be.visible');
       });
