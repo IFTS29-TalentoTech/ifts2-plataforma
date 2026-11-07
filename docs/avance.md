@@ -4,6 +4,16 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-07 · Categorías de galería y plantel docente (RF09 completo, RF10, ADR-036 y ADR-037, rama `feat/publico-fiel-al-figma`)
+
+**Hecho.** (1) **RF09/US-30:** `GalleryItem.category` (migración aditiva `20261107120000_galeria_categoria`), esquema zod, API, campo con sugerencias en el panel y **filtro por categoría accesible en Estudiantes** (botones con `aria-pressed`, se muestra solo si hay categorías). (2) **RF10/US-29:** modelo `Teacher` y migración `20261107130000_plantel` (también concede `teachers:manage` a los ADMIN y EDITOR existentes), módulo de API `teachers` (alta, edición, foto, orden, baja lógica y eliminación manual solo de personas ocultas, 409 si siguen visibles, todo auditado), lectura pública `/public/teachers`, página `/panel/plantel` (y pestaña de Configuración) y sección **Plantel docente** en Institucional (no se dibuja si no hay personas visibles). (3) **Semilla demo:** 6 docentes **ficticios** («Docente de ejemplo n», uno oculto, sin fotos) y categorías provisorias en la galería (Prácticas, Ingredientes, Platos, Perfil); producción deja el plantel vacío. Las bases que ya tenían las diapositivas provisorias reciben su categoría al volver a correr `pnpm db:seed` (solo si siguen sin categoría).
+
+**Pruebas.** `shared` (teachers y categorías), API (`teachers.test.ts`, 16 casos; categorías en `gallery.test.ts`) y Cypress: `public/plantel.cy.ts`, `panel-b/plantel.cy.ts`, filtro de `public/carrusel.cy.ts` y categoría en `panel-b/galerias.cy.ts` (390 y 1440 px, con axe).
+
+**Decisiones y preguntas.** ADR-037 y Q138 (datos reales del plantel) y Q139 (consentimiento de fotos).
+
+**Dificultad.** `prisma generate` falla con EPERM mientras un `pnpm dev` tiene abierto el motor de Prisma en Windows. Se regeneró el cliente en una carpeta temporal y se copiaron todos los archivos menos el `.dll` (el motor es el mismo; el esquema viaja en el cliente). Para uso normal: detener `pnpm dev`, `pnpm db:migrate`, volver a levantar.
+
 ### 2026-11-07 · Carrusel editable y galerías (RF09, ADR-036, rama `feat/publico-fiel-al-figma`)
 
 **Hecho.** Modelo `GalleryItem` y migración `20261107075740_galeria` (aditiva; también concede `gallery:manage` a los ADMIN y EDITOR existentes). Módulo de API `gallery` (alta con imagen a WebP de 1600 px, textos, reemplazo de foto, orden, eliminación manual auditada, hasta 10 por área) y lectura pública `/public/gallery`. Componente `Carousel` accesible (scroll-snap, botones, puntos, teclado, sin reproducción automática). Sección **Galerías** del panel (`/panel/galerias` y pestaña de Configuración) con subir, editar, Subir/Bajar y eliminar con confirmación. Estudiantes y La carrera usan el carrusel; sin diapositivas se usa el respaldo (`student_gallery`, `career_image`). La semilla crea las diapositivas provisorias solo si el área está vacía.
@@ -368,8 +378,8 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 - **Con servicios reales (faltan cuentas o credenciales):** probar Instagram contra una cuenta profesional y una app de Meta del cliente (`GraphInstagramClient` solo se probó contra un servidor simulado); SMTP real (remitente, Q100) y `S3Storage` contra un servicio real.
 - **Despliegue:** hosting, base y dominio sin definir (ADR-15, Q13, Q14); `deploy.yml` y `lighthouse.yml` de la CI; enlaces del repositorio y de la aplicación en `docs/entrega/Enlaces.md` (`[completar]`).
-- **Con el cliente:** datos de ingreso (Q122), ubicación de materias por año (Q120), nombres de la resolución (Q121), URL de SIU Guaraní, Mi Argentina y Tutoría (Q6), nombres finales Ingreso/Inscripciones (Q20, Q22), hashtag definitivo (Q1), a quién se entregan las credenciales del Superadministrador en producción (Q123), fotos y galería (Q63).
-- **Producto:** galería y plantel (RF09, RF10), plan por año navegable (Q17), "Prioridad visual" en la moderación (Q84), barra inferior móvil del Figma (Q65), documentos públicos de Ingreso (Q62), remitente SMTP (Q100).
+- **Con el cliente:** datos de ingreso (Q122), ubicación de materias por año (Q120), nombres de la resolución (Q121), URL de SIU Guaraní, Mi Argentina y Tutoría (Q6), nombres finales Ingreso/Inscripciones (Q20, Q22), hashtag definitivo (Q1), a quién se entregan las credenciales del Superadministrador en producción (Q123), fotos y galería (Q63), plantel docente real (Q138) y consentimiento de fotos (Q139).
+- **Producto:** plan por año navegable (Q17), "Prioridad visual" en la moderación (Q84), barra inferior móvil del Figma (Q65), documentos públicos de Ingreso (Q62), remitente SMTP (Q100).
 - **Escala:** un proceso web se satura cerca de 300-360 pedidos/s (se resuelve con CDN o más procesos); el límite de frecuencia es en memoria (Q29).
 - **Documentación:** regenerar DER, tablas y PDF; capturas de Roles y permisos (ver arriba).
 - **Cuidado:** `pnpm db:reset` borra la base de desarrollo y lo corre una persona, no un agente. `pnpm e2e` ya no la toca: usa su propia base `ifts2_e2e`.

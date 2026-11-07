@@ -275,3 +275,57 @@ export const SYSTEM_ROLES = [
   },
   { key: 'EDITOR', name: 'Comunicación', description: 'Publicaciones, redes y novedades.' },
 ] as const;
+
+/**
+ * PLANTEL DE DEMOSTRACIÓN (RF10, ADR-037). Personas FICTICIAS: los nombres son obviamente inventados
+ * ("Docente de ejemplo") y no corresponden a nadie del instituto. Se cargan SOLO con SEED_MODE=demo,
+ * para poder mostrar la pantalla de Institucional y el panel; producción deja el plantel vacío y el
+ * instituto carga el real (Q138). Las materias son nombres del plan de estudios ya sembrado
+ * (Res. MEGC 1202/07). Sin fotos: no hay imágenes de personas con consentimiento. La última está
+ * oculta a propósito, para mostrar la baja lógica.
+ */
+export interface TeacherSeed {
+  name: string;
+  role: string;
+  subjects: string[];
+  visible: boolean;
+}
+
+export const DEMO_TEACHERS: TeacherSeed[] = [
+  {
+    name: 'Docente de ejemplo 1',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Elaboraciones a base de carnes', 'Cocina nacional e internacional'],
+    visible: true,
+  },
+  {
+    name: 'Docente de ejemplo 2',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Elaboraciones de Panadería', 'Pastelería básica', 'Repostería'],
+    visible: true,
+  },
+  {
+    name: 'Docente de ejemplo 3',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Elementos de Química', 'Nutrición'],
+    visible: true,
+  },
+  {
+    name: 'Docente de ejemplo 4',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Introducción general a la microempresa', 'Comercialización'],
+    visible: true,
+  },
+  {
+    name: 'Docente de ejemplo 5',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Organización de eventos gastronómicos'],
+    visible: true,
+  },
+  {
+    name: 'Docente de ejemplo 6 (oculto)',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Taller de Francés técnico'],
+    visible: false,
+  },
+];

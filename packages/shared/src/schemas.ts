@@ -740,6 +740,66 @@ export const galleryOrderInput = z.object({
 });
 export type GalleryOrderInput = z.infer<typeof galleryOrderInput>;
 
+// ---------- plantel docente (RF10, US-29) ----------
+
+export const TEACHER_MAX_SUBJECTS = 12;
+
+const teacherText = (label: string, max: number) =>
+  z
+    .string({ invalid_type_error: `${label} no es válido.` })
+    .trim()
+    .max(max, `${label} no puede superar los ${max} caracteres.`);
+
+/**
+ * Materias a cargo: lista de textos cortos. Se recortan, se descartan los vacíos y se quitan los
+ * repetidos (sin distinguir mayúsculas), así quien escribe "una por línea" no tiene que cuidarlo.
+ */
+const teacherSubjects = z
+  .array(teacherText('Cada materia', 120), { invalid_type_error: 'Las materias no son válidas.' })
+  .transform((list) => {
+    const seen = new Set<string>();
+    return list.filter((s) => {
+      const k = s.toLocaleLowerCase('es');
+      if (!s || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  })
+  .pipe(
+    z
+      .array(z.string())
+      .max(TEACHER_MAX_SUBJECTS, `Se admiten hasta ${TEACHER_MAX_SUBJECTS} materias.`),
+  );
+
+export const teacherInput = z.object({
+  name: teacherText('El nombre', 100).min(1, 'El nombre es obligatorio.'),
+  role: teacherText('El cargo', 80).default(''),
+  subjects: teacherSubjects.default([]),
+  /** Al crear: visible por defecto. Ocultar es la baja lógica (no borra nada). */
+  visible: z.boolean({ invalid_type_error: 'La visibilidad no es válida.' }).default(true),
+});
+export type TeacherInput = z.infer<typeof teacherInput>;
+
+export const teacherUpdateInput = z
+  .object({
+    name: teacherText('El nombre', 100).min(1, 'El nombre es obligatorio.'),
+    role: teacherText('El cargo', 80),
+    subjects: teacherSubjects,
+    visible: z.boolean({ invalid_type_error: 'La visibilidad no es válida.' }),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+export type TeacherUpdateInput = z.infer<typeof teacherUpdateInput>;
+
+/** Nuevo orden del plantel: los ids de TODAS las personas (visibles y ocultas), en el orden deseado. */
+export const teacherOrderInput = z.object({
+  ids: z
+    .array(uuid('El identificador'))
+    .min(1, 'Indicá el orden del plantel.')
+    .max(200, 'El plantel no puede superar las 200 personas.'),
+});
+export type TeacherOrderInput = z.infer<typeof teacherOrderInput>;
+
 export const contentPageParam = enumOf('La página', CONTENT_PAGES);
 
 export const contentSectionInput = z.object({

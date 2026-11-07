@@ -12,6 +12,7 @@
 import type {
   PublicContentDto,
   PublicGalleryDto,
+  PublicTeachersDto,
   PublicHomeDto,
   PublicPublicationDetailDto,
   PublicPublicationsDto,
@@ -51,6 +52,8 @@ export const loadContent = (page: 'institucional' | 'carrera' | 'ingreso') =>
 /** Diapositivas editables de una galería (RF09). Si falla o está vacía, la página usa el respaldo de ajustes. */
 export const loadGallery = (area: 'STUDENTS' | 'CAREER') =>
   loadPublic<PublicGalleryDto>(`/gallery?area=${area}`);
+/** Plantel docente visible (RF10). Si falla, Institucional simplemente no muestra la sección. */
+export const loadTeachers = () => loadPublic<PublicTeachersDto>('/teachers');
 /** Una diapositiva lista para dibujar (de la galería editable o del respaldo de ajustes). */
 export interface Slide {
   key: string;

@@ -28,6 +28,7 @@ export const ACTIONS = [
   'documents:manage',
   'documents:delete',
   'gallery:manage',
+  'teachers:manage',
   'terms:manage',
   'terms:setPublic',
   'settings:manage',
@@ -87,6 +88,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<
     'social:moderate',
     'social:delete',
     'gallery:manage',
+    'teachers:manage',
     'categories:manage',
   ],
 };
@@ -215,6 +217,12 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         label: 'Galerías',
         description: 'Fotos del carrusel de Estudiantes y de La carrera.',
         permissions: [{ action: 'gallery:manage', label: 'Gestionar' }],
+      },
+      {
+        resource: 'teachers',
+        label: 'Plantel docente',
+        description: 'Docentes, sus materias a cargo y qué personas se muestran en Institucional.',
+        permissions: [{ action: 'teachers:manage', label: 'Gestionar' }],
       },
     ],
   },

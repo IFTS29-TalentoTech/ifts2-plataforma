@@ -19,7 +19,7 @@ import { encryptJson } from '../apps/api/src/infra/crypto';
 import { FAKE_MEDIA } from '../apps/api/src/infra/instagram/fake';
 import { userTransaction } from '../apps/api/src/modules/users/transaction';
 import { DEFAULT_ROLE_PERMISSIONS } from '../packages/shared/src/permissions';
-import { CONTENT, GALLERY, LINKS, SETTINGS, SYSTEM_ROLES } from './seed-data';
+import { CONTENT, DEMO_TEACHERS, GALLERY, LINKS, SETTINGS, SYSTEM_ROLES } from './seed-data';
 
 export const DEMO_PASSWORD = 'Demo-2026-ifts2';
 
@@ -235,6 +235,16 @@ async function demoDocument(
   });
 }
 
+/**
+ * Plantel de DEMOSTRACIÓN (RF10): solo en modo demo y solo si la tabla está vacía (nunca pisa lo que
+ * cargó el instituto). Personas ficticias, ver `DEMO_TEACHERS`.
+ */
+async function seedDemoTeachers() {
+  if ((await prisma.teacher.count()) > 0) return;
+  await prisma.teacher.createMany({ data: DEMO_TEACHERS.map((t, order) => ({ ...t, order })) });
+  log(`plantel de demostración: ${DEMO_TEACHERS.length} docentes ficticios (1 oculto)`);
+}
+
 async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
   // Nombres de PERSONA (no de rol): en la lista de usuarios el rol se muestra aparte y, si la persona
   // se llamara igual que su rol, no se distinguiría una cosa de la otra.
@@ -244,6 +254,8 @@ async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
   log(
     'usuarios de demostración: admin (superadministrador) / direccion@ / bedelia@ / editor@ifts2.local',
   );
+
+  await seedDemoTeachers();
 
   // Ajustes de demostración
   await prisma.siteSetting.upsert({

@@ -370,3 +370,23 @@ model AuditLog {
   @@index([entity, entityId])
   @@index([at])
 }
+
+/// Plantel docente (RF10, US-29). Baja lógica: `visible = false` oculta a la persona del sitio sin
+/// borrarla; la eliminación es siempre manual, con confirmación, y solo si está oculta (regla de ADR-07).
+/// No hay datos reales en la semilla de producción: los carga el instituto (Q138).
+model Teacher {
+  id        String   @id @default(uuid())
+  name      String
+  /// Cargo o rol libre ("Profesora"); vacío si no se cargó.
+  role      String   @default("")
+  /// Materias a cargo (texto libre; el plan de estudios vive en ContentSection).
+  subjects  String[] @default([])
+  /// Foto opcional: ruta propia (/img/...) o clave del almacenamiento; vacío = sin foto. Ley 25.326: requiere consentimiento.
+  photo     String   @default("")
+  order     Int      @default(0)
+  visible   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([visible, order])
+}

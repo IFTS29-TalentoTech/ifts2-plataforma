@@ -327,6 +327,12 @@ En **Mensajes** aparecen las consultas enviadas desde el sitio. Podés filtrarla
 
 ![Confirmar cambios de configuración](../capturas/panel/b-configuracion-confirmar-cambios-1440.png)
 
+### 5.11 Galerías y plantel docente _(Administración y Comunicación)_
+
+- **Galerías** (menú **Galerías**): son las fotos del carrusel «Vida en la cocina» de Estudiantes y la foto de La carrera. **Agregar diapositiva** → elegir la foto (JPG, PNG o WebP, hasta 5 MB) → completar título, descripción y, si querés, una **categoría** (por ejemplo, «Eventos») → **Guardar diapositiva**. Con **Subir** y **Bajar** cambiás el orden y con **Eliminar** la quitás (pide confirmación). Si alguna diapositiva tiene categoría, Estudiantes muestra botones para filtrar (Todas, Eventos…).
+- **Plantel docente** (menú **Plantel docente**): **Agregar docente** → nombre (obligatorio), cargo, materias a cargo (una por línea) y, si la persona dio su consentimiento, una foto → **Guardar docente**. **Ocultar** saca a la persona del sitio sin borrarla y **Mostrar** la vuelve a poner. **Eliminar** solo aparece para quienes están ocultas y pide confirmación. La sección **Plantel docente** de Institucional solo se ve si hay al menos una persona visible.
+- Los datos de demostración (docentes «Docente de ejemplo n» y las fotos provisorias) son ficticios: reemplazalos por los reales antes de publicar el sitio.
+
 ## 6. Operaciones de datos (crear, leer, actualizar y eliminar)
 
 Esta sección muestra, con la aplicación real, las cuatro operaciones sobre **avisos, publicaciones, documentos y usuarios**, junto con las reglas que las protegen. Las capturas fueron generadas por una prueba automática (`apps/web/cypress/e2e/panel-a/capturas-crud.cy.ts`) que recorre cada paso con la interfaz.
