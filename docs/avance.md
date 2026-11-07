@@ -4,6 +4,21 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-06 · Compatibilidad de portadas externas (A06)
+
+**Hecho.** Rama `fix/portadas-externas` creada desde `develop` actualizado, con A05
+(`4d2863b3e278014768efc94d6d0d5fcde0f57e38`) verificado. `Cover` optimiza solo rutas
+propias y URLs de la API sin parámetros; las externas y firmadas se cargan directamente.
+`remotePatterns` permanece limitado a la API y rechaza parámetros. Un componente cliente
+localizado muestra un fallback accesible si la imagen falla. No cambian A01, A05, los
+contratos públicos, el almacenamiento ni la limpieza de archivos A10.
+
+**Pruebas.** Seis casos nuevos de API, quince de política/atributos de imagen y veinte de
+Cypress contra la web compilada, con API e imágenes simuladas a 390 y 1440 px. Se verifican
+inicio, novedades, detalle, prioridad, carga diferida, dimensiones, accesibilidad, errores
+404/403 y el rechazo del optimizador. La suite se agrega a GitHub Actions. Resultados y
+limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión en ADR-032.
+
 ### 2026-11-06 · Histórico de publicaciones programadas (A05)
 
 **Hecho.** El filtro SQL compartido por el listado histórico, su total y el detalle archivado admite `SCHEDULED` con una ventana no vacía ya terminada. Los años disponibles incorporan las programadas elegibles, sin adelantar las futuras. Se preservan `PUBLISHED`, Instagram, los estados y la portada; no hay migraciones ni cambios visuales o de contratos.

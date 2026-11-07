@@ -42,6 +42,30 @@ if (await confirm({ title: '¿Eliminar el aviso?', tone: 'danger', confirmLabel:
 
 Implementado en `src/features/public/` (mapa de páginas, endpoints y decisiones en su README). `next.config.ts` lee el `.env` de la raíz con `forceReload` y autoriza el origen de la API para `next/image`. Cuidado con `text-base` (también es un color del tema).
 
+### Portadas externas (A06)
+
+`Cover` optimiza rutas propias y URLs de `API_ORIGIN` sin parámetros. Las URLs externas, las
+firmadas (también las de la API local) y las de desarrollo se cargan directamente desde el
+navegador con `next/image` y `unoptimized`. El optimizador solo autoriza el origen exacto de la
+API, sin parámetros; no se agregan dominios de terceros ni patrones universales. Se conservan
+dimensiones, carga diferida, prioridad del detalle y ancho responsive. Solo `CoverImage` es
+cliente: ante un error reemplaza la imagen por un bloque con nombre accesible.
+
+Las imágenes de Instagram ya copiadas siguen usando la clave del almacenamiento y su URL
+firmada. La firma pública dura 1800 segundos; las respuestas y páginas públicas usan caché,
+por lo que una pestaña abierta puede intentar cargar una firma vencida. El fallback permite
+seguir leyendo; no renueva firmas ni reintenta automáticamente. Una recarga obtiene la URL
+disponible según la caché vigente. La disponibilidad, HTTPS en sitios HTTPS y las restricciones
+del proveedor externo siguen siendo responsabilidad del origen. S3/R2/Supabase/MinIO reales
+no se verifican con credenciales en estas pruebas.
+
+Validación sin servicios externos ni PostgreSQL: `pnpm test:covers` desde la raíz compila la
+web con una API simulada (puerto 4100), la sirve en 3200 y ejecuta Cypress a 390 y 1440 px.
+Incluye inicio, novedades, detalle, imágenes propias, manuales, firmadas, copia de Instagram,
+404/403, ausencia de portada, axe y rechazo del optimizador. Usa el build `.next` habitual y
+requiere Cypress instalado (`pnpm --filter @ifts2/web exec cypress install`) y sus bibliotecas
+de sistema. `pnpm --filter @ifts2/web test` verifica la selección del optimizador con Vitest.
+
 `pnpm test:e2e` (web levantada; `CYPRESS_BASE_URL` para otro puerto). Viewports 390 y 1440; el comando `cy.a11y()` corre axe (WCAG 2.2 AA, impactos serio/crítico). Specs: `smoke.cy.ts`, `ui-kit.cy.ts`.
 
 ## Panel B (Horarios, Archivo, Configuración)

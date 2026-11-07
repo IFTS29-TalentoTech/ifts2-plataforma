@@ -24,7 +24,7 @@ Archivos de esta carpeta: `data.ts` (cliente de datos con ISR y degradación), `
 - **Markdown**: nunca `dangerouslySetInnerHTML`; React escapa todo y los enlaces solo admiten http(s), mailto, tel, rutas y anclas.
 - **Identidad**: nada institucional en el código; nombre, pie, sede y contactos salen de `getSiteInfo()`. Solo hay textos de navegación y de interfaz.
 - **Tokens**: solo clases del tema. Cuidado: `text-base` es a la vez tamaño de fuente y COLOR (`base` es un token de color): no usarlo como tamaño ni usar `Button size="lg"` (usa `text-base`).
-- **Imágenes**: `next/image` con ancho y alto explícitos; `next.config.ts` autoriza el origen de la API. En local (`localhost`) no se optimizan.
+- **Imágenes**: `Cover` usa `next/image` con dimensiones explícitas. Solo optimiza rutas propias y URLs de la API sin parámetros; las externas, firmadas y locales se cargan directo. `CoverImage` aísla el fallback accesible de error. Ver A06 y `pnpm test:covers` en el README de web.
 - **Hero**: usa `primary-strong` con texto `surface` (AA); `primary` del Figma no alcanza 4,5:1 con blanco.
 
 ## Cómo probar
