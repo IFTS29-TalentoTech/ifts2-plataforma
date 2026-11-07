@@ -320,7 +320,8 @@ En **Mensajes** aparecen las consultas enviadas desde el sitio. Podés filtrarla
 
 - **Datos de la sede y canales oficiales**: nombre, dirección, correos, teléfono, redes y texto del pie. Tocá **Guardar cambios** y confirmá (afectan a todo el sitio).
 - **Contenido de páginas**: textos de Institucional, La carrera e Ingreso, con vista previa.
-- **Enlaces de interés**: SIU Guaraní, Aulas Virtuales, etc.
+- **Enlaces de interés**: SIU Guaraní, Aulas Virtuales, etc. Activá **Enlace de inscripción de alumnos** solo en el sistema donde se inscriben los alumnos: es el único enlace que aparece en la página **Inscripciones**. Si no hay ninguno visible, la página avisa que el enlace está pendiente y muestra el correo de Bedelía.
+- **Inscripciones a mesas SIU habilitadas**: es el interruptor general. Si está apagado, ningún llamado figura con inscripción abierta en el sitio, aunque tenga marcada su casilla. Un llamado que ya terminó tampoco figura abierto.
 
 ![Configuración](../capturas/panel/b-configuracion-1440.png)
 

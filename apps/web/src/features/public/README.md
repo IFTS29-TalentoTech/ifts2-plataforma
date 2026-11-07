@@ -4,16 +4,16 @@ Implementa las páginas públicas del sitio con datos de la API `/public/*`. Fue
 
 ## Mapa: página -> endpoints -> componentes
 
-| Ruta              | Archivo                                | Endpoints                                                                   | Componentes principales                                    |
-| ----------------- | -------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `/`               | `app/(public)/page.tsx`                | `/public/home`, `/public/settings`                                          | `PageHero`, `LinkCard`, `PublicationCard`, `ExamCallCard`  |
-| `/institucional`  | `app/(public)/institucional/page.tsx`  | `/public/content/institucional`, `/public/settings`, `POST /public/contact` | `PageHero`, `Markdown`, `ContactForm` (ancla `#contacto`)  |
-| `/la-carrera`     | `app/(public)/la-carrera/page.tsx`     | `/public/content/carrera`                                                   | `PageHero`, `Markdown`                                     |
-| `/estudiantes`    | `app/(public)/estudiantes/page.tsx`    | `/public/students`                                                          | `NoticeCard`, `ScheduleCard`, `ExamCallCard`, `LinkCard`   |
-| `/ingreso`        | `app/(public)/ingreso/page.tsx`        | `/public/content/ingreso`, `/public/students?audience=ASPIRANTS`            | `MarkdownBlocks`, `NoticeCard`                             |
-| `/inscripciones`  | `app/(public)/inscripciones/page.tsx`  | `/public/students`                                                          | `ExamCallCard` (solo `enrollmentOpen`), `LinkCard` (SIU)   |
-| `/novedades`      | `app/(public)/novedades/page.tsx`      | `/public/publications?year&category&archived&page`                          | `NewsFilters`, `PublicationCard`, `LinkPagination`         |
-| `/novedades/[id]` | `app/(public)/novedades/[id]/page.tsx` | `/public/publications/:id[?archived=true]`                                  | `Cover` (`next/image`), `Markdown`; 404 en `not-found.tsx` |
+| Ruta              | Archivo                                | Endpoints                                                                   | Componentes principales                                               |
+| ----------------- | -------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `/`               | `app/(public)/page.tsx`                | `/public/home`, `/public/settings`                                          | `PageHero`, `LinkCard`, `PublicationCard`, `ExamCallCard`             |
+| `/institucional`  | `app/(public)/institucional/page.tsx`  | `/public/content/institucional`, `/public/settings`, `POST /public/contact` | `PageHero`, `Markdown`, `ContactForm` (ancla `#contacto`)             |
+| `/la-carrera`     | `app/(public)/la-carrera/page.tsx`     | `/public/content/carrera`                                                   | `PageHero`, `Markdown`                                                |
+| `/estudiantes`    | `app/(public)/estudiantes/page.tsx`    | `/public/students`                                                          | `NoticeCard`, `ScheduleCard`, `ExamCallCard`, `LinkCard`              |
+| `/ingreso`        | `app/(public)/ingreso/page.tsx`        | `/public/content/ingreso`, `/public/students?audience=ASPIRANTS`            | `MarkdownBlocks`, `NoticeCard`                                        |
+| `/inscripciones`  | `app/(public)/inscripciones/page.tsx`  | `/public/students`                                                          | `ExamCallCard` (`enrollmentOpen` efectivo), `LinkCard` (`enrollment`) |
+| `/novedades`      | `app/(public)/novedades/page.tsx`      | `/public/publications?year&category&archived&page`                          | `NewsFilters`, `PublicationCard`, `LinkPagination`                    |
+| `/novedades/[id]` | `app/(public)/novedades/[id]/page.tsx` | `/public/publications/:id[?archived=true]`                                  | `Cover` (`next/image`), `Markdown`; 404 en `not-found.tsx`            |
 
 Archivos de esta carpeta: `data.ts` (cliente de datos con ISR y degradación), `markdown.tsx` (renderizador que escapa HTML), `parts.tsx` (hero, secciones, tarjetas, archivos, paginación), `academic-parts.tsx` (avisos, horarios, llamados), `contact-form.tsx` y `news-filters.tsx` (los únicos componentes cliente).
 

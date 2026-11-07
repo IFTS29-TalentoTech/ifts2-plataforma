@@ -96,7 +96,13 @@ export async function createExamCallRow(over: {
 }
 
 export function createLinkRow(
-  over: Partial<{ title: string; url: string; visible: boolean; order: number }> = {},
+  over: Partial<{
+    title: string;
+    url: string;
+    visible: boolean;
+    order: number;
+    enrollment: boolean;
+  }> = {},
 ) {
   return testPrisma.externalLink.create({
     data: {
@@ -104,6 +110,7 @@ export function createLinkRow(
       url: over.url ?? 'https://ejemplo.test/destino',
       visible: over.visible ?? true,
       order: over.order ?? 0,
+      enrollment: over.enrollment ?? false,
     },
   });
 }

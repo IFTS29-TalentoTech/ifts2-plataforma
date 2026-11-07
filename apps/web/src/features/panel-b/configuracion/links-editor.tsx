@@ -82,6 +82,7 @@ export function LinksEditor({ perms }: { perms: PermissionList }) {
                   <Badge tone={l.visible ? 'success' : 'neutral'}>
                     {l.visible ? 'Visible' : 'Oculto'}
                   </Badge>
+                  {l.enrollment && <Badge tone="neutral">Inscripción de alumnos</Badge>}
                 </p>
                 <p className="break-all text-sm text-font-strong">{l.url}</p>
                 <p className="text-xs text-font-strong">
@@ -159,6 +160,7 @@ function LinkDialog({
   const [group, setGroup] = useState('academico');
   const [order, setOrder] = useState('0');
   const [visible, setVisible] = useState(true);
+  const [enrollment, setEnrollment] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -171,6 +173,7 @@ function LinkDialog({
     setGroup(current?.group ?? 'academico');
     setOrder(String(current?.order ?? 0));
     setVisible(current?.visible ?? true);
+    setEnrollment(current?.enrollment ?? false);
     setErrors({});
     setFormError(null);
   });
@@ -188,6 +191,7 @@ function LinkDialog({
         group: group.trim() || 'academico',
         order: Number(order) || 0,
         visible,
+        enrollment,
       };
       if (current) await api.patch(`/links/${current.id}`, body);
       else await api.post('/links', body);
@@ -257,6 +261,13 @@ function LinkDialog({
           />
         </div>
         <Switch label="Visible en el sitio" checked={visible} onCheckedChange={setVisible} />
+        {/* A07: el destino de Inscripciones se marca a mano; no se adivina por el título. */}
+        <Switch
+          label="Enlace de inscripción de alumnos"
+          hint="Se muestra en la página Inscripciones. Marcá solo el sistema donde se inscriben los alumnos, no el de profesores o secretaría."
+          checked={enrollment}
+          onCheckedChange={setEnrollment}
+        />
         {formError && Object.keys(errors).length === 0 && (
           <p role="alert" className="rounded-md bg-danger-back px-3 py-2 text-sm text-danger-text">
             {formError}

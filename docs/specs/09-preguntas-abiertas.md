@@ -128,3 +128,9 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | N.° | Pregunta | Supuesto provisorio | Impacta |
 | --- | --- | --- | --- |
 | Q133 | ¿El año de ingreso del Resumen debe seguir siendo una estimación (año del período vigente + 1) o el instituto va a definir una convocatoria con fechas propias (preinscripción abierta o cerrada)? | Se mantiene la estimación y se muestra como **estimada**. La tarjeta informa solo lo verificable: si la página de Ingreso tiene contenido visible y si le quedan datos `[a confirmar ...]`. Ver ADR-034 | US-12, A14 |
+## Agregadas por el equipo (07/11/2026): Inscripciones (auditoría A07 y A08)
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q131 | El ajuste "Inscripciones a mesas SIU habilitadas" (`exam_enrollment_open`), ¿es un **bloqueo general** o solo un texto informativo? ¿Un llamado ya terminado con su casilla marcada debe figurar cerrado? | **Bloqueo general:** con el ajuste apagado ningún llamado figura con inscripción abierta en el sitio, aunque tenga su casilla. Un llamado terminado figura cerrado. Se calcula al consultar; la casilla guardada no cambia. Si el instituto lo usa solo como texto, se cambia una función (`effectiveExamEnrollmentOpen`). Ver ADR-033 | RF06, A08 |
+| Q132 | ¿Qué enlace es el de inscripción de **alumnos** y qué trámites permite? (completa Q6) | El panel tiene la marca "Enlace de inscripción de alumnos"; Inscripciones muestra solo los enlaces marcados. La semilla marca "SIU Guaraní — Acceso alumnos", que sigue oculto hasta tener la URL oficial. Mientras tanto la página avisa que el enlace está pendiente y muestra el correo de Bedelía. Nunca se ofrece el SIU de profesores y secretaría. Ver ADR-033 | RF07, A07 |
