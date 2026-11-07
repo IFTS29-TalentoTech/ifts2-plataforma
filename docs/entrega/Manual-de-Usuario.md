@@ -275,6 +275,8 @@ En **Configuración → Seguridad y accesos** (o en el menú lateral, ítem **Ro
 
 ![Usuarios y roles](../capturas/panel/b-configuracion-usuarios-1440.png)
 
+![Roles y permisos](../capturas/panel/b-roles-1440.png)
+
 ### 5.8 Configurar Instagram y el correo _(requiere el permiso «Integraciones»; Administración lo tiene por defecto)_
 
 Entrá a **Configuración** y abrí la pestaña **Integraciones**. Allí se conectan los servicios externos; mientras no se configuren, el sitio funciona en **modo demostración** con datos de ejemplo.
@@ -330,8 +332,12 @@ En **Mensajes** aparecen las consultas enviadas desde el sitio. Podés filtrarla
 ### 5.11 Galerías y plantel docente _(Administración y Comunicación)_
 
 - **Galerías** (menú **Galerías**): son las fotos del carrusel «Vida en la cocina» de Estudiantes y la foto de La carrera. **Agregar diapositiva** → elegir la foto (JPG, PNG o WebP, hasta 5 MB) → completar título, descripción y, si querés, una **categoría** (por ejemplo, «Eventos») → **Guardar diapositiva**. Con **Subir** y **Bajar** cambiás el orden y con **Eliminar** la quitás (pide confirmación). Si alguna diapositiva tiene categoría, Estudiantes muestra botones para filtrar (Todas, Eventos…).
+
+![Galerías](../capturas/panel/b-galerias-1440.png)
 - **Plantel docente** (menú **Plantel docente**): **Agregar docente** → nombre (obligatorio), cargo, materias a cargo (una por línea) y, si la persona dio su consentimiento, una foto → **Guardar docente**. **Ocultar** saca a la persona del sitio sin borrarla y **Mostrar** la vuelve a poner. **Eliminar** solo aparece para quienes están ocultas y pide confirmación. La sección **Plantel docente** de Institucional solo se ve si hay al menos una persona visible.
-- Los datos de demostración (docentes «Docente de ejemplo n» y las fotos provisorias) son ficticios: reemplazalos por los reales antes de publicar el sitio.
+
+![Plantel docente](../capturas/panel/b-plantel-1440.png)
+- Los datos de demostración (los docentes con sus ilustraciones y las fotos provisorias) son ficticios: reemplazalos por los reales antes de publicar el sitio.
 
 ## 6. Operaciones de datos (crear, leer, actualizar y eliminar)
 

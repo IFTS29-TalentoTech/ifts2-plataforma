@@ -286,6 +286,8 @@ export const SYSTEM_ROLES = [
  */
 export interface TeacherSeed {
   name: string;
+  /** Ilustración de ejemplo (no es una foto de una persona real): ver apps/web/public/img/provisorio/docentes. */
+  photo: string;
   role: string;
   subjects: string[];
   visible: boolean;
@@ -293,37 +295,43 @@ export interface TeacherSeed {
 
 export const DEMO_TEACHERS: TeacherSeed[] = [
   {
-    name: 'Docente de ejemplo 1',
+    name: 'Mariana Quiroga',
+    photo: '/img/provisorio/docentes/docente-1.webp',
     role: 'Profesor/a (demostración)',
     subjects: ['Elaboraciones a base de carnes', 'Cocina nacional e internacional'],
     visible: true,
   },
   {
-    name: 'Docente de ejemplo 2',
+    name: 'Julián Bertolini',
+    photo: '/img/provisorio/docentes/docente-2.webp',
     role: 'Profesor/a (demostración)',
     subjects: ['Elaboraciones de Panadería', 'Pastelería básica', 'Repostería'],
     visible: true,
   },
   {
-    name: 'Docente de ejemplo 3',
+    name: 'Lucía Ferrante',
+    photo: '/img/provisorio/docentes/docente-3.webp',
     role: 'Profesor/a (demostración)',
     subjects: ['Elementos de Química', 'Nutrición'],
     visible: true,
   },
   {
-    name: 'Docente de ejemplo 4',
+    name: 'Martín Olivera',
+    photo: '/img/provisorio/docentes/docente-4.webp',
     role: 'Profesor/a (demostración)',
     subjects: ['Introducción general a la microempresa', 'Comercialización'],
     visible: true,
   },
   {
-    name: 'Docente de ejemplo 5',
+    name: 'Sofía Ledesma',
+    photo: '/img/provisorio/docentes/docente-5.webp',
     role: 'Profesor/a (demostración)',
     subjects: ['Organización de eventos gastronómicos'],
     visible: true,
   },
   {
-    name: 'Docente de ejemplo 6 (oculto)',
+    name: 'Esteban Rinaldi (oculto)',
+    photo: '/img/provisorio/docentes/docente-6.webp',
     role: 'Profesor/a (demostración)',
     subjects: ['Taller de Francés técnico'],
     visible: false,

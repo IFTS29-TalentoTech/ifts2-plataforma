@@ -675,6 +675,25 @@ Consultas enviadas desde el formulario del sitio.
 | `receivedAt` | DateTime | obligatorio, por defecto now() | Cuándo llegó. |
 | `mailSent` | Boolean | obligatorio, por defecto false | Si el correo de aviso salió. El mensaje se guarda siempre, aunque el correo falle. |
 
+#### GalleryItem
+
+Diapositivas editables de los carruseles del sitio (Estudiantes y La carrera).
+
+| Campo | Tipo | Restricciones | Significado |
+|---|---|---|---|
+| `id` | String | PK, obligatorio, por defecto uuid() | Identificador único (UUID generado por la aplicación). |
+| `area` | GalleryArea | obligatorio | Dónde se muestra: STUDENTS (carrusel de Estudiantes) o CAREER (La carrera). |
+| `order` | Int | obligatorio, por defecto 0 | Posición dentro del área (de menor a mayor). |
+| `title` | String | obligatorio, por defecto "" | Título de la diapositiva (opcional). |
+| `caption` | String | obligatorio, por defecto "" | Descripción visible debajo de la imagen (opcional). |
+| `alt` | String | obligatorio, por defecto "" | Texto alternativo de la imagen para lectores de pantalla. |
+| `category` | String | obligatorio, por defecto "" | Categoría opcional (por ejemplo "Prácticas"); alimenta el filtro del carrusel de Estudiantes. |
+| `image` | String | obligatorio | Ruta propia del sitio (/img/...) o clave del almacenamiento (gallery/<uuid>.webp); nunca una URL firmada. |
+| `createdAt` | DateTime | obligatorio, por defecto now() | Fecha y hora de creación del registro. |
+| `updatedAt` | DateTime | obligatorio | Fecha y hora de la última modificación (la actualiza Prisma sola). |
+
+Restricciones e índices de la tabla: `@@index([area, order])`.
+
 #### InstagramToken
 
 Estado del token y de la sincronización con Instagram (una sola fila).
@@ -716,6 +735,24 @@ Registro de auditoría: quién hizo qué y cuándo.
 
 Restricciones e índices de la tabla: `@@index([entity, entityId])`, `@@index([at])`.
 
+#### Teacher
+
+Plantel docente y materias a cargo (con baja lógica).
+
+| Campo | Tipo | Restricciones | Significado |
+|---|---|---|---|
+| `id` | String | PK, obligatorio, por defecto uuid() | Identificador único (UUID generado por la aplicación). |
+| `name` | String | obligatorio | Nombre y apellido que se muestra en el sitio. |
+| `role` | String | obligatorio, por defecto "" | Cargo o rol libre (por ejemplo "Profesora"); vacío si no se cargó. |
+| `subjects` | String[] | obligatorio, por defecto [] | Materias a cargo (texto libre; el plan de estudios vive en ContentSection). |
+| `photo` | String | obligatorio, por defecto "" | Foto opcional (ruta propia o clave del almacenamiento); vacío = sin foto. Requiere consentimiento (Ley 25.326). |
+| `order` | Int | obligatorio, por defecto 0 | Posición en la lista del sitio. |
+| `visible` | Boolean | obligatorio, por defecto true | Falso = baja lógica: no se muestra en el sitio, pero se conserva. Solo una persona oculta puede eliminarse. |
+| `createdAt` | DateTime | obligatorio, por defecto now() | Fecha y hora de creación del registro. |
+| `updatedAt` | DateTime | obligatorio | Fecha y hora de la última modificación (la actualiza Prisma sola). |
+
+Restricciones e índices de la tabla: `@@index([visible, order])`.
+
 #### Índice único parcial (SQL de la migración inicial)
 
 Prisma no puede expresar este índice en el schema, por eso vive en `prisma/migrations/20261029224122_init/migration.sql`: garantiza que **solo un ciclo** tenga `publicCurrent = true`.
@@ -735,6 +772,7 @@ Prisma no puede expresar este índice en el schema, por eso vive en `prisma/migr
 | `DocumentStatus` | `ACTIVE` (Activo); `ARCHIVED` (Archivado) | Estado de un documento. |
 | `TermKind` | `FIRST` (1.er cuatrimestre); `SECOND` (2.º cuatrimestre); `EXTRAORDINARY` (Extraordinario) | Tipo de ciclo. |
 | `MessageStatus` | `NEW` (Nuevo); `READ` (Leído); `ANSWERED` (Respondido) | Estado de un mensaje de contacto. |
+| `GalleryArea` | `STUDENTS` (Estudiantes); `CAREER` () |  |
 
 ### Relaciones entre tablas
 

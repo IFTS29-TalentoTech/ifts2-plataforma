@@ -88,6 +88,23 @@ const GENERIC = {
   updatedAt: 'Fecha y hora de la última modificación (la actualiza Prisma sola).',
 };
 const DESC = {
+  'GalleryItem.area': 'Dónde se muestra: STUDENTS (carrusel de Estudiantes) o CAREER (La carrera).',
+  'GalleryItem.order': 'Posición dentro del área (de menor a mayor).',
+  'GalleryItem.title': 'Título de la diapositiva (opcional).',
+  'GalleryItem.caption': 'Descripción visible debajo de la imagen (opcional).',
+  'GalleryItem.alt': 'Texto alternativo de la imagen para lectores de pantalla.',
+  'GalleryItem.category':
+    'Categoría opcional (por ejemplo \"Prácticas\"); alimenta el filtro del carrusel de Estudiantes.',
+  'GalleryItem.image':
+    'Ruta propia del sitio (/img/...) o clave del almacenamiento (gallery/<uuid>.webp); nunca una URL firmada.',
+  'Teacher.name': 'Nombre y apellido que se muestra en el sitio.',
+  'Teacher.role': 'Cargo o rol libre (por ejemplo \"Profesora\"); vacío si no se cargó.',
+  'Teacher.subjects': 'Materias a cargo (texto libre; el plan de estudios vive en ContentSection).',
+  'Teacher.photo':
+    'Foto opcional (ruta propia o clave del almacenamiento); vacío = sin foto. Requiere consentimiento (Ley 25.326).',
+  'Teacher.order': 'Posición en la lista del sitio.',
+  'Teacher.visible':
+    'Falso = baja lógica: no se muestra en el sitio, pero se conserva. Solo una persona oculta puede eliminarse.',
   'User.email': 'Correo con el que inicia sesión. No se repite entre usuarios.',
   'User.name': 'Nombre y apellido que se muestra en el panel y en la auditoría.',
   'User.passwordHash':
@@ -289,6 +306,8 @@ const ENTITY_DESC = {
   IntegrationConfig:
     'Configuración de integraciones cargada por el cliente desde el panel, cifrada.',
   AuditLog: 'Registro de auditoría: quién hizo qué y cuándo.',
+  GalleryItem: 'Diapositivas editables de los carruseles del sitio (Estudiantes y La carrera).',
+  Teacher: 'Plantel docente y materias a cargo (con baja lógica).',
 };
 const ENUM_DESC = {
   Role: 'Rol de usuario.',
@@ -357,6 +376,8 @@ const AREAS = {
       'AcademicTerm',
       'Schedule',
       'ExamCall',
+      'GalleryItem',
+      'Teacher',
     ],
     compact: true,
   },
@@ -370,8 +391,15 @@ const AREAS = {
     entities: ['Category', 'Notice', 'Document', 'AcademicTerm', 'Schedule', 'ExamCall'],
   },
   sitio: {
-    titulo: 'Contenido del sitio y contacto',
-    entities: ['SiteSetting', 'ContentSection', 'ExternalLink', 'ContactMessage'],
+    titulo: 'Contenido del sitio, galerías, plantel y contacto',
+    entities: [
+      'SiteSetting',
+      'ContentSection',
+      'ExternalLink',
+      'ContactMessage',
+      'GalleryItem',
+      'Teacher',
+    ],
   },
 };
 

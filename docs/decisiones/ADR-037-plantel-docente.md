@@ -15,7 +15,7 @@ RF10 pide "plantel docente y materias a cargo" (Should) y US-29 "alta, baja lóg
 5. **Permiso.** `teachers:manage` (recurso "Plantel docente" del catálogo) para ADMIN y EDITOR por defecto; el Superadministrador lo ajusta en "Roles y permisos". Un solo permiso para gestionar y eliminar, igual que `gallery:manage`: la regla de elegibilidad (solo ocultas) la aplica la API.
 6. **Panel.** Página `/panel/plantel` (ítem "Plantel docente" del menú) y la misma pantalla como pestaña de Configuración. Subir/Bajar sin arrastrar (teclado y lectores de pantalla), Mostrar/Ocultar, Editar y Eliminar. El formulario recuerda el consentimiento de la foto.
 7. **Sitio público.** Sección "Plantel docente" en **Institucional**, entre las tarjetas y Contacto (RF10 la ubica en la pantalla 02). Si no hay personas visibles, o la API falla, **no se dibuja nada** (RNF03). La foto es decorativa (`alt=""`); sin foto se muestran las iniciales.
-8. **Semilla.** Producción deja el plantel **vacío**. La semilla **demo** carga 6 docentes **ficticios** ("Docente de ejemplo n") con materias tomadas del plan sembrado, sin fotos y uno oculto para mostrar la baja lógica; solo si la tabla está vacía. Está marcado como demostración en `prisma/seed-data.ts` y en esta documentación.
+8. **Semilla.** Producción deja el plantel **vacío**. La semilla **demo** carga 6 docentes **ficticios** (nombres inventados) con materias tomadas del plan sembrado, una **ilustración de ejemplo** como foto (no son fotos de personas) y uno oculto para mostrar la baja lógica; solo si la tabla está vacía. Está marcado como demostración en `prisma/seed-data.ts` y en esta documentación.
 
 ## Consecuencias
 

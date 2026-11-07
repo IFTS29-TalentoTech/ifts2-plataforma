@@ -240,7 +240,18 @@ async function demoDocument(
  * cargó el instituto). Personas ficticias, ver `DEMO_TEACHERS`.
  */
 async function seedDemoTeachers() {
-  if ((await prisma.teacher.count()) > 0) return;
+  if ((await prisma.teacher.count()) > 0) {
+    // Bases sembradas antes de tener nombres y fotos de ejemplo: se actualizan solo las filas de
+    // demostración que siguen con su nombre provisorio (nunca lo que cargó el instituto).
+    for (const [i, t] of DEMO_TEACHERS.entries()) {
+      const old = i === 5 ? 'Docente de ejemplo 6 (oculto)' : `Docente de ejemplo ${i + 1}`;
+      await prisma.teacher.updateMany({
+        where: { name: old, photo: '' },
+        data: { name: t.name, photo: t.photo },
+      });
+    }
+    return;
+  }
   await prisma.teacher.createMany({ data: DEMO_TEACHERS.map((t, order) => ({ ...t, order })) });
   log(`plantel de demostración: ${DEMO_TEACHERS.length} docentes ficticios (1 oculto)`);
 }

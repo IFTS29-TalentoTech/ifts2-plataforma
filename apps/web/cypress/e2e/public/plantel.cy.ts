@@ -18,7 +18,7 @@ for (const width of [390, 1440]) {
       });
       cy.get('section#plantel h2').should('contain', 'Plantel docente');
       cy.get('[data-testid=plantel-docente]').should('have.length', 5);
-      cy.contains('[data-testid=plantel-docente]', 'Docente de ejemplo 3')
+      cy.contains('[data-testid=plantel-docente]', 'Lucía Ferrante')
         .should('contain', 'Elementos de Química')
         .and('contain', 'Nutrición');
       cy.contains('[data-testid=plantel-docente]', '(oculto)').should('not.exist');

@@ -23,7 +23,7 @@ for (const vp of viewports) {
       cy.visit('/panel/plantel');
       cy.contains('h1', 'Plantel docente').should('be.visible');
       cy.get(rows).should('have.length.at.least', 6);
-      cy.contains(`${rows}`, 'Docente de ejemplo 6 (oculto)').should('contain', 'Oculta');
+      cy.contains(`${rows}`, 'Esteban Rinaldi (oculto)').should('contain', 'Oculta');
       cy.a11y();
 
       // Alta: el nombre es obligatorio.

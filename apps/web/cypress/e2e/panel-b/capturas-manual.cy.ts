@@ -92,5 +92,24 @@ for (const vp of viewports) {
       cy.get('[data-testid="mail-status"]').scrollIntoView();
       shot('integraciones-correo');
     });
+
+    it('Roles y permisos (Superadministrador)', () => {
+      cy.loginAsApi('SUPERADMIN');
+      cy.visit('/panel/roles');
+      cy.contains('h1', 'Roles y permisos').should('be.visible');
+      loaded();
+      shot('roles');
+    });
+
+    it('Galerías y plantel docente', () => {
+      cy.visit('/panel/galerias');
+      cy.contains('h1', 'Galerías').should('be.visible');
+      loaded();
+      shot('galerias');
+      cy.visit('/panel/plantel');
+      cy.contains('h1', 'Plantel docente').should('be.visible');
+      loaded();
+      shot('plantel');
+    });
   });
 }
