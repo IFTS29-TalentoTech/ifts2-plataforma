@@ -19,6 +19,7 @@ export async function instagramView(ctx: AppContext) {
   const { config, integrations, prisma } = ctx;
   const stored = await integrations.get('instagram');
   const tokenRow = await prisma.instagramToken.findUnique({ where: { id: 1 } });
+  const syncState = await integrations.get('instagram_sync');
   const hashtagRow = await prisma.siteSetting.findUnique({ where: { key: 'instagram_hashtag' } });
 
   const env = config.instagram;
@@ -65,6 +66,11 @@ export async function instagramView(ctx: AppContext) {
     lastSyncAt: tokenRow?.lastSyncAt ?? null,
     lastSyncOk: tokenRow?.lastSyncOk ?? null,
     lastError,
+    /** Momento del último fetch EXITOSO (ADR-038); `lastSyncAt` es el último intento, sea cual sea su resultado. */
+    lastFetchAt: syncState?.lastFetchAt ?? null,
+    /** Tipo del último fetch exitoso: 'incremental' (solo lo nuevo) o 'full' (carga completa). */
+    lastSyncMode: syncState?.mode ?? null,
+    lastFetchCount: syncState?.count ?? null,
     hashtag: hashtagRow?.value ?? null,
     /** Dirección exacta que el cliente debe registrar en su app de Meta (copiable). */
     redirectUri: env.redirectUri,

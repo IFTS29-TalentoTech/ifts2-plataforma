@@ -53,6 +53,9 @@ export interface InstagramView {
   tokenExpiresAt: string | null;
   lastSyncAt: string | null;
   lastSyncOk: boolean | null;
+  /** Último fetch EXITOSO y su tipo (ADR-038). */
+  lastFetchAt?: string | null;
+  lastSyncMode?: 'incremental' | 'full' | null;
   lastError: string | null;
   hashtag: string | null;
   redirectUri: string;
@@ -279,7 +282,7 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
             </p>
           )}
 
-          <dl className="grid gap-3 text-sm sm:grid-cols-3">
+          <dl className="grid gap-3 text-sm sm:grid-cols-4">
             <Info label="Cuenta conectada" value={v.username ? `@${v.username}` : '—'} />
             <Info
               label="El token vence"
@@ -290,6 +293,14 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
               value={
                 v.lastSyncAt
                   ? `${formatDateTimeAR(v.lastSyncAt)}${v.lastSyncOk === false ? ' (con error)' : ''}`
+                  : '—'
+              }
+            />
+            <Info
+              label="Último fetch exitoso"
+              value={
+                v.lastFetchAt
+                  ? `${formatDateTimeAR(v.lastFetchAt)} (${v.lastSyncMode === 'full' ? 'completo' : 'incremental'})`
                   : '—'
               }
             />

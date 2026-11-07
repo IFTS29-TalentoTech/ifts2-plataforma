@@ -121,6 +121,41 @@ for (const vp of VIEWPORTS) {
       cy.contains('h3', title).should('be.visible');
     });
 
+    it('ADR-038: la sincronización completa pide confirmación y manda ?full=true; la común no', () => {
+      cy.intercept('POST', '/api/v1/social/sync*', (req) => {
+        req.reply({
+          statusCode: 200,
+          body: {
+            created: 0,
+            matched: 3,
+            alreadyKnown: 3,
+            demo: true,
+            lastSyncAt: new Date().toISOString(),
+            lastFetchAt: new Date().toISOString(),
+            mode: req.url.includes('full=true') ? 'full' : 'incremental',
+            fullReason: null,
+            since: null,
+          },
+        });
+      }).as('sync');
+      cy.visit('/panel/publicaciones');
+      // Cancelar no sincroniza.
+      cy.contains('button', 'Sincronización completa').click();
+      cy.get('[role="alertdialog"]').should('contain', '¿Hacer una sincronización completa?');
+      cy.a11y();
+      cy.get('[role="alertdialog"]').contains('button', 'Cancelar').click();
+      cy.get('[role="alertdialog"]').should('not.exist');
+      // Confirmar manda la completa.
+      cy.contains('button', 'Sincronización completa').click();
+      cy.get('[role="alertdialog"]').contains('button', 'Sí, sincronizar todo').click();
+      cy.wait('@sync').its('request.url').should('include', 'full=true');
+      cy.contains('Sincronización completa lista').should('be.visible');
+      // La común es incremental: sin el parámetro y sin confirmación.
+      cy.contains('button', 'Sincronizar con Instagram').click();
+      cy.wait('@sync').its('request.url').should('not.include', 'full=');
+      cy.get('[role="alertdialog"]').should('not.exist');
+    });
+
     it('E2E-13: el diálogo de moderación atrapa el foco, cierra con Escape y devuelve el foco', () => {
       seedPendingPost(unique('Foco'));
       cy.visit('/panel/publicaciones');

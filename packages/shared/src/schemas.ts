@@ -449,6 +449,17 @@ export const socialListQuery = paginationQuery.extend({
   source: enumOf('El origen', ['instagram', 'manual'] as const).optional(),
 });
 
+/**
+ * Query de POST /social/sync. `full=true` fuerza la carga completa (ignora la marca del último fetch
+ * exitoso); sin él, la sincronización es incremental cuando corresponde (ADR-038).
+ */
+export const socialSyncQuery = z.object({
+  full: enumOf('El parámetro full', ['true', 'false'] as const)
+    .optional()
+    .transform((v) => v === 'true'),
+});
+export type SocialSyncQuery = z.infer<typeof socialSyncQuery>;
+
 export const socialApproveInput = z
   .object({
     title: optionalText('El título', 160),

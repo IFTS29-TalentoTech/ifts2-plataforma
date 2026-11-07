@@ -9,7 +9,7 @@
  *  - Aprobada   = LINKED · Descartada = DISCARDED (recuperable con "Restaurar").
  * El filtro Origen (Instagram / carga manual) viaja como `?source=` y lo aplica la API (Q81 resuelta).
  */
-import { RefreshCw, PencilLine } from 'lucide-react';
+import { RefreshCw, PencilLine, DatabaseZap } from 'lucide-react';
 import { useState } from 'react';
 import {
   Badge,
@@ -25,6 +25,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  useConfirm,
 } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDateTimeAR } from '@/lib/dates';
@@ -32,7 +33,7 @@ import { can, type PermissionList, type SocialStatus } from '@ifts2/shared';
 import { deriveTitle } from '../lib/caption';
 import { detectedLabel } from '../lib/dates';
 import { humanError } from '../lib/errors';
-import type { SocialPostDto, SocialPostsPage } from '../lib/types';
+import type { DashboardDto, SocialPostDto, SocialPostsPage } from '../lib/types';
 import { useInstagramSync } from '../lib/use-sync';
 import { useResource } from '../lib/use-resource';
 import { ManualPostDialog } from './manual-post-dialog';
@@ -82,9 +83,28 @@ export function SocialPostsTab({
   );
   const changed = () => {
     reload();
+    fetchInfo.reload();
     onChanged(); // actualiza los contadores del menú
   };
   const { sync, syncing } = useInstagramSync(changed);
+  const confirm = useConfirm();
+  // Estado del último fetch exitoso: lo informa el Resumen. Si no se puede leer, simplemente no se muestra.
+  const fetchInfo = useResource('social:last-fetch', () =>
+    api.get<DashboardDto>('/dashboard').catch(() => null),
+  );
+  const lastFetchAt = fetchInfo.data?.instagram.lastFetchAt ?? null;
+  const lastFetchMode = fetchInfo.data?.instagram.lastSyncMode ?? 'incremental';
+  /** La completa es más pesada para Instagram: se pide confirmación con el diálogo único. */
+  const syncFull = async () => {
+    const ok = await confirm({
+      title: '¿Hacer una sincronización completa?',
+      description:
+        'Se vuelve a consultar todo el historial reciente de Instagram, no solo lo nuevo. Es una consulta más pesada: usala solo si falta alguna publicación. Las que ya conocemos no se duplican.',
+      confirmLabel: 'Sí, sincronizar todo',
+      icon: 'info',
+    });
+    if (ok) await sync({ full: true });
+  };
 
   const items = data?.items ?? [];
 
@@ -117,7 +137,7 @@ export function SocialPostsTab({
       }
       action={
         status === 'DETECTED' ? (
-          <Button variant="secondary" onClick={sync} loading={syncing}>
+          <Button variant="secondary" onClick={() => sync()} loading={syncing}>
             Sincronizar con Instagram
           </Button>
         ) : undefined
@@ -172,10 +192,20 @@ export function SocialPostsTab({
             setPage(1);
           }}
         />
+        {lastFetchAt && (
+          <p className="text-sm text-font-strong" data-testid="social-last-fetch">
+            Último fetch exitoso: {formatDateTimeAR(lastFetchAt)} (
+            {lastFetchMode === 'full' ? 'completo' : 'incremental'})
+          </p>
+        )}
         <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row">
-          <Button variant="secondary" onClick={sync} loading={syncing}>
+          <Button variant="secondary" onClick={() => sync()} loading={syncing}>
             <RefreshCw className="h-4 w-4" aria-hidden="true" />
             Sincronizar con Instagram
+          </Button>
+          <Button variant="secondary" onClick={() => void syncFull()} disabled={syncing}>
+            <DatabaseZap className="h-4 w-4" aria-hidden="true" />
+            Sincronización completa
           </Button>
           <Button variant="secondary" onClick={() => setManualOpen(true)}>
             <PencilLine className="h-4 w-4" aria-hidden="true" />

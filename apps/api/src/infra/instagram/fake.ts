@@ -35,14 +35,34 @@ export const FAKE_MEDIA: InstagramMedia[] = [
 export class FakeInstagramClient implements InstagramClient {
   readonly kind = 'fake' as const;
   failWith: Error | null = null;
+  /** Último `since` recibido (para las pruebas). */
+  lastSince: string | null = null;
   constructor(private readonly media: InstagramMedia[] = FAKE_MEDIA) {}
 
   async fetchRecentMedia(opts?: FetchMediaOptions) {
     if (this.failWith) throw this.failWith;
+    // Mismo contrato que el cliente real: con `since` no devuelve publicaciones más viejas.
+    const sinceMs = opts?.since ? new Date(opts.since).getTime() : null;
+    const recent =
+      sinceMs === null ? this.media : this.media.filter((m) => Date.parse(m.timestamp) >= sinceMs);
     const filtered = opts?.hashtag
-      ? this.media.filter((m) => captionHasHashtag(m.caption, opts.hashtag!))
-      : this.media;
-    return filtered.slice(0, opts?.limit ?? filtered.length);
+      ? recent.filter((m) => captionHasHashtag(m.caption, opts.hashtag!))
+      : recent;
+    const out = filtered.slice(0, opts?.limit ?? filtered.length);
+    this.lastSince = opts?.since ?? null;
+    // Sin red ni páginas: cubre todo, salvo que el límite haya recortado el resultado.
+    const times = this.media.map((m) => Date.parse(m.timestamp)).filter((n) => !Number.isNaN(n));
+    opts?.onCoverage?.({
+      complete: out.length === filtered.length,
+      oldestScanned: times.length ? new Date(Math.min(...times)).toISOString() : null,
+    });
+    return out;
+  }
+  /** Cuenta de demostración; las pruebas pueden cambiarla para simular otra cuenta. */
+  accountId = 'demo-account';
+  async getAccountId() {
+    if (this.failWith) throw this.failWith;
+    return this.accountId;
   }
   async testConnection(): Promise<ConnectionTest> {
     if (this.failWith) return { ok: false, error: this.failWith.message };

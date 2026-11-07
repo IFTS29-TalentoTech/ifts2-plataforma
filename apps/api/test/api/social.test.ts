@@ -45,7 +45,9 @@ beforeEach(async () => {
   await boot();
 });
 
-const sync = (c = cookie) => request(t.app).post(`${base}/sync`).set('Cookie', c);
+const sync = (c = cookie, qs = '') => request(t.app).post(`${base}/sync${qs}`).set('Cookie', c);
+/** Carga completa forzada (`?full=true`). */
+const syncFull = (c = cookie) => sync(c, '?full=true');
 const list = (qs = '', c = cookie) => request(t.app).get(`${base}/posts${qs}`).set('Cookie', c);
 const approve = (id: string, body: object = {}, c = cookie) =>
   request(t.app)
@@ -74,6 +76,7 @@ describe('permisos', () => {
   it('401 sin sesión en todos los endpoints de panel', async () => {
     const r = request(t.app);
     expect((await r.post(`${base}/sync`)).status).toBe(401);
+    expect((await r.post(`${base}/sync?full=true`)).status).toBe(401);
     expect((await r.get(`${base}/posts`)).status).toBe(401);
     expect((await r.post(`${base}/posts/${NIL}/approve`).send({})).status).toBe(401);
     expect((await r.post(`${base}/posts/${NIL}/discard`)).status).toBe(401);
@@ -86,6 +89,7 @@ describe('permisos', () => {
     const { cookie: c } = await loginAs(t.app, 'BEDELIA');
     const r = request(t.app);
     expect((await r.post(`${base}/sync`).set('Cookie', c)).status).toBe(403);
+    expect((await r.post(`${base}/sync?full=true`).set('Cookie', c)).status).toBe(403);
     expect((await r.get(`${base}/posts`).set('Cookie', c)).status).toBe(403);
     expect((await r.post(`${base}/posts/${NIL}/approve`).set('Cookie', c).send({})).status).toBe(
       403,
@@ -129,8 +133,9 @@ describe('POST /social/sync (modo demostración)', () => {
   it('es idempotente: sincronizar dos veces no duplica', async () => {
     await setSetting('instagram_hashtag', '#ifts2web');
     await sync();
-    const second = await sync();
-    expect(second.body).toMatchObject({ created: 0, matched: 3, alreadyKnown: 3 });
+    // La segunda sería incremental; se fuerza la completa para que vuelva a ver las 3.
+    const second = await syncFull();
+    expect(second.body).toMatchObject({ created: 0, matched: 3, alreadyKnown: 3, mode: 'full' });
     expect(await testPrisma.socialPost.count()).toBe(3);
   });
 
@@ -265,7 +270,7 @@ describe('POST /social/sync con la API real simulada (GraphInstagramClient + ser
       (p) => p.externalId,
     );
     expect(ids).toEqual(['r1', 'r3', 'r5']);
-    expect((await sync()).body).toMatchObject({ created: 0, alreadyKnown: 3 });
+    expect((await syncFull()).body).toMatchObject({ created: 0, alreadyKnown: 3 });
   });
 
   it('token vencido en Instagram: 502 claro, el Resumen muestra el error y NO se filtra el token', async () => {
@@ -859,5 +864,204 @@ describe('aprobación ante fallas parciales (A10)', () => {
     // Reintentar no duplica: la aprobación ya ocurrió.
     expect((await approve(p.id)).status).toBe(409);
     expect(await testPrisma.publication.count()).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// Sincronización incremental (ADR-038)
+// ---------------------------------------------------------------------------------------------------
+
+const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+const H = 3_600_000;
+const D = 24 * H;
+const syncState = () => t.ctx.integrations.get('instagram_sync');
+
+describe('sincronización incremental (API real simulada)', () => {
+  beforeEach(async () => {
+    await boot({ useRealIntegrationResolution: true });
+    await setSetting('instagram_hashtag', '#ifts2web');
+    await connectReal();
+    mock.pageSize = 2;
+    // Más nueva primero, como devuelve Instagram.
+    mock.media = [
+      { id: 'm3', caption: '#ifts2web tres', timestamp: ago(10 * D) },
+      { id: 'm2', caption: '#ifts2web dos', timestamp: ago(20 * D) },
+      { id: 'm1', caption: '#ifts2web uno', timestamp: ago(30 * D) },
+    ];
+  });
+
+  /** Las publicaciones ya moderadas no se vuelven a pedir para refrescar su imagen. */
+  const discardAll = () => testPrisma.socialPost.updateMany({ data: { status: 'DISCARDED' } });
+
+  it('la primera es completa y deja registrada la marca del fetch exitoso (sin secretos)', async () => {
+    const res = await sync();
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ mode: 'full', fullReason: 'first', since: null, created: 3 });
+    expect(typeof res.body.lastFetchAt).toBe('string');
+    expect(mock.callsTo('/me/media')).toHaveLength(2);
+    const st = await syncState();
+    expect(st).toMatchObject({ mode: 'full', count: 3, accountId: '1', hashtag: 'ifts2web' });
+    expect(JSON.stringify([st, res.body])).not.toContain(TOKEN);
+  });
+
+  it('la siguiente trae solo lo posterior: corta la paginación y no duplica', async () => {
+    await sync();
+    await discardAll();
+    mock.reset();
+    mock.pageSize = 2;
+    mock.media = [
+      { id: 'n1', caption: '#ifts2web nueva', timestamp: ago(1 * H) },
+      { id: 'm3', caption: '#ifts2web tres', timestamp: ago(10 * D) },
+      { id: 'm2', caption: '#ifts2web dos', timestamp: ago(20 * D) },
+      { id: 'm1', caption: '#ifts2web uno', timestamp: ago(30 * D) },
+    ];
+    const res = await sync();
+    expect(res.body).toMatchObject({
+      mode: 'incremental',
+      fullReason: null,
+      created: 1,
+      matched: 1,
+    });
+    expect(typeof res.body.since).toBe('string');
+    // Con páginas de 2: la primera ya trae una publicación vieja => no se pide la segunda.
+    expect(mock.callsTo('/me/media')).toHaveLength(1);
+    expect(await testPrisma.socialPost.count()).toBe(4);
+    // Repetir tampoco duplica.
+    expect((await sync()).body).toMatchObject({ mode: 'incremental', created: 0 });
+    expect(await testPrisma.socialPost.count()).toBe(4);
+  });
+
+  it('usa un margen de solapamiento: lo publicado poco antes de la marca igual se trae', async () => {
+    await sync();
+    await discardAll();
+    mock.media = [
+      { id: 'dentro', caption: '#ifts2web', timestamp: ago(2 * H) }, // dentro del margen de 6 h
+      { id: 'fuera', caption: '#ifts2web', timestamp: ago(9 * H) }, // más vieja que el margen
+      ...mock.media,
+    ];
+    const res = await sync();
+    expect(res.body).toMatchObject({ mode: 'incremental', created: 1 });
+    const ids = (await testPrisma.socialPost.findMany()).map((p) => p.externalId);
+    expect(ids).toContain('dentro');
+    expect(ids).not.toContain('fuera');
+  });
+
+  it('las pendientes recientes se vuelven a traer (se refresca su imagen que vence)', async () => {
+    await sync(); // m3, m2 y m1 quedan pendientes
+    const res = await sync();
+    expect(res.body.mode).toBe('incremental');
+    expect(res.body.matched).toBeGreaterThanOrEqual(1); // m3 (hace 10 días) cae dentro del tope de 14 días
+    expect(res.body.created).toBe(0);
+  });
+
+  it('un fetch fallido NO avanza la marca; el siguiente exitoso sigue desde la anterior', async () => {
+    await sync();
+    await discardAll();
+    const before = await syncState();
+    mock.mediaError = { status: 500, body: {} };
+    expect((await sync()).status).toBe(502);
+    expect(await syncState()).toEqual(before); // intacta
+    mock.mediaError = null;
+    // Algo publicado antes de la marca (pero dentro del margen) se recupera porque la marca no se movió.
+    mock.media = [{ id: 'tarde', caption: '#ifts2web', timestamp: ago(1 * H) }, ...mock.media];
+    const res = await sync();
+    expect(res.body).toMatchObject({ mode: 'incremental', created: 1 });
+    const after = await syncState();
+    expect(Date.parse(after!.coveredUntil)).toBeGreaterThan(Date.parse(before!.coveredUntil));
+  });
+
+  it('si el primer intento falla no hay marca: el siguiente exitoso es completo', async () => {
+    mock.mediaError = { status: 500, body: {} };
+    expect((await sync()).status).toBe(502);
+    expect(await syncState()).toBeNull();
+    mock.mediaError = null;
+    expect((await sync()).body).toMatchObject({ mode: 'full', fullReason: 'first', created: 3 });
+  });
+
+  it('?full=true fuerza la completa aunque haya marca, sin duplicar', async () => {
+    await sync();
+    await discardAll();
+    mock.calls = [];
+    const res = await syncFull();
+    expect(res.body).toMatchObject({ mode: 'full', fullReason: 'forced', since: null, created: 0 });
+    expect(res.body.matched).toBe(3);
+    expect(mock.callsTo('/me/media')).toHaveLength(2); // recorre todo el listado
+    expect(await testPrisma.socialPost.count()).toBe(3);
+    expect(await audited('social.sync')).toBe(2);
+  });
+
+  it('?full= con un valor inválido es un error de validación y no sincroniza', async () => {
+    const res = await sync(cookie, '?full=quizas');
+    expect(res.status).toBe(400);
+    expect(mock.callsTo('/me/media')).toHaveLength(0);
+  });
+
+  it('cambiar el hashtag fuerza una carga completa', async () => {
+    await sync();
+    await setSetting('instagram_hashtag', '#otro');
+    expect((await sync()).body).toMatchObject({ mode: 'full', fullReason: 'hashtag' });
+    expect((await sync()).body).toMatchObject({ mode: 'incremental' });
+  });
+
+  it('cambiar de cuenta (otro id de usuario de Graph) fuerza completa y reemplaza el registro', async () => {
+    await sync();
+    expect((await sync()).body.mode).toBe('incremental'); // misma cuenta
+    mock.accountId = '999';
+    const res = await sync();
+    expect(res.body).toMatchObject({ mode: 'full', fullReason: 'account' });
+    expect(await syncState()).toMatchObject({ accountId: '999', mode: 'full' });
+    expect((await sync()).body.mode).toBe('incremental');
+  });
+
+  it('cambiar el método de conexión fuerza una carga completa', async () => {
+    await sync();
+    await t.ctx.integrations.set('instagram', {
+      mode: 'real',
+      connectionMethod: 'token',
+      accessToken: TOKEN,
+      tokenExpiresAt: day(40).toISOString(),
+    });
+    expect((await sync()).body).toMatchObject({ mode: 'full', fullReason: 'connection' });
+  });
+
+  it('el estado queda visible en Configuración y en el Resumen', async () => {
+    const admin = (await loginAs(t.app, 'ADMIN')).cookie;
+    await sync(admin);
+    const view = await request(t.app).get('/api/v1/integrations/instagram').set('Cookie', admin);
+    expect(view.body).toMatchObject({ lastSyncMode: 'full', lastFetchCount: 3 });
+    expect(typeof view.body.lastFetchAt).toBe('string');
+    const dash = await request(t.app).get('/api/v1/dashboard').set('Cookie', admin);
+    expect(dash.body.instagram).toMatchObject({ lastSyncMode: 'full' });
+    expect(typeof dash.body.instagram.lastFetchAt).toBe('string');
+  });
+});
+
+describe('sincronización incremental (modo demostración)', () => {
+  beforeEach(async () => {
+    await setSetting('instagram_hashtag', '#ifts2web');
+  });
+
+  it('primera completa, luego incremental con cota; misma interfaz que el cliente real', async () => {
+    expect((await sync()).body).toMatchObject({ mode: 'full', demo: true, created: 3 });
+    expect(t.instagram.lastSince).toBeNull();
+    const second = await sync();
+    expect(second.body).toMatchObject({ mode: 'incremental', demo: true, created: 0 });
+    expect(t.instagram.lastSince).not.toBeNull();
+    expect(await testPrisma.socialPost.count()).toBe(3);
+  });
+
+  it('un cambio de cuenta en el doble fuerza completa', async () => {
+    await sync();
+    t.instagram.accountId = 'otra-cuenta';
+    expect((await sync()).body).toMatchObject({ mode: 'full', fullReason: 'account' });
+  });
+
+  it('si el doble falla, no hay marca nueva y el sitio sigue funcionando', async () => {
+    await sync();
+    const before = await syncState();
+    t.instagram.failWith = new InstagramApiError('Instagram respondió con un error (500).');
+    expect((await sync()).status).toBe(502);
+    expect(await syncState()).toEqual(before);
+    expect((await request(t.app).get('/api/v1/public/settings')).status).toBe(200);
   });
 });

@@ -52,7 +52,7 @@ for (const vp of [
 
     it('Estudiantes: galería "Vida en la cocina" con tres tarjetas de foto y texto', () => {
       cy.visit('/estudiantes');
-      cy.get('[data-testid=galeria] [role=group]').should('have.length', 3);
+      cy.get('[data-testid=galeria] [aria-roledescription=diapositiva]').should('have.length', 3);
       cy.get('[data-testid=galeria] figcaption').each(($c) => {
         expect($c.text().trim().length).to.be.greaterThan(5);
       });

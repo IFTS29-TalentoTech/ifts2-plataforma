@@ -44,6 +44,8 @@ async function instagramCard(ctx: AppContext) {
     status: v.status,
     ok,
     lastSyncAt: v.lastSyncAt,
+    lastFetchAt: v.lastFetchAt,
+    lastSyncMode: v.lastSyncMode,
     ...(error ? { error } : {}),
     ...(real && v.tokenExpiresAt ? { tokenExpiresAt: v.tokenExpiresAt } : {}),
     hashtag: v.hashtag,
