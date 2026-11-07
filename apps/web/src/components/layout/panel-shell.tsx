@@ -62,9 +62,13 @@ export function PanelShell({ session, site, counts = {}, demoMode, children }: P
             <p>{site.short}</p>
           </div>
         </aside>
+        {/* `relative`: el <main> es el que hace scroll en escritorio. Sin posición propia, los elementos
+            con `position: absolute` de adentro (por ejemplo los textos `sr-only` para lectores de
+            pantalla) se ubicaban respecto de la página, escapaban del scroll y la estiraban: quedaba un
+            espacio en blanco debajo del pie. */}
         <main
           id="contenido"
-          className="min-w-0 flex-1 px-gutter py-8 lg:overflow-y-auto lg:px-gutter-lg"
+          className="relative min-w-0 flex-1 px-gutter py-8 lg:overflow-y-auto lg:px-gutter-lg"
         >
           {demoMode && (
             <p
