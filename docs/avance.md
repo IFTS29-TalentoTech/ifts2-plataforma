@@ -332,6 +332,17 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 **Pruebas.** Cypress `panel-a/mi-cuenta.cy.ts` (390 y 1440 px, con axe): clave actual incorrecta, cambio correcto, la sesión sigue y solo la clave nueva sirve para entrar. `login.cy.ts` (cambio obligatorio) sigue en verde.
 
+### 2026-11-07 · Pie del sitio más bajo y sin espacio en blanco en el panel (rama `fix/panel-pie`)
+
+**Problema.** En el panel (escritorio) quedaba un espacio en blanco debajo del pie. Causa: el `<main>` que hace scroll no tenía posición propia, así que los elementos con `position: absolute` de adentro (los textos `sr-only` para lectores de pantalla) se ubicaban respecto de la página, escapaban del scroll y la estiraban (en Configuración, 992 px de alto con una ventana de 900). Además el pie ocupaba tres renglones.
+
+**Hecho.**
+
+- `panel-shell.tsx`: el `<main>` lleva `relative`. Ahora la página mide lo mismo que la ventana y el pie queda abajo, en todas las pantallas del panel.
+- `site-footer.tsx`: en escritorio, una sola fila (texto y contactos a la izquierda, redes a la derecha); en móvil se apila. Instagram y Facebook son íconos (SVG propios con `currentColor`, porque la versión de lucide-react ya no trae íconos de marcas) con nombre accesible y `title`.
+
+**Pruebas.** Cypress `recorrido`, `smoke`, `degradacion`, `integraciones-a11y` (axe) y `mi-cuenta` en verde; medido en el navegador: alto de página = alto de ventana.
+
 ## Estado actual (06/11/2026)
 
 - **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).
