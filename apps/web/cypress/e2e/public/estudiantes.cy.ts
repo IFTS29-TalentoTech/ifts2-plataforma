@@ -40,6 +40,14 @@ for (const width of [390, 1440]) {
       cy.get('[data-testid=exam-call]').should('contain', 'Inscripción abierta');
     });
 
+    it('A07: "¿Dónde me inscribo?" no ofrece el SIU de profesores y secretaría', () => {
+      cy.visit('/inscripciones');
+      // En la semilla el enlace de alumnos sigue oculto (URL a confirmar): se avisa que está pendiente.
+      cy.get('#donde').should('not.contain', 'Gestión académica');
+      cy.get('#donde').should('contain', 'El enlace de inscripción todavía no está publicado');
+      cy.get('#donde a[href^="mailto:"]').should('exist');
+    });
+
     it('Ingreso separa convocatoria y tres pasos', () => {
       cy.visit('/ingreso');
       cy.get('[data-testid=convocatoria]').should('exist');

@@ -581,6 +581,8 @@ export const linkInput = z.object({
   group: text('El grupo', 60).default('academico'),
   order: z.number().int().min(0).max(1000).default(0),
   visible: z.boolean().default(true),
+  /** A07: es el enlace donde los alumnos se inscriben (se muestra en /inscripciones). */
+  enrollment: z.boolean().default(false),
 });
 export type LinkInput = z.infer<typeof linkInput>;
 

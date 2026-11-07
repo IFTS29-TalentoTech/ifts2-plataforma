@@ -239,6 +239,8 @@ const DESC = {
   'ExternalLink.group': 'Grupo donde se agrupa (por defecto «academico»).',
   'ExternalLink.order': 'Posición dentro del grupo.',
   'ExternalLink.visible': 'Si se muestra en el sitio.',
+  'ExternalLink.enrollment':
+    'Si es el enlace donde se inscriben los alumnos (el único que muestra la página Inscripciones; A07).',
   'ContactMessage.name': 'Nombre de quien escribe.',
   'ContactMessage.email': 'Correo de respuesta.',
   'ContactMessage.subject': 'Asunto.',

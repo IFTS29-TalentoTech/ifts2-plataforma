@@ -12,6 +12,7 @@
  */
 import type { Prisma } from '@prisma/client';
 import {
+  effectiveExamEnrollmentOpen,
   isExamCallVisible,
   isNoticeVisible,
   isPublicationVisible,
@@ -193,13 +194,16 @@ export async function toPublicExamCall(
   storage: StorageProvider,
   c: Prisma.ExamCallGetPayload<{ include: typeof examCallInclude }>,
   now: Date,
+  /** Interruptor general del panel (`exam_enrollment_open`). */
+  generalEnrollmentOpen: boolean,
 ): Promise<PublicExamCallDto> {
   return {
     id: c.id,
     name: c.name,
     startsOn: c.startsOn.toISOString(),
     endsOn: c.endsOn.toISOString(),
-    enrollmentOpen: c.enrollmentOpen,
+    // A08: el sitio público recibe el estado EFECTIVO (general + llamado + no vencido), no la casilla.
+    enrollmentOpen: effectiveExamEnrollmentOpen(generalEnrollmentOpen, c, now),
     // "Destacar hasta su fecha" (reunión del 06/10): deja de resaltarse cuando el llamado terminó.
     highlighted: c.highlighted && now.getTime() < c.endsOn.getTime(),
     notes: c.notes,
@@ -214,12 +218,14 @@ export const toQuickLink = (l: {
   url: string;
   description: string | null;
   group: string;
+  enrollment: boolean;
 }): PublicQuickLinkDto => ({
   id: l.id,
   title: l.title,
   url: l.url,
   description: l.description,
   group: l.group,
+  enrollment: l.enrollment,
 });
 
 /** Horarios/llamados visibles del ciclo público (verificación en memoria con las funciones de shared). */
