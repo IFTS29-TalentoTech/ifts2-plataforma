@@ -248,6 +248,18 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 **Pendiente de documentación.** Regenerar las tablas de campos y el DER del Manual Técnico (`pnpm docs:der`) y el PDF (`pnpm docs:pdf`): reflejan el esquema del 30/10 (enum `Role`) y todavía no la tabla `Role`. Sumar capturas de la pantalla **Roles y permisos** al Manual de Usuario.
 
+### 2026-11-07 · Aprobación de redes ante fallas parciales (A10, rama `fix/A10-portada-aprobacion`)
+
+**Problema.** En `approvePost` (`apps/api/src/modules/social/social.service.ts`) un mismo `try` envolvía la transacción y el armado de la respuesta. Si fallaba algo **después** de confirmar (por ejemplo, la relectura de la base), el `catch` borraba la portada de una publicación ya guardada y publicada, y el moderador veía un error aunque la aprobación había ocurrido.
+
+**Hecho.**
+
+- La limpieza de la imagen copiada se limita a la falla de la transacción. Lo posterior a la confirmación ya no borra nada.
+- Ante una confirmación ambigua (la base guardó pero se informó un error), se consulta si existe una publicación con esa portada antes de borrar. Si no se puede verificar, se deja el archivo: mejor un huérfano que una portada rota.
+
+**Pruebas.** En `apps/api/test/api/social.test.ts`, "aprobación ante fallas parciales (A10)": falla al copiar la imagen, falla dentro de la transacción, confirmación ambigua y falla al releer la base después de confirmar, verificando registro y archivo en cada caso. La doble aprobación simultánea ya estaba cubierta (una 201, otra 409, un solo archivo).
+
+**Relacionado, sin cambios.** `documents` tiene el mismo patrón, pero lo posterior a la transacción (`toDocumentDto`) no puede fallar. En `publications/:id/cover` el riesgo es el inverso (si falla la transacción, el archivo queda huérfano), de menor gravedad.
 ### 2026-11-07 · Ventana "Usuarios y roles" más clara (rama `usuarios-y-roles`)
 
 **Problema.** En la ventana de usuarios el nombre y el correo quedaban en una columna angosta (el correo se cortaba en dos), cada fila repetía el nombre en el rótulo del desplegable, el rol se guardaba apenas se tocaba el desplegable (sin confirmación) y se ofrecía "Desactivar" sobre el propio usuario.
