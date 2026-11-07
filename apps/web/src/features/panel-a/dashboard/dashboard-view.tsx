@@ -229,12 +229,7 @@ export function DashboardView({ perms }: { perms: PermissionList }) {
               : 'No hay llamados a examen próximos cargados.'
           }
         />
-        <StatCard
-          eyebrow="Ingreso"
-          tag="Inscripción"
-          value={d.ingresoCycle ? `Ciclo ${d.ingresoCycle.year}` : 'Sin definir'}
-          text="Guía de requisitos y ficha de preinscripción activa en la web."
-        />
+        <StatCard eyebrow="Ingreso" testId="stat-ingreso" {...ingresoCard(d)} />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
@@ -460,21 +455,58 @@ export function DashboardView({ perms }: { perms: PermissionList }) {
   );
 }
 
+/**
+ * A14: la tarjeta de Ingreso dice solo lo que el sistema puede comprobar. Antes afirmaba una "ficha de
+ * preinscripción activa" fija; ahora informa si la página de Ingreso tiene contenido publicado y si le
+ * quedan datos "[a confirmar]". El año es una estimación (ciclo vigente + 1) y se presenta como tal.
+ */
+function ingresoCard(d: DashboardDto) {
+  const c = d.ingresoContent;
+  const estimate = d.ingresoCycle?.derived
+    ? ' El año es estimado a partir del período vigente.'
+    : '';
+  const value = d.ingresoCycle ? `Ciclo ${d.ingresoCycle.year}` : 'Sin definir';
+  if (c.visibleSections === 0) {
+    return {
+      tag: 'Sin publicar',
+      tagTone: 'warning' as const,
+      value,
+      text: `La página de Ingreso no tiene contenido publicado.${estimate}`,
+    };
+  }
+  if (c.pendingConfirmation) {
+    return {
+      tag: 'A confirmar',
+      tagTone: 'warning' as const,
+      value,
+      text: `La página de Ingreso tiene datos a confirmar (fechas, documentación o preinscripción).${estimate}`,
+    };
+  }
+  return {
+    tag: 'Publicada',
+    tagTone: 'success' as const,
+    value,
+    text: `La página de Ingreso está publicada. Revisá que las fechas estén al día.${estimate}`,
+  };
+}
+
 function StatCard({
   eyebrow,
   tag,
   tagTone = 'neutral',
   value,
   text,
+  testId,
 }: {
   eyebrow: string;
   tag: string;
   tagTone?: 'neutral' | 'warning' | 'success';
   value: string;
   text: string;
+  testId?: string;
 }) {
   return (
-    <Card className="flex flex-col gap-2">
+    <Card className="flex flex-col gap-2" data-testid={testId}>
       <div className="flex items-center justify-between gap-2">
         <Eyebrow className="text-font-strong">{eyebrow}</Eyebrow>
         <Badge tone={tagTone}>{tag}</Badge>

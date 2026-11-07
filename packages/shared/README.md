@@ -11,6 +11,7 @@
 | `enums.ts`           | Roles, estados, tipos, claves de ajustes, límites de archivos y códigos de error. Están alineados con `prisma/schema.prisma` (una prueba de la API lo verifica)                        |
 | `permissions.ts`     | **Matriz de permisos por rol** como datos (`PERMISSIONS`) y el helper `can(role, 'notices:manage')`. La usan la API (`requirePermission`) y la web (ocultar opciones)                  |
 | `visibility.ts`      | **Reglas de vigencia** puras: `isPublicationVisible`, `isNoticeVisible`, `isNoticeExpiringSoon` (7 días), `isScheduleVisible`, `isExamCallVisible`. Reciben `now` para poder probarlas |
+| `content.ts`         | Convención del contenido editable: `hasPendingConfirmation(texto)` detecta la marca `[a confirmar ...]` (A14: el Resumen avisa qué falta confirmar en Ingreso)                         |
 | `time.ts`            | Zona horaria `America/Argentina/Buenos_Aires` (UTC-3): `startOfDayBA`, `endOfDayBA`, `formatDateAR`…                                                                                   |
 | `schemas.ts`         | Esquemas **zod** de entrada de todas las entidades, con mensajes de error en español claro (son parte de lo que evalúa la cátedra: campos obligatorios, duplicados, mensajes claros)   |
 | `problem.ts`         | Tipos del error de la API (`ProblemDetails`) y de las páginas (`Page<T>`)                                                                                                              |

@@ -41,6 +41,7 @@ describe('GET /dashboard: contenido', () => {
     });
     expect(res.body.instagram.error).toBeUndefined();
     expect(res.body.ingresoCycle).toEqual({ year: new Date().getUTCFullYear() + 1, derived: true });
+    expect(res.body.ingresoContent).toEqual({ visibleSections: 0, pendingConfirmation: false });
   });
 
   it('cuenta publicaciones pendientes, avisos activos y por vencer usando las reglas de vigencia', async () => {
@@ -76,6 +77,25 @@ describe('GET /dashboard: contenido', () => {
     });
     expect(res.body.examCallNext).toMatchObject({ name: 'Próximo', published: true });
     expect(res.body.ingresoCycle).toEqual({ year: 2027, derived: true });
+  });
+
+  it('A14: informa el estado real de la página de Ingreso (secciones visibles y datos a confirmar)', async () => {
+    const { cookie } = await loginAs(t.app, 'EDITOR');
+    const section = (slug: string, body: string, visible = true, page = 'ingreso') =>
+      testPrisma.contentSection.create({ data: { page, slug, title: slug, body, visible } });
+    const ingreso = async () =>
+      (await request(t.app).get(url).set('Cookie', cookie)).body.ingresoContent;
+
+    // Otra página con pendientes y una sección oculta de Ingreso no cuentan.
+    await section('plan', 'Plan: [a confirmar con el cliente]', true, 'carrera');
+    await section('borrador', 'Fechas: [A confirmar]', false);
+    expect(await ingreso()).toEqual({ visibleSections: 0, pendingConfirmation: false });
+
+    await section('requisitos', 'Secundario completo.');
+    expect(await ingreso()).toEqual({ visibleSections: 1, pendingConfirmation: false });
+
+    await section('proceso', '1. Requisitos\n\nFechas: [a confirmar con el cliente]');
+    expect(await ingreso()).toEqual({ visibleSections: 2, pendingConfirmation: true });
   });
 
   it('Instagram real: refleja último estado, error y vencimiento del token, sin secretos', async () => {

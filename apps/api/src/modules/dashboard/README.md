@@ -31,14 +31,16 @@
     "enrollmentOpen": false,
     "published": true
   },
-  "ingresoCycle": { "year": 2027, "derived": true }
+  "ingresoCycle": { "year": 2027, "derived": true },
+  "ingresoContent": { "visibleSections": 2, "pendingConfirmation": true }
 }
 ```
 
 - `instagram.ok=false` incluye `error` (motivo) y la pantalla muestra "Instagram API: error"; en modo demostración (`mode: "demo"`) `ok` es `true`. Nunca trae secretos.
 - Avisos: se leen con Prisma y se filtran con `isNoticeVisible` / `isNoticeExpiringSoon` de `@ifts2/shared` (vigencia al consultar). No importa los módulos de avisos.
 - `examCallNext`: el primer llamado cuya fecha de fin no pasó (cualquier ciclo, publicado o no; `published` lo indica). `null` si no hay.
-- `ingresoCycle`: **derivado** (año del ciclo vigente + 1). No existe todavía un dato propio de ingreso; es una pregunta abierta (ver `docs/avance.md`).
+- `ingresoCycle`: **derivado** (año del ciclo vigente + 1). No existe todavía un dato propio de ingreso (Q133). La tarjeta lo presenta como **estimado**.
+- `ingresoContent` (A14, ADR-034): estado verificable de la página pública de Ingreso. `visibleSections` = secciones visibles de `ContentSection` con `page='ingreso'` (las mismas que ve el público). `pendingConfirmation` = alguna tiene la marca `[a confirmar ...]` en el título o el texto (`hasPendingConfirmation` de `@ifts2/shared`). La tarjeta muestra "Sin publicar", "A confirmar" o "Publicada" y ya no afirma una "ficha de preinscripción activa".
 - Para la lista "Publicaciones de redes por moderar" usar `GET /social/posts?status=DETECTED&pageSize=3`.
 
 Pruebas: `test/api/dashboard.test.ts`.
