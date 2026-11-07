@@ -186,9 +186,11 @@ async function demoDocument(
 }
 
 async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
-  await demoUser('direccion@ifts2.local', 'Rectoría / Dirección (demo)', roles.ADMIN);
-  const bedelia = await demoUser('bedelia@ifts2.local', 'Bedelía Académica (demo)', roles.BEDELIA);
-  const editor = await demoUser('editor@ifts2.local', 'Comunicación (demo)', roles.EDITOR);
+  // Nombres de PERSONA (no de rol): en la lista de usuarios el rol se muestra aparte y, si la persona
+  // se llamara igual que su rol, no se distinguiría una cosa de la otra.
+  await demoUser('direccion@ifts2.local', 'Directora de prueba', roles.ADMIN);
+  const bedelia = await demoUser('bedelia@ifts2.local', 'Bedel de prueba', roles.BEDELIA);
+  const editor = await demoUser('editor@ifts2.local', 'Editora de prueba', roles.EDITOR);
   log(
     'usuarios de demostración: admin (superadministrador) / direccion@ / bedelia@ / editor@ifts2.local',
   );

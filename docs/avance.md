@@ -199,3 +199,17 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 - La prueba nueva de rutas encontró `POST /social/cron` sin permiso. Es intencional, porque usa `CRON_SECRET`, y quedó documentado como excepción (Q127).
 
 **Preguntas nuevas.** Q126 (un ADMIN no administra a usuarios con más permisos) y Q127 (excepciones a "toda ruta declara permiso").
+
+## Ventana "Usuarios y roles" más clara (rama `usuarios-y-roles`, 2026-11-06)
+
+**Problema.** En la ventana de usuarios el nombre y el correo quedaban en una columna angosta (el correo se cortaba en dos), cada fila repetía el nombre en el rótulo del desplegable, el rol se guardaba apenas se tocaba el desplegable (sin confirmación) y se ofrecía "Desactivar" sobre el propio usuario.
+
+**Hecho.**
+
+- Cada fila muestra a la persona a lo ancho (nombre, correo completo y último ingreso) y el rol como etiqueta.
+- El rol se cambia con un botón **Cambiar rol**: abre un formulario que muestra qué permite cada rol y, al guardar, pide confirmación con el `ConfirmDialog` único. Avisa que se cierran las sesiones abiertas de esa persona.
+- El usuario propio aparece como "(vos)" y sin acciones; los usuarios con más permisos dicen que solo los administra un Superadministrador.
+- El formulario de alta muestra la descripción del rol elegido y, para el Superadministrador, el enlace "Ver qué puede hacer cada rol".
+- Los usuarios de demostración tienen nombres de persona ("Directora de prueba", "Bedel de prueba", "Editora de prueba"), para no confundirlos con los roles.
+
+**Pruebas.** Cypress `panel-b/usuarios-y-roles.cy.ts` (cambio de rol con confirmación, propio usuario sin acciones, 390 y 1440 px) y `panel-a/capturas-crud.cy.ts` adaptado al flujo nuevo.
