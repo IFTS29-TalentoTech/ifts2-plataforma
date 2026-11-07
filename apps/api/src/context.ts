@@ -39,10 +39,9 @@ export interface AppContext {
   getInstagramClient(): Promise<InstagramClient>;
   getMailer(): Promise<ResolvedMail>;
   limiters: Limiters;
-  /**
-   * `fetch` para llamadas HTTP salientes (Instagram, descarga de imágenes). Inyectable para probar con
-   * respuestas simuladas sin salir a la red.
-   */
+  /** Descargador con validación DNS y conexión al destino validado. */
+  downloadImage(url: string): Promise<Buffer>;
+  /** `fetch` inyectable para la API de Instagram y otras integraciones. */
   fetch: typeof fetch;
 }
 
