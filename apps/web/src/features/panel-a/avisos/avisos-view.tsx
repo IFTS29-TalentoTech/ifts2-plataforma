@@ -39,7 +39,7 @@ import {
   type NoticeDto,
   type NoticeListDto,
   type NoticeViewStatusDto,
-  type Role,
+  type PermissionList,
 } from '@ifts2/shared';
 import { orNull } from '../lib/dates';
 import { toDisplayError } from '../lib/display-error';
@@ -73,7 +73,7 @@ function vigenciaText(n: NoticeDto): string {
     : `Desde el ${formatDateAR(n.visibleFrom)} · sin fecha de fin`;
 }
 
-export function AvisosView({ role }: { role: Role }) {
+export function AvisosView({ perms }: { perms: PermissionList }) {
   const router = useRouter();
   const confirm = useConfirm();
   const { toast } = useToast();
@@ -199,7 +199,7 @@ export function AvisosView({ role }: { role: Role }) {
           : 'Probá con otro estado o destinatario.'
       }
       action={
-        can(role, 'notices:manage') ? (
+        can(perms, 'notices:manage') ? (
           <Button onClick={() => setForm({ open: true, notice: null })}>Nuevo aviso</Button>
         ) : undefined
       }
@@ -209,7 +209,7 @@ export function AvisosView({ role }: { role: Role }) {
       {pageItems.map((n) => {
         const canPause = n.viewStatus === 'ACTIVE';
         const canResume = n.viewStatus === 'PAUSED' || n.viewStatus === 'EXPIRED';
-        const canDelete = can(role, 'notices:delete') && canResume;
+        const canDelete = can(perms, 'notices:delete') && canResume;
         return (
           <li key={n.id}>
             <Card

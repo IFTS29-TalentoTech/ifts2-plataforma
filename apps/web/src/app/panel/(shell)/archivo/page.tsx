@@ -9,8 +9,8 @@ export const metadata: Metadata = { title: 'Archivo' };
 /** RF03 (US-16..18, US-33). Solo ADMIN y BEDELIA (`documents:manage`). */
 export default async function Page() {
   const session = await requireSession();
-  if (!can(session.role, 'documents:manage')) {
+  if (!can(session.permissions, 'documents:manage')) {
     return <Placeholder title="Archivo" description="No tenés permiso para ver esta sección." />;
   }
-  return <ArchivoScreen role={session.role} />;
+  return <ArchivoScreen perms={session.permissions} />;
 }

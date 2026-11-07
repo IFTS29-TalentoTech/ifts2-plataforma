@@ -2,17 +2,21 @@
  * Configuración · modal "Administrar usuarios y roles" (Figma 210:1011, US-25/26, RF01).
  *
  * Reglas (04-api.md "Usuarios"):
- * - Solo ADMIN (`users:manage`). Los usuarios NO se eliminan: se DESACTIVAN (se conserva la auditoría)
- *   y un usuario desactivado no puede ingresar.
- * - Alta con rol ADMIN / BEDELIA / EDITOR. Sin clave, la API genera una TEMPORAL y obliga a cambiarla:
+ * - Permiso `users:manage` (SUPERADMIN y ADMIN). Los usuarios NO se eliminan: se DESACTIVAN (se
+ *   conserva la auditoría) y un usuario desactivado no puede ingresar.
+ * - Los roles salen de `GET /roles` (RF11: son datos que define el Superadministrador). El selector
+ *   ofrece solo los roles con `assignable: true`: quien no es SUPERADMIN ve solo roles cuyos permisos
+ *   también tiene, y nunca Superadministrador. A los usuarios con un rol que no puede asignar no los
+ *   puede editar (la API igual responde 403 si se fuerza).
+ * - Alta con un rol. Sin clave, la API genera una TEMPORAL y obliga a cambiarla:
  *   se muestra UNA sola vez (al cerrar el modal desaparece de la pantalla) y nunca se vuelve a pedir.
  * - Restablecer contraseña también genera una clave temporal (misma regla).
  * - Correo único: la API responde 409 con `errors.email` y se muestra bajo el campo.
- * - No se puede desactivar a uno mismo ni al último administrador activo (422 con mensaje claro).
+ * - No se puede desactivar a uno mismo (422) ni dejar al sistema sin Superadministrador activo (409).
  */
 'use client';
 
-import { ROLES, ROLE_LABELS, formatDateAR, type Page, type Role } from '@ifts2/shared';
+import { formatDateAR, type Page } from '@ifts2/shared';
 import { Copy, KeyRound, UserPlus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import {
@@ -36,14 +40,23 @@ export interface PanelUser {
   id: string;
   email: string;
   name: string;
-  role: Role;
+  /** Clave del rol (SUPERADMIN, ADMIN, BEDELIA, EDITOR o una propia). */
+  role: string;
+  roleId: string;
+  roleName: string;
   active: boolean;
   mustChangePassword: boolean;
   createdAt: string;
   lastLoginAt: string | null;
 }
 
-const ROLE_OPTIONS = ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }));
+/** Lo que el diálogo necesita de `GET /roles`. */
+interface RoleOption {
+  id: string;
+  key: string;
+  name: string;
+  assignable: boolean;
+}
 
 type Pending = { type: 'deactivate' | 'activate' | 'reset'; user: PanelUser } | null;
 
@@ -59,9 +72,18 @@ export function UsersDialog({
 }) {
   const { toast } = useToast();
   const users = useResource<Page<PanelUser>>(open ? '/users?pageSize=100' : null);
+  const roles = useResource<{ items: RoleOption[] }>(open ? '/roles' : null);
+  const assignable = (roles.data?.items ?? []).filter((r) => r.assignable);
+  const roleOptions = assignable.map((r) => ({ value: r.id, label: r.name }));
+  const canAssignId = new Set(assignable.map((r) => r.id));
+  /** Hay roles que esta persona no puede asignar: se le explica por qué no los ve. */
+  const restricted = (roles.data?.items.length ?? 0) > assignable.length;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<Role>('BEDELIA');
+  const [chosenRoleId, setChosenRoleId] = useState<string | null>(null);
+  // Por defecto, el rol con menos alcance de los conocidos (Bedelía) o el primero asignable.
+  const roleId =
+    chosenRoleId ?? assignable.find((r) => r.key === 'BEDELIA')?.id ?? assignable[0]?.id ?? '';
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -88,7 +110,7 @@ export function UsersDialog({
       const res = await api.post<{ user: PanelUser; temporaryPassword?: string }>('/users', {
         name: name.trim(),
         email: email.trim(),
-        role,
+        roleId,
       });
       setName('');
       setEmail('');
@@ -106,10 +128,11 @@ export function UsersDialog({
     }
   }
 
-  async function changeRole(u: PanelUser, next: Role) {
+  async function changeRole(u: PanelUser, nextRoleId: string) {
+    const next = assignable.find((r) => r.id === nextRoleId);
     try {
-      await api.patch(`/users/${u.id}`, { role: next });
-      toast({ tone: 'success', title: `Ahora ${u.name} es ${ROLE_LABELS[next]}.` });
+      await api.patch(`/users/${u.id}`, { roleId: nextRoleId });
+      toast({ tone: 'success', title: `Ahora ${u.name} tiene el rol ${next?.name ?? ''}.` });
       users.reload();
       onChanged();
     } catch (err) {
@@ -154,10 +177,10 @@ export function UsersDialog({
             />
             <Select
               label="Rol"
-              value={role}
-              onValueChange={(v) => setRole(v as Role)}
-              options={ROLE_OPTIONS}
-              error={errors.role}
+              value={roleId}
+              onValueChange={setChosenRoleId}
+              options={roleOptions}
+              error={errors.roleId}
             />
             <Button type="submit" loading={saving}>
               <UserPlus className="h-4 w-4" aria-hidden="true" />
@@ -166,6 +189,12 @@ export function UsersDialog({
             {formError && Object.keys(errors).length === 0 && (
               <p role="alert" className="text-sm font-medium text-danger-text md:col-span-4">
                 {formError}
+              </p>
+            )}
+            {restricted && (
+              <p className="text-xs text-font-strong md:col-span-4">
+                Solo ves los roles cuyos permisos también tenés vos. El rol Superadministrador lo
+                asigna únicamente otro Superadministrador.
               </p>
             )}
           </form>
@@ -206,16 +235,25 @@ export function UsersDialog({
                         : 'Nunca ingresó'}
                     </p>
                   </div>
-                  <Select
-                    className="md:w-56"
-                    label={`Rol de ${u.name}`}
-                    value={u.role}
-                    disabled={!u.active}
-                    onValueChange={(v) => changeRole(u, v as Role)}
-                    options={ROLE_OPTIONS}
-                  />
+                  {canAssignId.has(u.roleId) ? (
+                    <Select
+                      className="md:w-56"
+                      label={`Rol de ${u.name}`}
+                      value={u.roleId}
+                      disabled={!u.active}
+                      onValueChange={(v) => changeRole(u, v)}
+                      options={roleOptions}
+                    />
+                  ) : (
+                    // Usuario con más permisos que quien mira (p. ej. el Superadministrador visto
+                    // por un ADMIN): se muestra el rol, sin acciones.
+                    <p className="text-sm text-font-strong md:w-56">
+                      <span className="block font-semibold text-accent-3">{u.roleName}</span>
+                      Solo lo administra un Superadministrador.
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2 md:self-end">
-                    {u.active && (
+                    {u.active && canAssignId.has(u.roleId) && (
                       <Button
                         variant="secondary"
                         size="sm"
@@ -226,16 +264,18 @@ export function UsersDialog({
                         Restablecer contraseña
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        setPending({ type: u.active ? 'deactivate' : 'activate', user: u })
-                      }
-                      aria-label={`${u.active ? 'Desactivar' : 'Reactivar'} a ${u.name}`}
-                    >
-                      {u.active ? 'Desactivar' : 'Reactivar'}
-                    </Button>
+                    {canAssignId.has(u.roleId) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setPending({ type: u.active ? 'deactivate' : 'activate', user: u })
+                        }
+                        aria-label={`${u.active ? 'Desactivar' : 'Reactivar'} a ${u.name}`}
+                      >
+                        {u.active ? 'Desactivar' : 'Reactivar'}
+                      </Button>
+                    )}
                   </div>
                 </li>
               ))}

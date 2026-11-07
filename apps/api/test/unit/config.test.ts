@@ -4,7 +4,6 @@ import { createInstagramClient } from '../../src/infra/instagram';
 import { IntegrationStore } from '../../src/infra/integration-store';
 import {
   PUBLICATION_STATUSES,
-  ROLES,
   NOTICE_STATUSES,
   DOCUMENT_KINDS,
   TERM_KINDS,
@@ -79,7 +78,6 @@ describe('enums de shared alineados con prisma/schema.prisma', async () => {
   const client = await import('@prisma/client');
   it('todos los enums coinciden', () => {
     const pairs: Array<[readonly string[], Record<string, string>]> = [
-      [ROLES, client.Role],
       [PUBLICATION_KINDS, client.PublicationKind],
       [PUBLICATION_STATUSES, client.PublicationStatus],
       [PUBLICATION_ORIGINS, client.PublicationOrigin],

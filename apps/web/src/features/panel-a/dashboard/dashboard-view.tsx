@@ -31,7 +31,7 @@ import {
 } from '@/components/ui';
 import { api } from '@/lib/api';
 import { daysUntil, formatDateAR, formatDateTimeAR } from '@/lib/dates';
-import { can, type NoticeDto, type Role } from '@ifts2/shared';
+import { can, type NoticeDto, type PermissionList } from '@ifts2/shared';
 import { NoticeFormDialog } from '../avisos/notice-form-dialog';
 import { deriveTitle } from '../lib/caption';
 import { detectedLabel } from '../lib/dates';
@@ -62,11 +62,11 @@ function instagramLabel(ig: DashboardDto['instagram']): {
   return { text: 'Sincronizada', tone: 'ok' };
 }
 
-export function DashboardView({ role }: { role: Role }) {
+export function DashboardView({ perms }: { perms: PermissionList }) {
   const router = useRouter();
-  const canSocial = can(role, 'social:moderate');
-  const canNotices = can(role, 'notices:manage');
-  const canSchedules = can(role, 'schedules:manage');
+  const canSocial = can(perms, 'social:moderate');
+  const canNotices = can(perms, 'notices:manage');
+  const canSchedules = can(perms, 'schedules:manage');
 
   const dash = useResource('dashboard', () => api.get<DashboardDto>('/dashboard'));
   const posts = useResource(canSocial ? 'dash-posts' : 'dash-posts-off', () =>
@@ -447,7 +447,7 @@ export function DashboardView({ role }: { role: Role }) {
         post={selected}
         onClose={() => setSelected(null)}
         onChanged={refreshAll}
-        canDelete={can(role, 'social:delete')}
+        canDelete={can(perms, 'social:delete')}
       />
       <NoticeFormDialog
         open={noticeOpen}

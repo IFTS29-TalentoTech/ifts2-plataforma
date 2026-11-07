@@ -1,4 +1,4 @@
-import { can, ROLE_LABELS } from '@ifts2/shared';
+import { can } from '@ifts2/shared';
 import type { ReactNode } from 'react';
 import { PANEL_NAV } from '@/lib/nav';
 import type { Session } from '@/lib/session';
@@ -24,7 +24,7 @@ export interface PanelShellProps {
  * Lo aplica `src/app/panel/(shell)/layout.tsx`; las páginas usan <PageHeader> y su contenido.
  */
 export function PanelShell({ session, site, counts = {}, demoMode, children }: PanelShellProps) {
-  const items = PANEL_NAV.filter((i) => can(session.role, i.permission)).map((i) => ({
+  const items = PANEL_NAV.filter((i) => can(session.permissions, i.permission)).map((i) => ({
     href: i.href,
     label: i.label,
     count: i.countKey ? counts[i.countKey] : undefined,
@@ -49,7 +49,7 @@ export function PanelShell({ session, site, counts = {}, demoMode, children }: P
           </div>
           <div className="text-xs text-accent-2">
             <p className="font-semibold text-base">{session.name}</p>
-            <p className="mb-2">{ROLE_LABELS[session.role]}</p>
+            <p className="mb-2">{session.roleName}</p>
             <LogoutButton />
             <p className="mt-3">Panel administrativo</p>
             <p>{site.short}</p>

@@ -4,15 +4,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loginAs } from '../helpers/auth';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { resetDb, testPrisma } from '../helpers/db';
+import { ensureRole } from '../helpers/factories';
 
 let t: TestApp;
 beforeEach(async () => {
   await resetDb();
   t = await createTestApp();
+  EDITOR_ID = await ensureRole('EDITOR');
 });
 afterEach(() => vi.restoreAllMocks());
 
-const activeAdmins = () => testPrisma.user.count({ where: { role: 'ADMIN', active: true } });
+// RF11: la regla de "último" se aplica ahora al rol SUPERADMIN (los ADMIN pueden desactivarse entre sí).
+const activeAdmins = () =>
+  testPrisma.user.count({ where: { role: { key: 'SUPERADMIN' }, active: true } });
+let EDITOR_ID: string;
 const mutationLogs = () =>
   testPrisma.auditLog.findMany({ where: { action: { startsWith: 'user.' } } });
 const serializationConflict = () =>
@@ -72,8 +77,8 @@ function synchronizeAdminChecks() {
 
 describe('protección del último administrador', () => {
   it('desactiva otro administrador, revoca sus sesiones y audita una vez', async () => {
-    const admin = await loginAs(t.app, 'ADMIN');
-    const target = await loginAs(t.app, 'ADMIN');
+    const admin = await loginAs(t.app, 'SUPERADMIN');
+    const target = await loginAs(t.app, 'SUPERADMIN');
     await request(t.app)
       .post(`/api/v1/users/${target.user.id}/deactivate`)
       .set('Cookie', admin.cookie)
@@ -86,12 +91,12 @@ describe('protección del último administrador', () => {
   });
 
   it('rechaza desactivar al último administrador y conserva usuario, sesiones y auditoría', async () => {
-    const admin = await loginAs(t.app, 'ADMIN');
-    const target = await loginAs(t.app, 'ADMIN');
+    const admin = await loginAs(t.app, 'SUPERADMIN');
+    const target = await loginAs(t.app, 'SUPERADMIN');
     const current = await testPrisma.user.findUnique({ where: { id: target.user.id } });
     // Conserva una solicitud ya autenticada mientras cambia el estado del actor en PostgreSQL.
     interceptTransactions(async (_tx, run) => {
-      await testPrisma.user.update({ where: { id: admin.user.id }, data: { role: 'EDITOR' } });
+      await testPrisma.user.update({ where: { id: admin.user.id }, data: { roleId: EDITOR_ID } });
       return run();
     });
     const sessions = await testPrisma.session.findMany();
@@ -99,8 +104,8 @@ describe('protección del último administrador', () => {
     const res = await request(t.app)
       .post(`/api/v1/users/${target.user.id}/deactivate`)
       .set('Cookie', admin.cookie);
-    expect(res.status).toBe(422);
-    expect(res.body.detail).toMatch(/último administrador/);
+    expect(res.status).toBe(409);
+    expect(res.body.detail).toMatch(/Superadministrador/);
     expect(await activeAdmins()).toBe(1);
     expect(await testPrisma.user.findUnique({ where: { id: target.user.id } })).toEqual(current);
     expect(await testPrisma.session.findMany()).toEqual(sessions);
@@ -108,16 +113,16 @@ describe('protección del último administrador', () => {
   });
 
   it('rechaza degradar al último administrador sin guardar otros campos ni revocar sesiones', async () => {
-    const admin = await loginAs(t.app, 'ADMIN');
+    const admin = await loginAs(t.app, 'SUPERADMIN');
     const sessions = await testPrisma.session.findMany();
     const logs = await testPrisma.auditLog.findMany();
     const current = await testPrisma.user.findUnique({ where: { id: admin.user.id } });
     const res = await request(t.app)
       .patch(`/api/v1/users/${admin.user.id}`)
       .set('Cookie', admin.cookie)
-      .send({ role: 'EDITOR', name: 'No debe guardarse', email: 'cambio@prueba.local' });
-    expect(res.status).toBe(422);
-    expect(res.body.detail).toMatch(/último administrador/);
+      .send({ roleId: EDITOR_ID, name: 'No debe guardarse', email: 'cambio@prueba.local' });
+    expect(res.status).toBe(409);
+    expect(res.body.detail).toMatch(/Superadministrador/);
     expect(await activeAdmins()).toBe(1);
     expect(await testPrisma.user.findUnique({ where: { id: admin.user.id } })).toEqual(current);
     expect(await testPrisma.session.findMany()).toEqual(sessions);
@@ -125,18 +130,18 @@ describe('protección del último administrador', () => {
   });
 
   it('PATCH no admite active ni evita la prohibición de desactivarse', async () => {
-    const admin = await loginAs(t.app, 'ADMIN');
+    const admin = await loginAs(t.app, 'SUPERADMIN');
     const call = (body: object) =>
       request(t.app).patch(`/api/v1/users/${admin.user.id}`).set('Cookie', admin.cookie).send(body);
     expect((await call({ active: false })).status).toBe(400);
     const res = await call({ active: false, name: 'Nombre permitido' });
     expect(res.status).toBe(200);
     expect(res.body.active).toBe(true);
-    expect((await call({ active: false, role: 'EDITOR' })).status).toBe(422);
+    expect((await call({ active: false, roleId: EDITOR_ID })).status).toBe(409);
     await request(t.app)
       .post(`/api/v1/users/${admin.user.id}/deactivate`)
       .set('Cookie', admin.cookie)
-      .expect(422);
+      .expect(422); // desactivarse a uno mismo sigue siendo 422
     expect(await activeAdmins()).toBe(1);
     expect(await testPrisma.session.count({ where: { userId: admin.user.id } })).toBe(1);
     expect(await mutationLogs()).toHaveLength(1);
@@ -148,8 +153,8 @@ describe('protección del último administrador', () => {
     ['deactivate', 'demote'],
   ] as const) {
     it(`serializa ${operations.join(' + ')} concurrentes sobre PostgreSQL`, async () => {
-      const a = await loginAs(t.app, 'ADMIN');
-      const b = await loginAs(t.app, 'ADMIN');
+      const a = await loginAs(t.app, 'SUPERADMIN');
+      const b = await loginAs(t.app, 'SUPERADMIN');
       const before = await testPrisma.user.findMany();
       const race = synchronizeAdminChecks();
       const call = (actor: typeof a, target: typeof a, operation: string) =>
@@ -160,10 +165,10 @@ describe('protección del último administrador', () => {
           : request(t.app)
               .patch(`/api/v1/users/${target.user.id}`)
               .set('Cookie', actor.cookie)
-              .send({ role: 'EDITOR' });
+              .send({ roleId: EDITOR_ID });
       const responses = await Promise.all([call(a, b, operations[0]), call(b, a, operations[1])]);
-      expect(responses.map((r) => r.status).sort()).toEqual([200, 422]);
-      expect(responses.find((r) => r.status === 422)?.body.detail).toMatch(/último administrador/);
+      expect(responses.map((r) => r.status).sort()).toEqual([200, 409]);
+      expect(responses.find((r) => r.status === 409)?.body.detail).toMatch(/Superadministrador/);
       expect(race.arrivals()).toBe(2);
       expect(race.conflicts).toEqual([expect.objectContaining({ code: 'P2034' })]);
       expect(race.transaction).toHaveBeenCalledTimes(3);
@@ -180,8 +185,8 @@ describe('protección del último administrador', () => {
   for (const operation of ['deactivate', 'demote'] as const) {
     for (const exhaust of [false, true]) {
       it(`${operation}: revierte efectos de P2034 y ${exhaust ? 'agota reintentos' : 'confirma una vez al reintentar'}`, async () => {
-        const admin = await loginAs(t.app, 'ADMIN');
-        const target = await loginAs(t.app, 'ADMIN');
+        const admin = await loginAs(t.app, 'SUPERADMIN');
+        const target = await loginAs(t.app, 'SUPERADMIN');
         const current = await testPrisma.user.findUnique({ where: { id: target.user.id } });
         const sessions = await testPrisma.session.findMany();
         const logs = await testPrisma.auditLog.findMany();
@@ -199,7 +204,7 @@ describe('protección del último administrador', () => {
             : await request(t.app)
                 .patch(`/api/v1/users/${target.user.id}`)
                 .set('Cookie', admin.cookie)
-                .send({ role: 'EDITOR' });
+                .send({ roleId: EDITOR_ID });
         expect(res.status).toBe(exhaust ? 409 : 200);
         expect(transaction).toHaveBeenCalledTimes(exhaust ? 3 : 2);
         expect(await activeAdmins()).toBe(exhaust ? 2 : 1);

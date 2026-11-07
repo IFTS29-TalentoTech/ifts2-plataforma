@@ -1,6 +1,6 @@
 import type { Express } from 'express';
 import request from 'supertest';
-import type { Role } from '@ifts2/shared';
+import type { SystemRoleKey } from '@ifts2/shared';
 import { createUser, TEST_PASSWORD } from './factories';
 
 export interface LoggedIn {
@@ -23,10 +23,10 @@ export function cookieFrom(res: { headers: Record<string, unknown> }): string {
   return pair;
 }
 
-/** Crea un usuario con ese rol, inicia sesión y devuelve la cookie. */
+/** Crea un usuario con ese rol del sistema, inicia sesión y devuelve la cookie. */
 export async function loginAs(
   app: Express,
-  role: Role,
+  role: SystemRoleKey,
   over: Parameters<typeof createUser>[0] = {},
 ): Promise<LoggedIn> {
   const { user, password } = await createUser({ role, ...over });

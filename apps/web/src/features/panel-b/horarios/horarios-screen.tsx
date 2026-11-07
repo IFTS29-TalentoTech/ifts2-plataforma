@@ -20,7 +20,7 @@ import {
   formatDateAR,
   type ExamCallDto,
   type Page,
-  type Role,
+  type PermissionList,
   type ScheduleDto,
   type TermDto,
 } from '@ifts2/shared';
@@ -54,7 +54,7 @@ type Pending =
   | { type: 'call-toggle'; item: ExamCallDto }
   | { type: 'call-delete'; item: ExamCallDto };
 
-export function HorariosScreen({ role }: { role: Role }) {
+export function HorariosScreen({ perms }: { perms: PermissionList }) {
   const { toast } = useToast();
   const terms = useResource<Page<TermDto>>('/terms?pageSize=100');
   const [termId, setTermId] = useState<string>('');
@@ -67,8 +67,8 @@ export function HorariosScreen({ role }: { role: Role }) {
   // elección explícita de la persona (derivar evita sincronizar estado con un efecto).
   const term = termList.find((t) => t.id === termId) ?? publicTerm ?? termList[0];
 
-  const canSetPublic = can(role, 'terms:setPublic');
-  const canManageTerms = can(role, 'terms:manage');
+  const canSetPublic = can(perms, 'terms:setPublic');
+  const canManageTerms = can(perms, 'terms:manage');
 
   return (
     <div>
@@ -151,8 +151,8 @@ export function HorariosScreen({ role }: { role: Role }) {
                   el ciclo público vigente.
                 </p>
               )}
-              <SchedulesSection role={role} term={term} onChange={terms.reload} />
-              <ExamCallsSection role={role} term={term} onChange={terms.reload} />
+              <SchedulesSection perms={perms} term={term} onChange={terms.reload} />
+              <ExamCallsSection perms={perms} term={term} onChange={terms.reload} />
             </>
           )}
         </>
@@ -224,11 +224,11 @@ function FileChip({ doc }: { doc: { id: string; filename: string } | null }) {
 // ---------------------------------------------------------------------------
 
 function SchedulesSection({
-  role,
+  perms,
   term,
   onChange,
 }: {
-  role: Role;
+  perms: PermissionList;
   term: TermDto;
   onChange: () => void;
 }) {
@@ -237,8 +237,8 @@ function SchedulesSection({
   const [editing, setEditing] = useState<ScheduleDto | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
-  const canManage = can(role, 'schedules:manage');
-  const canDelete = can(role, 'schedules:delete');
+  const canManage = can(perms, 'schedules:manage');
+  const canDelete = can(perms, 'schedules:delete');
 
   function refresh() {
     list.reload();
@@ -378,11 +378,11 @@ function SchedulesSection({
 // ---------------------------------------------------------------------------
 
 function ExamCallsSection({
-  role,
+  perms,
   term,
   onChange,
 }: {
-  role: Role;
+  perms: PermissionList;
   term: TermDto;
   onChange: () => void;
 }) {
@@ -391,8 +391,8 @@ function ExamCallsSection({
   const [editing, setEditing] = useState<ExamCallDto | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
-  const canManage = can(role, 'examCalls:manage');
-  const canDelete = can(role, 'examCalls:delete');
+  const canManage = can(perms, 'examCalls:manage');
+  const canDelete = can(perms, 'examCalls:delete');
 
   // "Próximo turno oficial": el primer llamado publicado que todavía no terminó (por fecha de inicio).
   const items = useMemo(

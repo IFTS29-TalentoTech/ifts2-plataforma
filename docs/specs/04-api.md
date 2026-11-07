@@ -111,6 +111,14 @@ La configuración la carga el cliente desde el panel y se guarda cifrada (ADR-20
 
 **Autenticación (implementado):** `GET /auth/me` devuelve además `mustChangePassword` y `permissions`; con `mustChangePassword` toda otra ruta responde 403 con `reason: "password-change-required"`.
 
+**Roles (implementado, ADR-031).**
+
+- **Respuestas de usuarios.** `GET /auth/me` y las respuestas de `/users` traen `role` (la clave, por ejemplo `"BEDELIA"`), `roleId` y `roleName`.
+- **`GET /roles`.** Devuelve `{ items }` con `id`, `key`, `name`, `description`, `isSystem`, `editable`, `userCount`, `permissions` y `assignable`. `assignable` indica si quien pregunta puede asignar ese rol.
+- **`GET /permissions`.** Devuelve `{ groups, reserved }`.
+- **Rol inexistente.** Un `roleId` que no existe responde 400 en `errors.roleId`.
+- **Usuarios con más permisos.** Un ADMIN que intenta editar, desactivar, reactivar o restablecer la clave de un usuario con más permisos que él recibe 403 (Q126).
+
 **Configuración pública (contrato para el agente de `/public/*`):** `GET /public/settings` debe devolver un objeto plano con las claves de `SETTING_KEYS` (`institution_name`, `institution_short`, `institution_subtitle`, `footer_text`, `address`, `phone`, `email_*`, `instagram_url`, `facebook_url`, `tagline`...), que la web usa para cabecera y pie (ADR-22).
 
 ## Bloque académico (implementado en `feat/academic`)

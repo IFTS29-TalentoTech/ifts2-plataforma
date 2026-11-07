@@ -13,7 +13,7 @@
  */
 'use client';
 
-import { can, formatDateAR, type DocumentDto, type Page, type Role } from '@ifts2/shared';
+import { can, formatDateAR, type DocumentDto, type Page, type PermissionList } from '@ifts2/shared';
 import { ArchiveRestore, Archive, FileText, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
@@ -59,7 +59,7 @@ type Action =
   | { type: 'restore' | 'archive' | 'delete'; doc: DocumentDto }
   | { type: 'force-archive'; doc: DocumentDto; refs: ProblemReference[] };
 
-export function ArchivoScreen({ role }: { role: Role }) {
+export function ArchivoScreen({ perms }: { perms: PermissionList }) {
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
@@ -70,8 +70,8 @@ export function ArchivoScreen({ role }: { role: Role }) {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [detail, setDetail] = useState<DocumentDto | null>(null);
   const [action, setAction] = useState<Action | null>(null);
-  const canManage = can(role, 'documents:manage');
-  const canDelete = can(role, 'documents:delete');
+  const canManage = can(perms, 'documents:manage');
+  const canDelete = can(perms, 'documents:delete');
 
   // Búsqueda con retardo (no pedimos a la API en cada tecla) y de vuelta a la página 1.
   useEffect(() => {

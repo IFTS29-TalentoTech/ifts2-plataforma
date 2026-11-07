@@ -9,8 +9,8 @@ export const metadata: Metadata = { title: 'Horarios' };
 /** RF06 (US-13..15). Solo ADMIN y BEDELIA (`schedules:manage`); EDITOR no ve el ítem ni la pantalla. */
 export default async function Page() {
   const session = await requireSession();
-  if (!can(session.role, 'schedules:manage')) {
+  if (!can(session.permissions, 'schedules:manage')) {
     return <Placeholder title="Horarios" description="No tenés permiso para ver esta sección." />;
   }
-  return <HorariosScreen role={session.role} />;
+  return <HorariosScreen perms={session.permissions} />;
 }

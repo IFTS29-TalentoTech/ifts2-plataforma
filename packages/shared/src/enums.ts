@@ -1,13 +1,12 @@
 // Enums y constantes alineados con prisma/schema.prisma. Si cambia el schema, cambia acá
 // (apps/api/test/unit/enums-sync.test.ts lo verifica).
-export const ROLES = ['ADMIN', 'BEDELIA', 'EDITOR'] as const;
-export type Role = (typeof ROLES)[number];
-
-export const ROLE_LABELS: Record<Role, string> = {
-  ADMIN: 'Rectoría / Dirección',
-  BEDELIA: 'Bedelía Académica',
-  EDITOR: 'Comunicación',
-};
+/**
+ * Roles del sistema (RF11, ADR-18 ampliada). Los roles son DATOS (tabla `Role`): estos cuatro los crea
+ * la semilla con `isSystem = true` y no se eliminan; el Superadministrador puede crear otros.
+ * Sus nombres visibles ("Rectoría / Dirección", etc.) también son datos: salen de la semilla.
+ */
+export const SYSTEM_ROLE_KEYS = ['SUPERADMIN', 'ADMIN', 'BEDELIA', 'EDITOR'] as const;
+export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
 
 export const PUBLICATION_KINDS = ['NEWS', 'EVENT'] as const;
 export type PublicationKind = (typeof PUBLICATION_KINDS)[number];

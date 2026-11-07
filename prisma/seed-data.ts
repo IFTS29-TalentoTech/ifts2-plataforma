@@ -181,3 +181,26 @@ export const CONTENT: SectionSeed[] = [
     body: 'Secundario completo (nivel medio aprobado). La carrera es gratuita, dura 3 años y otorga un título oficial de alcance nacional. La cursada es presencial, de lunes a viernes de 18:00 a 22:00 hs.\n\nDocumentación a presentar y modo de preinscripción: [a confirmar con el cliente]',
   },
 ];
+
+/**
+ * Roles del sistema (RF11). Nombres y descripciones son el valor inicial: el Superadministrador puede
+ * cambiarlos desde el panel. Los permisos iniciales salen de DEFAULT_ROLE_PERMISSIONS (packages/shared).
+ */
+export const SYSTEM_ROLES = [
+  {
+    key: 'SUPERADMIN',
+    name: 'Superadministrador',
+    description: 'Crea roles y define sus permisos. Tiene acceso a todo.',
+  },
+  {
+    key: 'ADMIN',
+    name: 'Rectoría / Dirección',
+    description: 'Configuración, usuarios, archivo y todo el contenido.',
+  },
+  {
+    key: 'BEDELIA',
+    name: 'Bedelía Académica',
+    description: 'Horarios, mesas, avisos y cartelera.',
+  },
+  { key: 'EDITOR', name: 'Comunicación', description: 'Publicaciones, redes y novedades.' },
+] as const;

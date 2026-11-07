@@ -7,10 +7,12 @@
  * Se importa desde cada spec: `import '../../support/panel-b';`
  */
 
-export type PanelRole = 'ADMIN' | 'BEDELIA' | 'EDITOR';
+export type PanelRole = 'SUPERADMIN' | 'ADMIN' | 'BEDELIA' | 'EDITOR';
 
+/** Usuarios de la semilla demo. RF11: `admin@` es el Superadministrador; `direccion@` es un ADMIN. */
 export const DEMO_USERS: Record<PanelRole, { email: string; password: string }> = {
-  ADMIN: { email: 'admin@ifts2.local', password: 'Cambiame-123!' },
+  SUPERADMIN: { email: 'admin@ifts2.local', password: 'Cambiame-123!' },
+  ADMIN: { email: 'direccion@ifts2.local', password: 'Demo-2026-ifts2' },
   BEDELIA: { email: 'bedelia@ifts2.local', password: 'Demo-2026-ifts2' },
   EDITOR: { email: 'editor@ifts2.local', password: 'Demo-2026-ifts2' },
 };

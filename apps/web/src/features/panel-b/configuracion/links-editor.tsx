@@ -9,7 +9,7 @@
  */
 'use client';
 
-import { can, type LinkDto, type Role } from '@ifts2/shared';
+import { can, type LinkDto, type PermissionList } from '@ifts2/shared';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import {
@@ -31,12 +31,12 @@ import { errorText, fieldErrors } from '../lib/format';
 import { useResetOn } from '../lib/use-reset-on';
 import { useResource } from '../lib/use-resource';
 
-export function LinksEditor({ role }: { role: Role }) {
+export function LinksEditor({ perms }: { perms: PermissionList }) {
   const { toast } = useToast();
   const list = useResource<{ items: LinkDto[]; total: number }>('/links');
   const [editing, setEditing] = useState<LinkDto | 'new' | null>(null);
   const [deleting, setDeleting] = useState<LinkDto | null>(null);
-  const canDelete = can(role, 'links:delete');
+  const canDelete = can(perms, 'links:delete');
 
   return (
     <section aria-labelledby="links-title" className="flex flex-col gap-4">

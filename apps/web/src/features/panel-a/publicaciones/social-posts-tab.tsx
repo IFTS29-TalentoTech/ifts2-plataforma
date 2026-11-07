@@ -28,7 +28,7 @@ import {
 } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDateTimeAR } from '@/lib/dates';
-import { can, type Role, type SocialStatus } from '@ifts2/shared';
+import { can, type PermissionList, type SocialStatus } from '@ifts2/shared';
 import { deriveTitle } from '../lib/caption';
 import { detectedLabel } from '../lib/dates';
 import { humanError } from '../lib/errors';
@@ -62,7 +62,13 @@ function stateBadge(p: SocialPostDto) {
   return stale ? <Badge tone="warning">Revisar</Badge> : <Badge tone="neutral">Pendiente</Badge>;
 }
 
-export function SocialPostsTab({ role, onChanged }: { role: Role; onChanged: () => void }) {
+export function SocialPostsTab({
+  perms,
+  onChanged,
+}: {
+  perms: PermissionList;
+  onChanged: () => void;
+}) {
   const [status, setStatus] = useState<SocialStatus>('DETECTED');
   const [page, setPage] = useState(1);
   const [source, setSource] = useState('all');
@@ -218,7 +224,7 @@ export function SocialPostsTab({ role, onChanged }: { role: Role; onChanged: () 
         post={selected}
         onClose={() => setSelected(null)}
         onChanged={changed}
-        canDelete={can(role, 'social:delete')}
+        canDelete={can(perms, 'social:delete')}
       />
       <ManualPostDialog open={manualOpen} onOpenChange={setManualOpen} onCreated={changed} />
     </div>

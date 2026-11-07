@@ -84,13 +84,16 @@ Comprobá: `http://localhost:4000/health` responde `{"status":"ok","db":"ok",…
 
 **Usuarios de demostración** (solo desarrollo):
 
-| Rol     | Correo                | Clave                                   | Puede                               |
-| ------- | --------------------- | --------------------------------------- | ----------------------------------- |
-| ADMIN   | `admin@ifts2.local`   | `Cambiame-123!` (`SEED_ADMIN_PASSWORD`) | Todo                                |
-| BEDELIA | `bedelia@ifts2.local` | `Demo-2026-ifts2`                       | Avisos, horarios, llamados, archivo |
-| EDITOR  | `editor@ifts2.local`  | `Demo-2026-ifts2`                       | Publicaciones y moderación de redes |
+| Rol                | Correo                  | Clave                                   | Puede                                             |
+| ------------------ | ----------------------- | --------------------------------------- | ------------------------------------------------- |
+| Superadministrador | `admin@ifts2.local`     | `Cambiame-123!` (`SEED_ADMIN_PASSWORD`) | Todo, incluido crear roles y definir sus permisos |
+| ADMIN              | `direccion@ifts2.local` | `Demo-2026-ifts2`                       | Todo salvo roles; crea usuarios (también admins)  |
+| BEDELIA            | `bedelia@ifts2.local`   | `Demo-2026-ifts2`                       | Avisos, horarios, llamados, archivo               |
+| EDITOR             | `editor@ifts2.local`    | `Demo-2026-ifts2`                       | Publicaciones y moderación de redes               |
 
-La semilla **demo** crea ciclo 2026-2.º público, avisos (vigente, urgente y vencido), publicaciones de redes detectadas, documentos archivados, llamado "Turno extraordinario de Diciembre 2026", contenido de páginas y enlaces. La semilla **prod** (`SEED_MODE=prod`) crea solo el administrador (con cambio de clave obligatorio), ajustes y enlaces reales; **nunca** datos de demostración. Ambas son idempotentes (se pueden repetir).
+Los permisos de ADMIN, BEDELIA y EDITOR son los iniciales: el Superadministrador los cambia en **Panel → Roles y permisos** (RF11, ADR-031).
+
+La semilla **demo** crea ciclo 2026-2.º público, avisos (vigente, urgente y vencido), publicaciones de redes detectadas, documentos archivados, llamado "Turno extraordinario de Diciembre 2026", contenido de páginas y enlaces. La semilla **prod** (`SEED_MODE=prod`) crea solo los roles del sistema, el superadministrador (con cambio de clave obligatorio), ajustes y enlaces reales; **nunca** datos de demostración. Ambas son idempotentes (se pueden repetir).
 
 ## 6. Comandos útiles
 
