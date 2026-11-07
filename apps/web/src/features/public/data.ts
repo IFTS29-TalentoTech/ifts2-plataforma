@@ -11,6 +11,7 @@
  */
 import type {
   PublicContentDto,
+  PublicGalleryDto,
   PublicHomeDto,
   PublicPublicationDetailDto,
   PublicPublicationsDto,
@@ -47,6 +48,37 @@ export const loadStudents = (audience?: 'ASPIRANTS' | 'STUDENTS') =>
   loadPublic<PublicStudentsDto>(`/students${audience ? `?audience=${audience}` : ''}`);
 export const loadContent = (page: 'institucional' | 'carrera' | 'ingreso') =>
   loadPublic<PublicContentDto>(`/content/${page}`);
+/** Diapositivas editables de una galería (RF09). Si falla o está vacía, la página usa el respaldo de ajustes. */
+export const loadGallery = (area: 'STUDENTS' | 'CAREER') =>
+  loadPublic<PublicGalleryDto>(`/gallery?area=${area}`);
+/** Una diapositiva lista para dibujar (de la galería editable o del respaldo de ajustes). */
+export interface Slide {
+  key: string;
+  src: string;
+  title: string;
+  caption: string;
+  alt: string;
+}
+
+/**
+ * Diapositivas de un área: las de la galería editable (RF09, ADR-036) y, si no hay ninguna o la API
+ * falla, el respaldo que sale de los ajustes (`student_gallery` / `career_image`). El sitio nunca
+ * queda sin su imagen por una falla de la galería (RNF03).
+ */
+export async function loadSlides(area: 'STUDENTS' | 'CAREER', fallback: Slide[]): Promise<Slide[]> {
+  const res = await loadGallery(area);
+  if (res.ok && res.data.items.length > 0) {
+    return res.data.items.map((i) => ({
+      key: i.id,
+      src: i.src,
+      title: i.title,
+      caption: i.caption,
+      alt: i.alt,
+    }));
+  }
+  return fallback;
+}
+
 export const loadPublication = (id: string, archived: boolean) =>
   loadPublic<PublicPublicationDetailDto>(
     `/publications/${encodeURIComponent(id)}${archived ? '?archived=true' : ''}`,
