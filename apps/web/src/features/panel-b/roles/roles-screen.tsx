@@ -4,7 +4,8 @@
  * Solo el SUPERADMIN (`roles:manage`). Se arma con componentes del kit: tabla de roles, diálogo con
  * casillas agrupadas por recurso y el ConfirmDialog único. Reglas (las aplica la API; acá se reflejan):
  * - Superadministrador: no se edita ni se elimina; siempre tiene todos los permisos.
- * - Roles del sistema (isSystem): se editan casilla por casilla, pero no se eliminan.
+ * - Roles del sistema (ADMIN, BEDELIA, EDITOR): se editan y se pueden eliminar si no tienen usuarios;
+ *   SUPERADMIN no se edita ni se elimina.
  * - Un rol con usuarios no se elimina: se avisa "Reasigná a los usuarios antes de eliminar el rol".
  * - Guardar y eliminar piden confirmación. Los cambios rigen en el próximo pedido de cada usuario,
  *   sin volver a iniciar sesión. Todo queda en la auditoría.
@@ -46,6 +47,8 @@ export interface RoleDto {
   description: string | null;
   isSystem: boolean;
   editable: boolean;
+  /** Eliminable a mano (todos menos SUPERADMIN). */
+  deletable?: boolean;
   userCount: number;
   permissions: Action[];
 }
@@ -218,7 +221,7 @@ export function RolesScreen() {
                     ) : (
                       <span className="text-xs text-font-strong">No se edita</span>
                     )}
-                    {!r.isSystem && (
+                    {r.deletable !== false && (
                       <Button
                         variant="ghost"
                         size="sm"

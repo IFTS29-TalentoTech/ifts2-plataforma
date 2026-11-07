@@ -27,7 +27,7 @@ Los elementos sin permiso no se muestran; la API igual responde 403.
 ## Reglas importantes
 
 - Eliminar solo contenido no publicado / archivado / oculto, con confirmación. Los usuarios no se eliminan: se desactivan.
-- Roles (RF11): el selector de usuarios ofrece solo roles con `assignable: true` (anti-escalada); un rol con usuarios no se elimina; SUPERADMIN no se edita. La interfaz oculta lo que la sesión no puede usar, pero quien protege es la API.
+- Roles (RF11): el selector de usuarios ofrece solo roles con `assignable: true` (anti-escalada); un rol con usuarios no se elimina (también ADMIN, BEDELIA y EDITOR se pueden eliminar si no tienen usuarios); SUPERADMIN no se edita ni se elimina. La interfaz oculta lo que la sesión no puede usar, pero quien protege es la API.
 - Archivar un documento adjunto a contenido visible: 409 `requiresConfirmation`, segunda confirmación y reintento con `force`.
 - El App Secret y la contraseña SMTP nunca se muestran ni vuelven a pedirse; la clave temporal de un usuario se muestra una sola vez.
 

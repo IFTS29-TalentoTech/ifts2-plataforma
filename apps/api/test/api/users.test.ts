@@ -185,7 +185,7 @@ describe('ADMIN: editar, desactivar, reset', () => {
     expect(
       (await request(t.app).post(`/api/v1/users/${user.id}/deactivate`).set('Cookie', cookie))
         .status,
-    ).toBe(422);
+    ).toBe(409);
     const res = await request(t.app)
       .patch(`/api/v1/users/${user.id}`)
       .set('Cookie', cookie)

@@ -9,7 +9,7 @@ Prioridad M / S / C como en `01-requerimientos.md`. Una historia = una rama = un
 | 0. Base | Repositorio, CI, entorno, esqueleto | Pipeline en verde, "hola mundo" desplegado en vista previa, semilla ejecutable | US-01, US-02, US-03 |
 | 1. Núcleo | Autenticación, roles, auditoría, prueba de concepto de Instagram | Login y permisos; informe de la prueba de concepto | US-04, US-05, US-06 |
 | 2. Contenido dinámico | Publicaciones, moderación, avisos (con eliminación manual confirmada, US-33) | Flujo de moderación de punta a punta (con doble) | US-07 a US-12 |
-| 3. Académico y archivo | Horarios, llamados, ciclo público, documentos, archivo | Estudiantes muestra solo el ciclo público | US-13 a US-18 |
+| 3. Académico y archivo | Horarios, llamados, ciclo público, documentos, archivo | Estudiantes muestra solo el ciclo público | US-13 a US-18, US-37 |
 | 4. Sitio público | Las seis páginas, responsive y accesibles | Lighthouse en umbral | US-19 a US-24 |
 | 5. Configuración | Datos institucionales, usuarios, roles y permisos (SUPERADMIN) | Administración completa | US-25, US-26, US-36 |
 | 6. Should y Could | Contacto, plantel, plan con correlatividades, galería | Según tiempo disponible | US-27 a US-30 |
@@ -41,7 +41,6 @@ Prioridad M / S / C como en `01-requerimientos.md`. Una historia = una rama = un
 | US-19 | Como visitante quiero ver el Inicio | M | RF02 | Pantalla 01 |
 | US-20 | Como visitante quiero ver Institucional | M | RF02 | Pantalla 02 |
 | US-21 | Como visitante quiero ver La carrera | M | RF02 | Pantalla 03 |
-| US-36 | Como bedelía quiero marcar "destacar" en un llamado o aviso para resaltar los eventos próximos | M | RF06 | Aparece resaltado en Inicio y Estudiantes hasta su fecha |
 | US-22 | Como visitante quiero ver Estudiantes con el ciclo público y enlaces | M | RF06, RF07 | Pantalla 04; regla 3 de negocio |
 | US-23 | Como visitante quiero ver Ingreso | M | RF02 | Pantalla 05 |
 | US-24 | Como visitante quiero ver Novedades con filtros y archivo del año | M | RF03 | Pantalla 06 |
@@ -57,6 +56,9 @@ Prioridad M / S / C como en `01-requerimientos.md`. Una historia = una rama = un
 | US-34 | Como equipo quiero evidencias de pruebas unitarias e integración documentadas | M | Consigna | Sección 6 de `10-entregables-etapa-3.md` |
 | US-35 | Como docente quiero instalar y ejecutar el proyecto solo con la documentación | M | Consigna | Manual Técnico con pasos verificados en una máquina limpia |
 | US-36 | Como superadministrador quiero crear roles y definir sus permisos para que cada persona use solo lo que le corresponde | M | RF11 | E2E-18 a E2E-20; pruebas de API 403 y 409 y de "toda ruta declara permiso"; `GET /auth/me` con permisos |
+| US-37 | Como bedelía quiero marcar "destacar" en un llamado o aviso para resaltar los eventos próximos | M | RF06 | Aparece resaltado en Inicio y Estudiantes hasta su fecha |
+
+> **Nota de numeración (06/11/2026):** la historia de "destacar" tenía por error el mismo número que la de roles configurables. US-36 queda para **roles y permisos configurables** (la usan las ramas, `docs/avance.md` y los commits) y "destacar" pasó a **US-37**.
 
 ## Orden sugerido dentro de una fase
 

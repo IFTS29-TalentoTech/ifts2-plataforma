@@ -9,8 +9,10 @@
 | Extremo a extremo | Cypress (viewports 390 y 1440) | Escenarios E2E de abajo | Todos en verde antes del hito |
 | Accesibilidad | axe en Cypress + Lighthouse CI | WCAG 2.2 AA | 0 violaciones graves; Accesibilidad ≥ 90 |
 | Rendimiento | Lighthouse CI | Inicio y Novedades en móvil | Rendimiento ≥ 80; contenido principal < 2,5 s |
-| Carga | k6 | Sitio público con 400 usuarios virtuales (Inicio, Estudiantes, Novedades) | Sin errores 5xx y p95 < 1,5 s (RNF09) |
+| Carga | autocannon (`pnpm load`) | Sitio público con 400 usuarios virtuales (Inicio, Estudiantes, Novedades) | Sin errores 5xx y p95 < 1,5 s con el uso real esperado (RNF09) |
 | Seguridad | Pruebas de API + revisión | Acceso sin sesión, escalada de roles (incluido un ADMIN asignando SUPERADMIN), una prueba que recorre todas las rutas de la API y falla si alguna fuera de `/public` y `/auth` no declara permiso, subida de archivos no permitidos, límites de frecuencia | Sin hallazgos altos |
+
+**Por qué autocannon y no k6:** el plan original nombraba k6, pero k6 es un binario aparte (no se instala con `pnpm install`) y complica la instalación en limpio que debe poder hacer un docente. autocannon es un paquete de Node, funciona en Windows, macOS y Linux, y el script `pnpm load` levanta la pila y vuelca la evidencia en `docs/evidencias/`. El objetivo (400 usuarios virtuales) no cambia. Resultado: con el uso real esperado cumple; en saturación sostenida un proceso de Node llega a ~300-360 pedidos/s (ver `docs/evidencias/2026-10-30-carga-publico.md`).
 
 Las integraciones externas se prueban con **dobles**: `FakeInstagramClient`, `InMemoryStorage`, `FakeMailer`. La prueba de concepto con la API real de Instagram es manual y se documenta.
 
@@ -40,8 +42,8 @@ La semilla (`prisma/seed.ts`) crea: los roles del sistema (SUPERADMIN, ADMIN, BE
 | E2E-16 | CRUD completo de avisos: crear, ver, editar y eliminar (con diálogo de confirmación) un aviso vencido; no se puede eliminar uno vigente | Consigna de la cátedra |
 | E2E-17 | Validaciones: campos obligatorios vacíos, correo de usuario duplicado y ciclo duplicado muestran mensajes claros | Consigna de la cátedra |
 | E2E-18 | El Superadministrador crea un rol con permisos acotados y se lo asigna a un usuario; ese usuario ve solo lo permitido y recibe 403 en el resto. Un ADMIN no ve "Roles y permisos" | RF11 |
+| E2E-19 | Roles: un rol con usuarios no se elimina (mensaje claro); un rol de sistema ADMIN, BEDELIA o EDITOR sin usuarios sí se elimina y SUPERADMIN no; el último SUPERADMIN no se puede desactivar; el cambio de permisos rige sin volver a iniciar sesión | RF11 |
 | E2E-20 | Un ADMIN crea otro ADMIN; su selector de roles no ofrece Superadministrador; forzar ese rol por la API devuelve 403 | RF11 |
-| E2E-19 | Roles: un rol con usuarios no se elimina (mensaje claro); el último SUPERADMIN no se puede desactivar; el cambio de permisos rige sin volver a iniciar sesión | RF11 |
 
 ## Pruebas que se documentan para la cátedra
 

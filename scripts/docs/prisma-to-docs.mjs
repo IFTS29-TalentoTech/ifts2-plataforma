@@ -92,8 +92,20 @@ const DESC = {
   'User.name': 'Nombre y apellido que se muestra en el panel y en la auditoría.',
   'User.passwordHash':
     'Clave guardada como hash argon2id. Nunca se guarda ni se devuelve la clave en claro.',
-  'User.role':
-    'Rol: ADMIN (todo), BEDELIA (avisos, horarios, archivo) o EDITOR (publicaciones y redes).',
+  'User.role': 'Relación con Role.',
+  'User.roleId': 'Rol del usuario (relación con Role). Sus permisos se leen en cada pedido.',
+  'Role.key':
+    'Clave interna única del rol (SUPERADMIN, ADMIN, BEDELIA, EDITOR o la de un rol creado).',
+  'Role.name': 'Nombre que se muestra en el panel. No se repite entre roles.',
+  'Role.description': 'Explicación breve de para qué sirve el rol.',
+  'Role.isSystem':
+    'Verdadero para los roles que crea la semilla. SUPERADMIN no se edita ni se elimina; los demás sí se pueden eliminar si no tienen usuarios.',
+  'Role.permissions': 'Permisos del rol (relación inversa con RolePermission).',
+  'Role.users': 'Usuarios que tienen este rol (relación inversa).',
+  'RolePermission.roleId': 'Rol al que pertenece el permiso. Al borrar el rol se borran sus filas.',
+  'RolePermission.role': 'Relación con Role.',
+  'RolePermission.permission':
+    'Permiso del catálogo fijo en el código (por ejemplo notices:manage). No se repite dentro del rol.',
   'User.active':
     'Si es falso, la persona no puede iniciar sesión (se desactiva en lugar de borrar, para conservar la auditoría).',
   'User.mustChangePassword':

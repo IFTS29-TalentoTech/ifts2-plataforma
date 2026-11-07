@@ -51,8 +51,10 @@ export function toRoleDto(role: RoleRow, caller: AuthUser) {
     name: role.name,
     description: role.description,
     isSystem: role.isSystem,
-    /** SUPERADMIN no se edita: siempre tiene todos los permisos. */
+    /** SUPERADMIN no se edita ni se elimina: siempre tiene todos los permisos. */
     editable: role.key !== SUPERADMIN_KEY,
+    /** Eliminable a mano: todos menos SUPERADMIN (igual la API bloquea si tiene usuarios). */
+    deletable: role.key !== SUPERADMIN_KEY,
     userCount: role._count.users,
     permissions: rolePermissions(role),
     assignable: canAssign(caller, role),

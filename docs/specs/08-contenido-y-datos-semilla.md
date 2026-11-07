@@ -29,7 +29,7 @@ Fuente: documento del cliente "Páginas a vincular con la WEB del IFTS N.° 2", 
 | `address` | Cañada de Gómez 3850, Villa Lugano, CABA |
 | `instagram_url` | https://www.instagram.com/ifts_2_ok/ |
 | `facebook_url` | https://www.facebook.com/iftsn2/ |
-| `instagram_hashtag` | **[definir con el cliente]** (ver `09-preguntas-abiertas.md`) |
+| `instagram_hashtag` | `#ifts2web` **provisorio** (propuesta de Q1; la semilla demo lo carga, la semilla `prod` lo deja vacío hasta que el cliente confirme; ver Q1 y Q25) |
 
 El correo `ifts2@bue.edu.ar` y el teléfono `(011) 4601-2345` que aparecen en el Figma **no son los datos reales**.
 
@@ -57,4 +57,4 @@ Ciclo público 2026-2.º; turno extraordinario de mesas en diciembre de 2026 con
 
 ## Imágenes y marca
 
-Logos disponibles en `cliente/ifts2/` (logo 2026, logo "Iftsy B", logo de la Agencia de Habilidades) y fotografía institucional. Las fotografías del Figma son de referencia; las imágenes definitivas las provee el cliente. Las fotos con estudiantes solo se publican con consentimiento (RNF08). La carpeta de materiales de marca de la Agencia de Habilidades todavía no tiene acceso confirmado.
+Logos disponibles en `cliente/ifts2/` (carpeta del repositorio del equipo, fuera de este repo) (logo 2026, logo "Iftsy B", logo de la Agencia de Habilidades) y fotografía institucional. Las fotografías del Figma son de referencia; las imágenes definitivas las provee el cliente. Las fotos con estudiantes solo se publican con consentimiento (RNF08). La carpeta de materiales de marca de la Agencia de Habilidades todavía no tiene acceso confirmado.

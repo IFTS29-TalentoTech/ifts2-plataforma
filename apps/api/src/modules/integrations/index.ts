@@ -23,7 +23,7 @@ export const mountPath = '/integrations';
 export const router = Router();
 
 /**
- * Integraciones que el CLIENTE configura desde el panel (ADR-20). Solo ADMIN. Los secretos se guardan
+ * Integraciones que el CLIENTE configura desde el panel (ADR-20). Exige el permiso integrations:manage. Los secretos se guardan
  * cifrados (AES-256-GCM) y NUNCA salen en una respuesta: solo máscaras y estados.
  */
 router.use(requirePermission('integrations:manage'));

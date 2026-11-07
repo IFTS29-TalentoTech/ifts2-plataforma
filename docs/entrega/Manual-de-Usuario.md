@@ -17,12 +17,13 @@ La plataforma reemplaza al sitio anterior del instituto y tiene dos partes:
 
 | Persona                         | Rol en el panel                     | Qué puede hacer                                                                            |
 | ------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------ |
-| Rectoría / Dirección            | **Administración** (ADMIN)          | Todo: además de lo de abajo, usuarios y roles, configuración del sitio, ciclo público e integraciones |
+| Persona designada por la institución | **Superadministrador** (SUPERADMIN) | Todo lo de Administración, más **crear roles y elegir qué puede hacer cada uno** |
+| Rectoría / Dirección            | **Administración** (ADMIN)          | Todo lo de abajo, usuarios (también puede crear otros administradores), configuración del sitio, ciclo público e integraciones. No define roles |
 | Bedelía Académica               | **Bedelía** (BEDELIA)               | Avisos académicos, horarios, llamados a examen, archivo de documentos y mensajes de contacto |
 | Comunicación                    | **Comunicación** (EDITOR)           | Publicaciones, moderación de Instagram y publicaciones propias                              |
 | Aspirantes, estudiantes, familias | (no necesitan cuenta)             | Navegar el sitio público y enviar consultas                                                 |
 
-El panel solo muestra las opciones que corresponden a tu rol. Si intentás entrar a una pantalla que no es tuya, verás el aviso «No tenés permiso».
+Los permisos de cada rol los define el Superadministrador, así que lo que ves arriba es lo habitual y puede cambiar. El panel solo muestra las opciones que corresponden a tu rol. Si intentás entrar a una pantalla que no es tuya, verás el aviso «No tenés permiso».
 
 ### 1.3 Ideas que conviene tener claras
 
@@ -260,10 +261,19 @@ La pantalla **Archivo** guarda la documentación histórica. Por defecto muestra
 4. **Restablecer contraseña**: genera una nueva clave temporal (con confirmación).
 5. **Desactivar**: la persona deja de poder ingresar. **Los usuarios no se eliminan**, se desactivan, para conservar el registro de lo que hicieron. Se puede **Reactivar** cuando haga falta.
 6. No se puede repetir un correo: verás «Ya existe un usuario con ese correo».
+7. La Administración ofrece solo los roles cuyos permisos ella misma tiene y nunca «Superadministrador». El último Superadministrador activo no se puede desactivar ni cambiar de rol.
+
+#### Roles y permisos _(solo Superadministrador)_
+
+En **Configuración → Seguridad y accesos** (o en el menú lateral, ítem **Roles y permisos**) el Superadministrador ve la lista de roles y cuántas personas tiene cada uno.
+
+1. **Nuevo rol**: poné un nombre, tildá lo que ese rol puede hacer (las casillas están agrupadas por recurso) y tocá **Crear rol**.
+2. **Editar permisos**: abrí un rol, cambiá las casillas y **Guardar cambios**; el cambio rige en el próximo pedido de cada persona, sin que tenga que volver a ingresar.
+3. **Eliminar**: pide confirmación y solo se puede si el rol no tiene personas asignadas («Reasigná a los usuarios antes de eliminar el rol»). Se pueden eliminar también Administración, Bedelía y Comunicación; **Superadministrador no se edita ni se elimina**.
 
 ![Usuarios y roles](../capturas/panel/b-configuracion-usuarios-1440.png)
 
-### 5.8 Configurar Instagram y el correo _(solo Administración)_
+### 5.8 Configurar Instagram y el correo _(requiere el permiso «Integraciones»; Administración lo tiene por defecto)_
 
 Entrá a **Configuración** y abrí la pestaña **Integraciones**. Allí se conectan los servicios externos; mientras no se configuren, el sitio funciona en **modo demostración** con datos de ejemplo.
 

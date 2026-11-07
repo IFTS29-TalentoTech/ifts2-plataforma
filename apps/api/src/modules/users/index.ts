@@ -182,9 +182,9 @@ router.post('/:id/deactivate', validate({ params: idParam }), async (req, res) =
   const { id } = req.valid.params as { id: string };
   const { prisma } = req.ctx;
   const user = await userTransaction(prisma, async (tx) => {
-    if (id === req.auth!.user.id)
-      throw errors.unprocessable('No podés desactivar tu propio usuario.');
     const current = await assertCanManageUser(tx, req.auth!.user, id);
+    // El último Superadministrador activo siempre da 409 (también si es uno mismo): se evalúa antes
+    // que la regla de "no desactivarse a sí mismo" para que el mensaje sea el de fondo.
     if (
       current.role.key === SUPERADMIN_KEY &&
       current.active &&
@@ -192,6 +192,8 @@ router.post('/:id/deactivate', validate({ params: idParam }), async (req, res) =
     ) {
       throw errors.conflict(LAST_SUPERADMIN);
     }
+    if (id === req.auth!.user.id)
+      throw errors.unprocessable('No podés desactivar tu propio usuario.');
     const u = await tx.user.update({ where: { id }, data: { active: false }, select });
     await tx.session.deleteMany({ where: { userId: id } }); // revoca sesiones: no puede seguir entrando
     await audit.fromReq(req, { action: 'user.deactivate', entity: 'User', entityId: id }, tx);

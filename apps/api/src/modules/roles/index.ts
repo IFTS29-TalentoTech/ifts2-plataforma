@@ -7,7 +7,8 @@
  *
  * Reglas:
  * - SUPERADMIN es del sistema: no se edita ni se elimina (409) y siempre tiene todos los permisos.
- * - Los roles del sistema (ADMIN, BEDELIA, EDITOR) se editan casilla por casilla, pero no se eliminan.
+ * - Los roles ADMIN, BEDELIA y EDITOR (isSystem) se editan casilla por casilla y SÍ se pueden eliminar
+ *   (manual, con confirmación, auditado como `role.delete`), siempre que no tengan usuarios (409).
  * - Un rol con usuarios no se elimina (409): primero hay que reasignarlos. La eliminación es manual,
  *   con confirmación en la interfaz y queda en la auditoría (regla general del proyecto).
  * - Nombre único (409). Permisos inexistentes o `roles:manage` -> 400 (lo valida el esquema zod).
@@ -178,11 +179,13 @@ router.put(
   },
 );
 
-/** DELETE /roles/:id -> 204. Del sistema o con usuarios -> 409. */
+/** DELETE /roles/:id -> 204. SUPERADMIN o con usuarios asignados -> 409. */
 router.delete('/:id', manage, validate({ params: idParam }), async (req, res) => {
   const id = req.valid.params.id as string;
   const current = await findRole(req, id);
-  if (current.isSystem) throw errors.conflict('Los roles del sistema no se eliminan.');
+  if (current.key === SUPERADMIN_KEY) {
+    throw errors.conflict('El rol Superadministrador no se elimina.');
+  }
   if (current._count.users > 0) {
     throw errors.conflict('Reasigná a los usuarios antes de eliminar el rol.');
   }
