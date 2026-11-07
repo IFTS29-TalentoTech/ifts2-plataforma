@@ -14,6 +14,7 @@ export function humanError(
   fallback = 'No pudimos completar la acción. Intentá de nuevo.',
 ): string {
   if (!(e instanceof ApiError)) return fallback;
+  if (e.outcome === 'unknown') return e.userMessage;
   switch (e.status) {
     case 0:
       return e.userMessage;

@@ -1,4 +1,5 @@
 import type { ProblemDetails } from '@ifts2/shared';
+import { mutationContract } from './mutation-contracts';
 
 /**
  * Cliente de la API REST (fetch con credenciales y manejo de Problem Details).
@@ -16,7 +17,11 @@ export class ApiError extends Error {
   readonly code: string;
   readonly problem: Partial<ProblemDetails> & Record<string, unknown>;
 
-  constructor(problem: Partial<ProblemDetails> & Record<string, unknown>, status: number) {
+  constructor(
+    problem: Partial<ProblemDetails> & Record<string, unknown>,
+    status: number,
+    readonly outcome: 'rejected' | 'unknown' = 'rejected',
+  ) {
     super(problem.detail ?? problem.title ?? 'Ocurrió un error inesperado.');
     this.name = 'ApiError';
     this.status = status;
@@ -30,6 +35,14 @@ export class ApiError extends Error {
   }
   /** Mensaje para el usuario (sin códigos técnicos). */
   get userMessage(): string {
+    if (
+      this.outcome === 'unknown' &&
+      this.status === 502 &&
+      typeof this.problem.detail === 'string'
+    )
+      return `${this.problem.detail} No pudimos confirmar el resultado. Revisá el estado antes de volver a enviar la operación.`;
+    if (this.outcome === 'unknown')
+      return 'No pudimos confirmar el resultado. El servidor puede haber guardado los cambios. Revisá el estado antes de volver a enviar la operación.';
     if (this.status === 0)
       return 'No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.';
     if (this.status >= 500)
@@ -60,6 +73,25 @@ async function request<T>(
   body?: unknown,
   opts: RequestOptions = {},
 ): Promise<T> {
+  const mutation = method !== 'GET';
+  const contract = mutation ? mutationContract(method, path) : undefined;
+  if (mutation && !contract) {
+    throw new ApiError(
+      { title: 'Esta operación no tiene un contrato de respuesta definido.' },
+      400,
+    );
+  }
+  const unconfirmed = () =>
+    new ApiError(
+      {
+        title: mutation
+          ? 'No pudimos confirmar el resultado.'
+          : 'El servidor envió una respuesta inválida.',
+        code: 'bad-gateway',
+      },
+      mutation ? 0 : 502,
+      mutation ? 'unknown' : 'rejected',
+    );
   const headers: Record<string, string> = { Accept: 'application/json' };
   let payload: BodyInit | undefined;
   if (body instanceof FormData) payload = body;
@@ -81,18 +113,37 @@ async function request<T>(
       ...(isServer && opts.next ? { next: opts.next } : {}),
     });
   } catch {
+    if (mutation) throw unconfirmed();
     throw new ApiError({ title: 'Sin conexión', code: 'bad-gateway', status: 0 }, 0);
   }
 
-  if (res.status === 204) return undefined as T;
-  const text = await res.text();
-  const data = text ? safeJson(text) : undefined;
-  if (!res.ok) {
-    throw new ApiError(
-      (data as Partial<ProblemDetails>) ?? { title: res.statusText, status: res.status },
-      res.status,
-    );
+  let text: string;
+  try {
+    text = await res.text();
+  } catch {
+    throw unconfirmed();
   }
+  const data = safeJson(text);
+  if (!res.ok) {
+    const problem =
+      data && typeof data === 'object' && !Array.isArray(data)
+        ? (data as Partial<ProblemDetails>)
+        : { title: res.statusText || 'La solicitud falló.', status: res.status };
+    throw new ApiError(problem, res.status, mutation && res.status >= 500 ? 'unknown' : 'rejected');
+  }
+  if (contract?.status === 204) {
+    if (res.status !== 204 || text !== '') throw unconfirmed();
+    return undefined as T;
+  }
+  if (
+    res.status === 204 ||
+    (contract && ![contract.status, ...(contract.alsoStatuses ?? [])].includes(res.status))
+  )
+    throw unconfirmed();
+  const type = res.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
+  if (!(type === 'application/json' || type?.endsWith('+json')) || data === undefined)
+    throw unconfirmed();
+  if (contract?.schema && !contract.schema.safeParse(data).success) throw unconfirmed();
   return data as T;
 }
 
