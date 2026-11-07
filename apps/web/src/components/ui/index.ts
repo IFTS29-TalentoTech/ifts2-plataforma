@@ -8,5 +8,6 @@ export * from './dialog';
 export * from './toast';
 export * from './states';
 export * from './tabs';
+export * from './carousel';
 export * from './pagination';
 export * from './dropdown-menu';
