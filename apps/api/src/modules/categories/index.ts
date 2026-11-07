@@ -21,14 +21,21 @@ import {
 } from '@ifts2/shared';
 import { errors } from '../../infra/errors';
 import { pageArgs, toPage } from '../../lib/pagination';
-import { requirePermission } from '../../middleware/auth';
+import { requireAnyPermission, requirePermission } from '../../middleware/auth';
 import { valid, validate } from '../../middleware/validate';
 import { audit } from '../audit/audit.service';
 
 export const mountPath = '/categories';
 export const router = Router();
 
-router.use(requirePermission('categories:manage'));
+const manage = requirePermission('categories:manage');
+// Los selectores de autoría necesitan leer el catálogo sin poder administrarlo.
+const read = requireAnyPermission(
+  'categories:manage',
+  'publications:manage',
+  'social:moderate',
+  'notices:manage',
+);
 
 const DUP = { name: ['Ya existe una categoría con ese nombre en este tipo.'] };
 
@@ -64,7 +71,7 @@ async function nameTaken(
   }));
 }
 
-router.get('/', validate({ query: categoryListQuery }), async (req, res) => {
+router.get('/', read, validate({ query: categoryListQuery }), async (req, res) => {
   const q = valid<{ kind?: CategoryKind; page: number; pageSize: number }>(req, 'query');
   const where: Prisma.CategoryWhereInput = q.kind ? { kind: q.kind } : {};
   const [total, rows] = await Promise.all([
@@ -79,7 +86,7 @@ router.get('/', validate({ query: categoryListQuery }), async (req, res) => {
   res.json(toPage(rows.map(view), total, q));
 });
 
-router.post('/', validate({ body: categoryInput }), async (req, res) => {
+router.post('/', manage, validate({ body: categoryInput }), async (req, res) => {
   const body = valid<CategoryInput>(req, 'body');
   const { prisma } = req.ctx;
   if (await nameTaken(prisma, body.name, body.kind)) {
@@ -105,44 +112,49 @@ router.post('/', validate({ body: categoryInput }), async (req, res) => {
   }
 });
 
-router.patch('/:id', validate({ params: idParam, body: categoryUpdateInput }), async (req, res) => {
-  const { id } = req.valid.params as { id: string };
-  const body = valid<CategoryUpdateInput>(req, 'body');
-  const { prisma } = req.ctx;
-  const current = await prisma.category.findUnique({ where: { id } });
-  if (!current) throw errors.notFound('No encontramos la categoría.');
-  if (await nameTaken(prisma, body.name, current.kind, id)) {
-    throw errors.conflict('Ya existe una categoría con ese nombre.', DUP);
-  }
-  try {
-    const updated = await prisma.$transaction(async (tx) => {
-      const c = await tx.category.update({
-        where: { id },
-        data: { name: body.name },
-        include: withUsage,
-      });
-      await audit.fromReq(
-        req,
-        {
-          action: 'category.update',
-          entity: 'Category',
-          entityId: id,
-          detail: { fields: ['name'] },
-        },
-        tx,
-      );
-      return c;
-    });
-    res.json(view(updated));
-  } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+router.patch(
+  '/:id',
+  manage,
+  validate({ params: idParam, body: categoryUpdateInput }),
+  async (req, res) => {
+    const { id } = req.valid.params as { id: string };
+    const body = valid<CategoryUpdateInput>(req, 'body');
+    const { prisma } = req.ctx;
+    const current = await prisma.category.findUnique({ where: { id } });
+    if (!current) throw errors.notFound('No encontramos la categoría.');
+    if (await nameTaken(prisma, body.name, current.kind, id)) {
       throw errors.conflict('Ya existe una categoría con ese nombre.', DUP);
     }
-    throw e;
-  }
-});
+    try {
+      const updated = await prisma.$transaction(async (tx) => {
+        const c = await tx.category.update({
+          where: { id },
+          data: { name: body.name },
+          include: withUsage,
+        });
+        await audit.fromReq(
+          req,
+          {
+            action: 'category.update',
+            entity: 'Category',
+            entityId: id,
+            detail: { fields: ['name'] },
+          },
+          tx,
+        );
+        return c;
+      });
+      res.json(view(updated));
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw errors.conflict('Ya existe una categoría con ese nombre.', DUP);
+      }
+      throw e;
+    }
+  },
+);
 
-router.delete('/:id', validate({ params: idParam }), async (req, res) => {
+router.delete('/:id', manage, validate({ params: idParam }), async (req, res) => {
   const { id } = req.valid.params as { id: string };
   const { prisma } = req.ctx;
   const current = await prisma.category.findUnique({ where: { id }, include: withUsage });
