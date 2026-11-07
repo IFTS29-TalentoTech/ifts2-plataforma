@@ -17,6 +17,7 @@ import { PrismaClient } from '@prisma/client';
 import { hash } from '@node-rs/argon2';
 import { encryptJson } from '../apps/api/src/infra/crypto';
 import { FAKE_MEDIA } from '../apps/api/src/infra/instagram/fake';
+import { userTransaction } from '../apps/api/src/modules/users/transaction';
 import { DEFAULT_ROLE_PERMISSIONS } from '../packages/shared/src/permissions';
 import { CONTENT, LINKS, SETTINGS, SYSTEM_ROLES } from './seed-data';
 
@@ -80,23 +81,41 @@ async function seedAdmin(superadminRoleId: string) {
       'Faltan SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD para crear el superadministrador inicial.',
     );
   }
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    log(`superadministrador ya existe (${email}); no se modifican su clave ni su rol`);
-    return existing;
-  }
-  const admin = await prisma.user.create({
-    data: {
-      email,
-      name: 'Superadministración',
-      roleId: superadminRoleId,
-      passwordHash: await hash(password),
-      // En producción el primer ingreso obliga a cambiar la clave inicial.
-      mustChangePassword: mode === 'prod',
-    },
+  // El conteo y la creación comparten el aislamiento de A02: dos semillas no pueden decidir
+  // simultáneamente que la instalación está vacía y crear dos cuentas privilegiadas.
+  const passwordHash = await hash(password);
+  return userTransaction(prisma, async (tx) => {
+    const existing = await tx.user.findUnique({ where: { email } });
+    if (existing) {
+      if (!existing.active || existing.roleId !== superadminRoleId) {
+        throw new Error(
+          'SEED_ADMIN_EMAIL debe corresponder a un SUPERADMIN activo. La semilla no reactiva ' +
+            'cuentas ni cambia roles. Consultá docs/operaciones/recuperacion-superadmin.md.',
+        );
+      }
+      log(`SUPERADMIN activo ya existe (${email}); no se modifica la cuenta`);
+      return existing;
+    }
+    if ((await tx.user.count()) !== 0) {
+      throw new Error(
+        'Ya existen usuarios: la semilla no crea otro SUPERADMIN. Configurá el correo de un ' +
+          'SUPERADMIN activo o seguí el procedimiento de recuperación en ' +
+          'docs/operaciones/recuperacion-superadmin.md.',
+      );
+    }
+    const admin = await tx.user.create({
+      data: {
+        email,
+        name: 'Superadministración',
+        roleId: superadminRoleId,
+        passwordHash,
+        // En producción el primer ingreso obliga a cambiar la clave inicial.
+        mustChangePassword: mode === 'prod',
+      },
+    });
+    log(`superadministrador creado: ${email}`);
+    return admin;
   });
-  log(`superadministrador creado: ${email}`);
-  return admin;
 }
 
 async function seedSettingsAndLinks() {
@@ -143,7 +162,8 @@ async function demoUser(email: string, name: string, roleId: string) {
   return prisma.user.upsert({
     where: { email },
     create: { email, name, roleId, passwordHash: await hash(DEMO_PASSWORD) },
-    update: { name, roleId, active: true },
+    // Una repetición tampoco debe reactivar, elevar ni degradar cuentas de demostración.
+    update: {},
   });
 }
 

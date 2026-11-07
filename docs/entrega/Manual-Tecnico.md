@@ -328,6 +328,8 @@ La referencia completa de endpoints, con permisos y códigos de estado, está en
 
 Hay **cuatro roles de sistema** (SUPERADMIN, ADMIN, BEDELIA y EDITOR). Los permisos son un **catálogo fijo** (`ACTIONS` en `packages/shared/src/permissions.ts`, por ejemplo `notices:manage`) y los **roles son datos** (tablas `Role` y `RolePermission`): el Superadministrador crea, edita y elimina roles y tilda sus permisos en **Panel → Roles y permisos** (RF11, ADR-031). La API (`requirePermission`) y la web (para ocultar opciones) leen los permisos de la sesión en cada pedido, así que un cambio rige sin volver a ingresar. SUPERADMIN siempre tiene todo y no se edita ni se elimina; ADMIN, BEDELIA y EDITOR se pueden editar y eliminar (409 si tienen usuarios). El último SUPERADMIN activo no se puede desactivar ni cambiar de rol (409). Las rutas `/integrations/*` exigen el permiso `integrations:manage`, no un rol.
 
+La semilla solo crea el SUPERADMIN inicial en ausencia de usuarios y solo acepta una cuenta existente si es SUPERADMIN activa. No restablece claves, reactiva cuentas ni eleva privilegios existentes. Si falta acceso administrativo, consultar el [procedimiento explícito y auditado de recuperación](../operaciones/recuperacion-superadmin.md).
+
 La tabla siguiente es la **matriz inicial** que carga la semilla (después manda lo que el Superadministrador haya tildado). SUPERADMIN tiene todo y no figura.
 
 | Recurso                                              | ADMIN | BEDELIA | EDITOR |
