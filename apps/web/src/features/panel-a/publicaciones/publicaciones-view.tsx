@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import type { PermissionList } from '@ifts2/shared';
+import { can, type PermissionList } from '@ifts2/shared';
 import { OwnPublicationsTab } from './own-publications-tab';
 import { SocialPostsTab } from './social-posts-tab';
 
@@ -15,18 +15,24 @@ import { SocialPostsTab } from './social-posts-tab';
 export function PublicacionesView({ perms }: { perms: PermissionList }) {
   const router = useRouter();
   const refreshNav = () => router.refresh();
+  const canSocial = can(perms, 'social:moderate');
+  const canOwn = can(perms, 'publications:manage');
   return (
-    <Tabs defaultValue="redes">
+    <Tabs key={`${canSocial}:${canOwn}`} defaultValue={canSocial ? 'redes' : 'propias'}>
       <TabsList aria-label="Tipo de publicaciones">
-        <TabsTrigger value="redes">De redes sociales</TabsTrigger>
-        <TabsTrigger value="propias">Propias del sitio</TabsTrigger>
+        {canSocial && <TabsTrigger value="redes">De redes sociales</TabsTrigger>}
+        {canOwn && <TabsTrigger value="propias">Propias del sitio</TabsTrigger>}
       </TabsList>
-      <TabsContent value="redes">
-        <SocialPostsTab perms={perms} onChanged={refreshNav} />
-      </TabsContent>
-      <TabsContent value="propias">
-        <OwnPublicationsTab onChanged={refreshNav} />
-      </TabsContent>
+      {canSocial && (
+        <TabsContent value="redes">
+          <SocialPostsTab perms={perms} onChanged={refreshNav} />
+        </TabsContent>
+      )}
+      {canOwn && (
+        <TabsContent value="propias">
+          <OwnPublicationsTab perms={perms} onChanged={refreshNav} />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

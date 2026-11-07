@@ -25,7 +25,9 @@ export function ExamCallDialog({
   term,
   call,
   onSaved,
+  canUploadDocument,
 }: {
+  canUploadDocument: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   term: TermDto;
@@ -76,7 +78,7 @@ export function ExamCallDialog({
     setSaving(true);
     try {
       let documentId = call?.documentId ?? undefined;
-      if (file) {
+      if (file && canUploadDocument) {
         const doc = await uploadDocument(file, {
           title: `Cronograma de mesas · ${name.trim()}`,
           kind: 'EXAM_CALENDAR',
@@ -170,13 +172,15 @@ export function ExamCallDialog({
           rows={3}
           maxLength={1000}
         />
-        <FileField
-          label="Cronograma oficial de tribunales y aulas (PDF)"
-          file={file}
-          onChange={setFile}
-          error={errors.file?.[0] ?? errors.documentId?.[0]}
-          current={call?.document?.filename}
-        />
+        {canUploadDocument && (
+          <FileField
+            label="Cronograma oficial de tribunales y aulas (PDF)"
+            file={file}
+            onChange={setFile}
+            error={errors.file?.[0] ?? errors.documentId?.[0]}
+            current={call?.document?.filename}
+          />
+        )}
         {formError && Object.keys(errors).length === 0 && (
           <p role="alert" className="rounded-md bg-danger-back px-3 py-2 text-sm text-danger-text">
             {formError}
