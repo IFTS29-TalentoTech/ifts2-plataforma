@@ -179,15 +179,17 @@ describe('CRUD con la interfaz real · 1440px', () => {
     });
     cy.captura('crud-usr-2-leer-y-duplicado');
 
-    // U · Actualizar el rol
-    cy.get('[role="dialog"]')
-      .contains('[data-testid="user-row"]', email)
-      .within(() => {
-        cy.contains('label', 'Rol de')
-          .invoke('attr', 'for')
-          .then((id) => cy.get(`[id="${id}"]`).click());
-      });
+    // U · Actualizar el rol: formulario "Cambiar rol" y confirmación (no se guarda al elegir).
+    cy.contains('[data-testid="user-row"]', email).contains('button', 'Cambiar rol').click();
+    cy.contains('[role="dialog"]', 'Rol actual').within(() => {
+      cy.contains('label', 'Nuevo rol')
+        .invoke('attr', 'for')
+        .then((id) => cy.get(`[id="${id}"]`).click());
+    });
     cy.get('[role="option"]').contains('Comunicación').click();
+    cy.contains('[role="dialog"]', 'Rol actual').contains('button', 'Guardar').click();
+    cy.get('[role="alertdialog"]').should('contain', '¿Cambiar el rol?');
+    cy.get('[role="alertdialog"]').contains('button', 'Cambiar rol').click();
     cy.contains('[data-testid="user-row"]', email).contains('Comunicación');
     cy.captura('crud-usr-3-actualizar-rol');
 

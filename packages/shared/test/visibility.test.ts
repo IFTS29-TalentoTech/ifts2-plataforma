@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  effectiveExamEnrollmentOpen,
   endOfDayBA,
   hasSinglePublicTerm,
   isExamCallVisible,
@@ -154,5 +155,29 @@ describe('zona horaria Buenos Aires', () => {
   it('a las 23:30 BA del 31/12 todavía es 31/12; a las 00:00 BA ya es 01/01', () => {
     expect(toDateStrBA(d('2027-01-01T02:30:00Z'))).toBe('2026-12-31');
     expect(toDateStrBA(d('2027-01-01T03:00:00Z'))).toBe('2027-01-01');
+  });
+});
+
+describe('effectiveExamEnrollmentOpen (A08)', () => {
+  const now = d('2026-11-07T12:00:00Z');
+  const open = { enrollmentOpen: true, endsOn: d('2026-11-20T00:00:00Z') };
+
+  it('abierta solo con interruptor general + casilla del llamado + llamado sin terminar', () => {
+    expect(effectiveExamEnrollmentOpen(true, open, now)).toBe(true);
+    expect(effectiveExamEnrollmentOpen(false, open, now)).toBe(false);
+    expect(effectiveExamEnrollmentOpen(true, { ...open, enrollmentOpen: false }, now)).toBe(false);
+    expect(effectiveExamEnrollmentOpen(false, { ...open, enrollmentOpen: false }, now)).toBe(false);
+  });
+
+  it('borde: en el instante de fin ya está cerrada (fin exclusivo)', () => {
+    const endsOn = d('2026-11-07T12:00:00Z');
+    expect(effectiveExamEnrollmentOpen(true, { enrollmentOpen: true, endsOn }, now)).toBe(false);
+    expect(
+      effectiveExamEnrollmentOpen(
+        true,
+        { enrollmentOpen: true, endsOn },
+        d('2026-11-07T11:59:59Z'),
+      ),
+    ).toBe(true);
   });
 });

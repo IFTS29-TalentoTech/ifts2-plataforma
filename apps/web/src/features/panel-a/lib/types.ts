@@ -45,6 +45,8 @@ export interface DashboardDto {
     published: boolean;
   } | null;
   ingresoCycle: { year: number; derived: boolean } | null;
+  /** A14: estado real de la página de Ingreso (secciones visibles y datos "[a confirmar]"). */
+  ingresoContent: { visibleSections: number; pendingConfirmation: boolean };
 }
 
 /** Elemento de GET /social/posts. */

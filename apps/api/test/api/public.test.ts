@@ -189,6 +189,7 @@ describe('GET /public/home', () => {
       url: 'https://uno.test/',
       description: null,
       group: 'academico',
+      enrollment: false,
     });
     expect(res.body).toMatchObject({
       publications: [],
@@ -720,6 +721,8 @@ describe('GET /public/students', () => {
   it('horarios y llamados: solo publicados del ciclo público, con enlace de descarga firmado y sin clave de almacenamiento', async () => {
     const pub = await createTerm({ year: 2026, kind: 'SECOND', publicCurrent: true });
     const old = await createTerm({ year: 2026, kind: 'FIRST' });
+    // A08: el interruptor general encendido para que la casilla del llamado cuente.
+    await testPrisma.siteSetting.create({ data: { key: 'exam_enrollment_open', value: 'true' } });
     const doc = await createDocumentRow({
       title: 'Grilla A',
       storageKey: 'documents/secreta-123.pdf',
@@ -878,6 +881,72 @@ describe('GET /public/students', () => {
     expect((await get('/students')).body.examEnrollmentOpen).toBe(false);
     await testPrisma.siteSetting.create({ data: { key: 'exam_enrollment_open', value: 'true' } });
     expect((await get('/students')).body.examEnrollmentOpen).toBe(true);
+  });
+
+  it('A08: cada llamado informa el estado EFECTIVO (interruptor general + casilla + no terminado)', async () => {
+    const term = await createTerm({ publicCurrent: true });
+    const call = (name: string, enrollmentOpen: boolean, endsOn = fromNow(5 * DAY)) =>
+      createExamCallRow({
+        termId: term.id,
+        name,
+        published: true,
+        enrollmentOpen,
+        startsOn: ago(DAY),
+        endsOn,
+      });
+    await call('Marcado', true);
+    await call('Sin marcar', false);
+    await call('Marcado pero terminado', true, ago(1000));
+    const states = async () =>
+      Object.fromEntries(
+        (await get('/students')).body.examCalls.map(
+          (c: { name: string; enrollmentOpen: boolean }) => [c.name, c.enrollmentOpen],
+        ),
+      );
+
+    // Interruptor general apagado: ningún llamado figura abierto (no contradice "cerrada por ahora").
+    expect(await states()).toEqual({
+      Marcado: false,
+      'Sin marcar': false,
+      'Marcado pero terminado': false,
+    });
+    // Encendido: solo el marcado y vigente.
+    await testPrisma.siteSetting.create({ data: { key: 'exam_enrollment_open', value: 'true' } });
+    expect(await states()).toEqual({
+      Marcado: true,
+      'Sin marcar': false,
+      'Marcado pero terminado': false,
+    });
+    // La casilla guardada no se toca: el cálculo es al consultar (sin tareas programadas).
+    expect(
+      (await testPrisma.examCall.findFirstOrThrow({ where: { name: 'Marcado pero terminado' } }))
+        .enrollmentOpen,
+    ).toBe(true);
+  });
+
+  it('A08: el inicio aplica la misma regla a los llamados destacados', async () => {
+    const term = await createTerm({ publicCurrent: true });
+    await createExamCallRow({
+      termId: term.id,
+      name: 'Destacado',
+      published: true,
+      highlighted: true,
+      enrollmentOpen: true,
+    });
+    expect((await get('/home')).body.highlightedExamCalls[0].enrollmentOpen).toBe(false);
+    await testPrisma.siteSetting.create({ data: { key: 'exam_enrollment_open', value: 'true' } });
+    expect((await get('/home')).body.highlightedExamCalls[0].enrollmentOpen).toBe(true);
+  });
+
+  it('A07: cada enlace informa si es el de inscripción de alumnos', async () => {
+    await createLinkRow({ title: 'SIU Guaraní — Gestión académica' });
+    await createLinkRow({ title: 'Sistema de alumnos', enrollment: true });
+    await createLinkRow({ title: 'Inscripción oculta', enrollment: true, visible: false });
+    const links = (await get('/students')).body.links as { title: string; enrollment: boolean }[];
+    expect(Object.fromEntries(links.map((l) => [l.title, l.enrollment]))).toEqual({
+      'SIU Guaraní — Gestión académica': false,
+      'Sistema de alumnos': true,
+    });
   });
 
   it('si el almacenamiento falla la página carga igual (downloadUrl=null) — RNF03', async () => {

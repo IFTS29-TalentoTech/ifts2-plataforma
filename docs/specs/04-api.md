@@ -41,7 +41,7 @@ Esta matriz es el **punto de partida de la semilla**. La API no pregunta "¿sos 
 | `GET /public/home` | Frase ancla (`tagline`), `examEnrollmentOpen`, accesos rápidos, hasta 6 publicaciones vigentes de sección HOME o BOTH, avisos destacados y llamados destacados del ciclo público |
 | `GET /public/publications?year=&category=&archived=&page=&pageSize=` | Publicaciones vigentes de sección NEWS o BOTH; `?archived=true` para el histórico del año (incluye las programadas ya terminadas, A05) |
 | `GET /public/publications/:id?archived=` | Detalle de una publicación vigente (o del histórico con `archived=true`) |
-| `GET /public/students?audience=ALL|STUDENTS|ASPIRANTS|GRADUATES` | Ciclo público, `examEnrollmentOpen`, horarios y llamados publicados, avisos vigentes (con `audience` devuelve los de "todos" y los de ese destinatario) y enlaces de interés. Lo usan tres pantallas: **Estudiantes**, **Inscripciones** (alumnos: llamados con `enrollmentOpen`) e **Ingreso** (aspirantes, con `audience=ASPIRANTS`) |
+| `GET /public/students?audience=ALL|STUDENTS|ASPIRANTS|GRADUATES` | Ciclo público, `examEnrollmentOpen`, horarios y llamados publicados, avisos vigentes (con `audience` devuelve los de "todos" y los de ese destinatario) y enlaces de interés. Lo usan tres pantallas: **Estudiantes**, **Inscripciones** (alumnos: llamados con `enrollmentOpen` y enlaces con `enrollment`). `enrollmentOpen` de cada llamado es el estado **efectivo**: interruptor general + casilla del llamado + llamado no terminado (A08, ADR-033) e **Ingreso** (aspirantes, con `audience=ASPIRANTS`) |
 | `GET /public/content/:page` | Secciones visibles de `institucional`, `carrera` o `ingreso` (Markdown ya sanitizado); otra página: 404. No existen `/public/ingreso` ni `/public/inscripciones`: Ingreso usa `content/ingreso` más `students?audience=ASPIRANTS`, e Inscripciones usa `students` |
 | `GET /public/settings` | Datos institucionales visibles (nombre, sigla, pie, dirección, correos, teléfono, redes, frase ancla; ADR-22) |
 | `POST /public/contact` | (Should) `{ name, email, subject, message, consent, website? }`; 201 `{ received: true }`; el consentimiento es obligatorio; anti-spam con campo señuelo `website` y 5 envíos por hora por IP (429), sin captcha externo (Q46); el mensaje se guarda siempre aunque falle el correo |
@@ -51,7 +51,7 @@ Cabecera de caché de todo `/public/*`: ver la última sección. Los ids y filtr
 ## Panel
 
 **Resumen**
-- `GET /dashboard` → `{ instagram: { mode, status, ok, lastSyncAt, error?, tokenExpiresAt?, hashtag }, pendingPosts, activeNotices, noticesExpiringIn7Days, currentTerm, examCallNext, ingresoCycle }` (**implementado**; forma exacta y reglas en `apps/api/src/modules/dashboard/README.md`: `currentTerm` y `examCallNext` pueden ser `null`; `ingresoCycle` es `{ year, derived: true }`)
+- `GET /dashboard` → `{ instagram: { mode, status, ok, lastSyncAt, error?, tokenExpiresAt?, hashtag }, pendingPosts, activeNotices, noticesExpiringIn7Days, currentTerm, examCallNext, ingresoCycle }` (**implementado**; forma exacta y reglas en `apps/api/src/modules/dashboard/README.md`: `currentTerm` y `examCallNext` pueden ser `null`; `ingresoCycle` es `{ year, derived: true }`; `ingresoContent` es `{ visibleSections, pendingConfirmation }`, el estado real de la página de Ingreso, A14)
 
 **Publicaciones y redes**
 - `POST /social/sync` → renueva el token si hace falta y sincroniza; `{ created, matched, alreadyKnown, demo, lastSyncAt, token }`. 422 sin hashtag configurado; 502 con mensaje claro si Instagram falla (**implementado**).
@@ -82,7 +82,7 @@ Cabecera de caché de todo `/public/*`: ver la última sección. Los ids y filtr
 **Configuración y usuarios**
 - `GET/PUT /settings` (sede, correos, teléfono, hashtag de Instagram, inscripciones a mesas habilitadas)
 - `GET/PUT /content/:page/:slug`
-- `GET/POST/PATCH /links`
+- `GET/POST/PATCH /links` (`enrollment: boolean`: enlace de inscripción de alumnos, el único que muestra `/inscripciones`; A07)
 - `GET/POST/PATCH /users` (con `roleId`), `POST /users/:id/deactivate`, `POST /users/:id/reset-password`
 - **Roles y permisos (solo SUPERADMIN, permiso `roles:manage`):** `GET /permissions` (catálogo agrupado por recurso), `GET/POST /roles`, `GET/PATCH/DELETE /roles/:id`, `PUT /roles/:id/permissions` (`{ permissions: string[] }`). `GET /roles` también lo pueden usar quienes tienen `users:manage` (por defecto ADMIN) para elegir el rol de un usuario (solo lectura). Reglas: el rol de sistema SUPERADMIN no se edita ni se elimina (409); los roles de sistema ADMIN, BEDELIA y EDITOR **sí se pueden editar y eliminar** (decisión del 06/11/2026); un rol con usuarios asignados no se elimina (409, también los de sistema); no se desactiva ni se cambia el rol del último SUPERADMIN activo (409); nombre de rol único (409); permisos que no existen en el catálogo o `roles:manage` (400). `POST/PATCH /users` devuelve 403 si un ADMIN asigna SUPERADMIN o un rol con permisos que él no tiene. `GET /permissions` devuelve cada permiso con su recurso y una etiqueta en español para la pantalla de roles. Todo queda en `AuditLog` (`role.create`, `role.update`, `role.delete`, `role.permissions`).
 - `GET /audit?entity=&page=` (permiso `audit:read`)

@@ -109,6 +109,8 @@ Si te equivocás de clave verás «Correo o contraseña incorrectos.». Tras **5
 
 Al ingresar ves el **Resumen**: el estado de Instagram, cuántas publicaciones esperan moderación, avisos activos o por vencer, el ciclo público y el próximo llamado a examen. Los bloques cambian según tu rol.
 
+La tarjeta **Ingreso** muestra el ciclo de ingreso **estimado** (año del período vigente + 1) y el estado de la página de Ingreso: **Sin publicar** (no tiene contenido visible), **A confirmar** (algún texto tiene la marca `[a confirmar ...]`) o **Publicada**. Para completarla, editá los textos en Configuración -> Contenido de páginas -> Ingreso y quitá la marca cuando el dato esté confirmado.
+
 ![Resumen del panel (Comunicación)](../capturas/panel/10-resumen-1440.png)
 
 ![Resumen del panel (Bedelía)](../capturas/panel/20-resumen-bedelia-1440.png)
@@ -318,7 +320,8 @@ En **Mensajes** aparecen las consultas enviadas desde el sitio. Podés filtrarla
 
 - **Datos de la sede y canales oficiales**: nombre, dirección, correos, teléfono, redes y texto del pie. Tocá **Guardar cambios** y confirmá (afectan a todo el sitio).
 - **Contenido de páginas**: textos de Institucional, La carrera e Ingreso, con vista previa.
-- **Enlaces de interés**: SIU Guaraní, Aulas Virtuales, etc.
+- **Enlaces de interés**: SIU Guaraní, Aulas Virtuales, etc. Activá **Enlace de inscripción de alumnos** solo en el sistema donde se inscriben los alumnos: es el único enlace que aparece en la página **Inscripciones**. Si no hay ninguno visible, la página avisa que el enlace está pendiente y muestra el correo de Bedelía.
+- **Inscripciones a mesas SIU habilitadas**: es el interruptor general. Si está apagado, ningún llamado figura con inscripción abierta en el sitio, aunque tenga marcada su casilla. Un llamado que ya terminó tampoco figura abierto.
 
 ![Configuración](../capturas/panel/b-configuracion-1440.png)
 

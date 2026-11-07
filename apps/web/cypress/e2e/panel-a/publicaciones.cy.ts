@@ -88,6 +88,7 @@ for (const vp of VIEWPORTS) {
         currentTerm: null,
         examCallNext: null,
         ingresoCycle: { year: 2027, derived: true },
+        ingresoContent: { visibleSections: 0, pendingConfirmation: false },
       });
       cy.intercept('POST', '/api/v1/social/sync', {
         statusCode: 502,

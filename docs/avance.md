@@ -4,6 +4,35 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-07 · Tarjeta "Ingreso" del Resumen con datos verificables (A14)
+
+**Hecho.** Rama `fix/indicador-ingreso` desde `develop` (`f0c236f`). `GET /dashboard` agrega
+`ingresoContent` (secciones visibles de Ingreso y si les quedan datos `[a confirmar ...]`). La
+tarjeta muestra "Sin publicar", "A confirmar" o "Publicada" y presenta el año como estimado. Ya no
+afirma una "ficha de preinscripción activa". Nuevo `hasPendingConfirmation` en `@ifts2/shared`.
+
+**Pruebas.** 1 caso de integración nuevo y 1 ajustado, unitarias de shared y 4 E2E (390 y 1440 px,
+axe). Resultados en `docs/evidencias/2026-11-07-indicador-ingreso-a14.md`; decisión en ADR-034.
+
+**Pendiente.** Q133: definir si el año de ingreso seguirá siendo una estimación.
+### 2026-11-07 · Inscripciones: enlace de alumnos y estado efectivo (A07, A08)
+
+**Hecho.** Rama `fix/inscripciones-siu-y-estado` desde `develop` (`f0c236f`). **A07:** los enlaces
+tienen la marca `enrollment` ("Enlace de inscripción de alumnos" en el panel; migración
+`20261107030216_enlace_inscripcion`). `/inscripciones` muestra solo esos enlaces. Ya no busca "SIU"
+en el título ni ofrece todos los enlaces; si no hay ninguno, avisa que está pendiente y muestra el
+correo de Bedelía. **A08:** `effectiveExamEnrollmentOpen` (`@ifts2/shared`) combina el interruptor
+general, la casilla del llamado y `now < endsOn`. La API lo entrega en `/public/home` y
+`/public/students`, así que la insignia general y las tarjetas ya no se contradicen.
+
+**Pruebas.** 2 unitarias de shared, 4 de integración nuevas y 2 ajustadas, y un caso E2E a 390 y
+1440 px. Resultados en `docs/evidencias/2026-11-07-inscripciones-a07-a08.md`; decisión en ADR-033.
+
+**Pendiente / dificultades.** Q131 (¿el interruptor general es un bloqueo?) y Q132 (enlace oficial
+de alumnos) para confirmar con el instituto. En instalaciones existentes hay que marcar el enlace
+de alumnos a mano. `pnpm test` de la API falla por configuración de Vitest (problema anterior;
+ver la evidencia).
+
 ### 2026-11-06 · Compatibilidad de portadas externas (A06)
 
 **Hecho.** Rama `fix/portadas-externas` creada desde `develop` actualizado, con A05
@@ -231,6 +260,19 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 **Pruebas.** En `apps/api/test/api/social.test.ts`, "aprobación ante fallas parciales (A10)": falla al copiar la imagen, falla dentro de la transacción, confirmación ambigua y falla al releer la base después de confirmar, verificando registro y archivo en cada caso. La doble aprobación simultánea ya estaba cubierta (una 201, otra 409, un solo archivo).
 
 **Relacionado, sin cambios.** `documents` tiene el mismo patrón, pero lo posterior a la transacción (`toDocumentDto`) no puede fallar. En `publications/:id/cover` el riesgo es el inverso (si falla la transacción, el archivo queda huérfano), de menor gravedad.
+### 2026-11-07 · Ventana "Usuarios y roles" más clara (rama `usuarios-y-roles`)
+
+**Problema.** En la ventana de usuarios el nombre y el correo quedaban en una columna angosta (el correo se cortaba en dos), cada fila repetía el nombre en el rótulo del desplegable, el rol se guardaba apenas se tocaba el desplegable (sin confirmación) y se ofrecía "Desactivar" sobre el propio usuario.
+
+**Hecho.**
+
+- Cada fila muestra a la persona a lo ancho (nombre, correo completo y último ingreso) y el rol como etiqueta.
+- El rol se cambia con un botón **Cambiar rol**: abre un formulario que muestra qué permite cada rol y, al guardar, pide confirmación con el `ConfirmDialog` único. Avisa que se cierran las sesiones abiertas de esa persona.
+- El usuario propio aparece como "(vos)" y sin acciones; los usuarios con más permisos dicen que solo los administra un Superadministrador.
+- El formulario de alta muestra la descripción del rol elegido y, para el Superadministrador, el enlace "Ver qué puede hacer cada rol".
+- Los usuarios de demostración tienen nombres de persona ("Directora de prueba", "Bedel de prueba", "Editora de prueba"), para no confundirlos con los roles.
+
+**Pruebas.** Cypress `panel-b/usuarios-y-roles.cy.ts` (cambio de rol con confirmación, propio usuario sin acciones, 390 y 1440 px) y `panel-a/capturas-crud.cy.ts` adaptado al flujo nuevo.
 
 ## Estado actual (06/11/2026)
 
