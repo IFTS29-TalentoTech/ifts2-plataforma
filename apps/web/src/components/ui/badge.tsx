@@ -21,7 +21,9 @@ export function Badge({ tone = 'neutral', className, children, ...props }: Badge
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-pill px-2.5 py-0.5 text-xs font-semibold leading-5',
+        // justify-center + text-center + leading-4: si el texto baja a dos líneas queda centrado y
+        // con poco interlineado (antes quedaba alineado a la izquierda y con aire de más).
+        'inline-flex items-center justify-center gap-1 rounded-pill px-2.5 py-1 text-center text-xs font-semibold leading-4',
         tones[tone],
         className,
       )}

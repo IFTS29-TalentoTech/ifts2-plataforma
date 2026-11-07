@@ -6,7 +6,12 @@ import { useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { Button } from '../ui/button';
 
-export function LogoutButton() {
+/**
+ * Botón de cierre de sesión. `tone="dark"` es para fondos oscuros (menú lateral del panel, texto claro);
+ * `tone="light"` para fondos claros (menú de cuenta). El color va en una sola rama: `text-base` es un
+ * color claro en este tema y no se debe mezclar con otro color de texto.
+ */
+export function LogoutButton({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +21,11 @@ export function LogoutButton() {
         variant="ghost"
         size="sm"
         loading={loading}
-        className="w-full justify-start text-base hover:bg-accent-3"
+        className={
+          tone === 'dark'
+            ? 'w-full justify-start text-base hover:bg-accent-3'
+            : 'w-full justify-start text-accent-3 hover:bg-accent-2'
+        }
         onClick={async () => {
           setLoading(true);
           setError(null);

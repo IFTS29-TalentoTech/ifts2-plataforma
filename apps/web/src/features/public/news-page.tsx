@@ -87,7 +87,10 @@ export async function NewsPage({ sp }: { sp: NewsSearchParams }) {
                 title={archived ? 'No hay publicaciones archivadas' : 'No encontramos novedades'}
                 description="Probá con otro año o categoría."
                 action={
-                  <Link href="/novedades" className="text-sm font-semibold text-accent underline">
+                  <Link
+                    href={archived ? '/novedades?archived=true' : '/novedades'}
+                    className="text-sm font-semibold text-accent underline"
+                  >
                     Quitar los filtros
                   </Link>
                 }

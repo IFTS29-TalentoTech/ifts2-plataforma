@@ -1,12 +1,13 @@
 'use client';
 
-import { Menu, User, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PUBLIC_NAV } from '@/lib/nav';
 import type { SiteInfo } from '@/lib/site';
 import { cn } from '@/lib/cn';
+import { AccountMenu } from './account-menu';
 import { LogoutButton } from './logout-button';
 
 export interface MobilePanelItem {
@@ -21,6 +22,37 @@ interface Props {
   panelItems?: MobilePanelItem[];
   /** Nombre del usuario autenticado (muestra el icono de cuenta con su nombre accesible). */
   userName?: string | null;
+  /** Nombre visible del rol del usuario (se muestra en el menú de cuenta). */
+  userRole?: string | null;
+}
+
+/**
+ * Nombre de quien tiene la sesión iniciada. En el panel viene resuelto desde el servidor (`userName`).
+ * En el sitio público las páginas son estáticas y no pueden leer cookies, así que se consulta
+ * `/api/session` desde el navegador. `undefined` = todavía no se sabe (no se muestra ni el botón de
+ * ingreso ni "Administración", para que no parpadeen); `null` = sin sesión.
+ */
+function useSessionUser(
+  initialName: string | null | undefined,
+  initialRole: string | null | undefined,
+): { name: string | null; roleName: string | null } | undefined {
+  const [fetched, setFetched] = useState<{ name: string | null; roleName: string | null }>();
+  useEffect(() => {
+    if (initialName !== undefined) return;
+    let alive = true;
+    fetch('/api/session', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : { name: null, roleName: null }))
+      .then(
+        (d: { name?: string | null; roleName?: string | null }) =>
+          alive && setFetched({ name: d.name ?? null, roleName: d.roleName ?? null }),
+      )
+      .catch(() => alive && setFetched({ name: null, roleName: null }));
+    return () => {
+      alive = false;
+    };
+  }, [initialName]);
+  if (initialName !== undefined) return { name: initialName, roleName: initialRole ?? null };
+  return fetched;
 }
 
 function isActive(pathname: string, href: string) {
@@ -31,8 +63,10 @@ function isActive(pathname: string, href: string) {
  * Barra superior institucional (público y panel). Menú hamburguesa a 390 px.
  * El nombre y la sigla vienen de la configuración del sitio (SiteSetting), no del código.
  */
-export function SiteHeader({ site, panelItems, userName }: Props) {
+export function SiteHeader({ site, panelItems, userName: userNameProp, userRole }: Props) {
   const pathname = usePathname();
+  const user = useSessionUser(userNameProp, userRole);
+  const userName = user?.name;
   // El menú móvil se cierra solo al navegar: el estado recuerda en qué ruta se abrió.
   const [openAt, setOpenAt] = useState<string | null>(null);
   const open = openAt === pathname;
@@ -68,23 +102,28 @@ export function SiteHeader({ site, panelItems, userName }: Props) {
               {item.label}
             </Link>
           ))}
-          <Link
-            href="/panel"
-            aria-current={inPanel ? 'page' : undefined}
-            className={cn(
-              'rounded-sm border-b-2 border-transparent py-1 text-sm font-semibold text-accent hover:text-accent-3 focus-visible:outline-none focus-visible:shadow-focus',
-              inPanel && 'border-accent',
-            )}
-          >
-            Administración
-          </Link>
-          <Link
-            href={userName ? '/panel' : '/panel/login'}
-            aria-label={userName ? `Cuenta de ${userName}` : 'Ingresar al panel'}
-            className="flex h-9 w-9 items-center justify-center rounded-pill border border-accent-2 text-accent-3 hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus"
-          >
-            <User className="h-4 w-4" aria-hidden="true" />
-          </Link>
+          {userName && (
+            <Link
+              href="/panel"
+              aria-current={inPanel ? 'page' : undefined}
+              className={cn(
+                'rounded-sm border-b-2 border-transparent py-1 text-sm font-semibold text-accent hover:text-accent-3 focus-visible:outline-none focus-visible:shadow-focus',
+                inPanel && 'border-accent',
+              )}
+            >
+              Administración
+            </Link>
+          )}
+          {userName ? (
+            <AccountMenu name={userName} roleName={user?.roleName} inPanel={inPanel} />
+          ) : userName === null ? (
+            <Link
+              href="/panel/login"
+              className="rounded-md px-3 py-1.5 text-sm font-semibold text-accent-3 hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus"
+            >
+              Iniciar sesión
+            </Link>
+          ) : null}
         </nav>
 
         <button
@@ -122,46 +161,58 @@ export function SiteHeader({ site, panelItems, userName }: Props) {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/panel"
-              className={cn(
-                'rounded-md px-4 py-3 text-sm font-semibold text-accent hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus',
-                inPanel && 'bg-accent-2',
-              )}
-            >
-              Administración
-            </Link>
+            {userName ? (
+              <Link
+                href="/panel"
+                className={cn(
+                  'rounded-md px-4 py-3 text-sm font-semibold text-accent hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus',
+                  inPanel && 'bg-accent-2',
+                )}
+              >
+                Administración
+              </Link>
+            ) : userName === null ? (
+              <Link
+                href="/panel/login"
+                className="rounded-md px-4 py-3 text-sm font-semibold text-accent hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus"
+              >
+                Iniciar sesión
+              </Link>
+            ) : null}
           </nav>
           {panelItems && panelItems.length > 0 && (
             <nav aria-label="Gestión del sitio (móvil)" className="bg-accent p-3">
               <p className="px-4 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-accent-2">
                 Gestión del sitio
               </p>
-              {panelItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={
-                    isActive(pathname, item.href) &&
-                    (item.href !== '/panel' || pathname === '/panel')
-                      ? 'page'
-                      : undefined
-                  }
-                  className={cn(
-                    'flex items-center justify-between rounded-md px-4 py-3 text-sm font-medium text-base hover:bg-accent-3 focus-visible:outline-none focus-visible:shadow-focus',
-                    item.href === '/panel'
-                      ? pathname === '/panel' && 'bg-base text-accent-3'
-                      : isActive(pathname, item.href) && 'bg-base text-accent-3',
-                  )}
-                >
-                  {item.label}
-                  {item.count ? (
-                    <span className="rounded-pill bg-accent-2 px-2 text-xs font-semibold text-accent-3">
-                      {item.count}
-                    </span>
-                  ) : null}
-                </Link>
-              ))}
+              {panelItems.map((item) => {
+                // "Resumen" (/panel) solo está activo en su propia ruta; el resto, también en subrutas.
+                const current =
+                  item.href === '/panel' ? pathname === '/panel' : isActive(pathname, item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={current ? 'page' : undefined}
+                    className={cn(
+                      'flex items-center justify-between rounded-md px-4 py-3 text-sm font-medium focus-visible:outline-none focus-visible:shadow-focus',
+                      // El color del texto va en una u otra rama, nunca en las dos: `text-base` es un color
+                      // en este tema y tailwind-merge no lo trata como conflicto con `text-accent-3`
+                      // (antes el ítem activo quedaba con texto claro sobre fondo claro).
+                      current
+                        ? 'bg-base font-semibold text-accent-3'
+                        : 'text-base hover:bg-accent-3',
+                    )}
+                  >
+                    {item.label}
+                    {item.count ? (
+                      <span className="rounded-pill bg-accent-2 px-2 text-xs font-semibold text-accent-3">
+                        {item.count}
+                      </span>
+                    ) : null}
+                  </Link>
+                );
+              })}
               {/* Cierre de sesión también en móvil (el menú lateral con el botón solo se ve en escritorio). */}
               {userName && (
                 <div className="mt-2 border-t border-accent-3 pt-2">

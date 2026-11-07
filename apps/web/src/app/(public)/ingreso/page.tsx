@@ -20,6 +20,7 @@ import { NoticeCard } from '@/features/public/academic-parts';
 import { loadContent, loadStudents } from '@/features/public/data';
 import { MarkdownBlocks, parseMarkdown, renderInline } from '@/features/public/markdown';
 import { PageHero, Section, SectionError } from '@/features/public/parts';
+import { cn } from '@/lib/cn';
 import { getSiteInfo } from '@/lib/site';
 
 export const metadata: Metadata = { title: 'Ingreso' };
@@ -75,7 +76,14 @@ export default async function Page() {
 
           {stepSections.map((s) => (
             <Section key={s.slug} eyebrow="Pasos para aspirantes" title={s.title} id={s.slug}>
-              <ol className="grid gap-4 md:grid-cols-3">
+              {/* Columnas según la cantidad de pasos: con 1 o 2 no queda espacio vacío al costado. */}
+              <ol
+                className={cn(
+                  'grid gap-4',
+                  s.steps!.length >= 3 && 'md:grid-cols-3',
+                  s.steps!.length === 2 && 'md:grid-cols-2',
+                )}
+              >
                 {s.steps!.map((step, i) => (
                   <li key={i}>
                     <Card accentBar className="h-full" data-testid="ingreso-paso">
@@ -92,7 +100,8 @@ export default async function Page() {
 
           {others.length > 0 && (
             <Section>
-              <div className="grid gap-4 md:grid-cols-2">
+              {/* Con una sola sección ocupa todo el ancho; con varias, dos columnas (A13). */}
+              <div className={cn('grid gap-4', others.length > 1 && 'md:grid-cols-2')}>
                 {others.map((s) => (
                   <Card key={s.slug} accentBar className="flex flex-col gap-3">
                     <h2 className="font-display text-xl font-bold text-accent-3">{s.title}</h2>

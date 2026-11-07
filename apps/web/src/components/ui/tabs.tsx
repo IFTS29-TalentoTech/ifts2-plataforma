@@ -13,7 +13,12 @@ export function TabsList({
 }: ComponentPropsWithoutRef<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
-      className={cn('flex gap-1 overflow-x-auto border-b border-accent-2', className)}
+      // overflow-y-hidden: con overflow-x-auto el navegador activa también el scroll vertical y
+      // mostraba una barra al costado de las pestañas.
+      className={cn(
+        'flex gap-1 overflow-x-auto overflow-y-hidden border-b border-accent-2',
+        className,
+      )}
       {...props}
     />
   );
@@ -26,7 +31,7 @@ export function TabsTrigger({
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        '-mb-px whitespace-nowrap border-b-2 border-transparent px-4 py-2.5 text-sm font-semibold text-font-strong',
+        'whitespace-nowrap border-b-2 border-transparent px-4 py-2.5 text-sm font-semibold text-font-strong',
         'hover:text-accent-3 focus-visible:outline-none focus-visible:shadow-focus',
         'data-[state=active]:border-accent data-[state=active]:text-accent-3',
         className,

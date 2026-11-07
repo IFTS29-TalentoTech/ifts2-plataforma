@@ -88,3 +88,20 @@ export function ErrorState({
     </div>
   );
 }
+
+/**
+ * Carga de pantalla completa del área de contenido (la usan los `loading.tsx` de Next mientras el
+ * servidor prepara la ruta). Spinner centrado, con el color del tema y anunciado una sola vez.
+ */
+export function PageLoading({ label = 'Cargando' }: { label?: string }) {
+  return (
+    <LoadingRegion label={label}>
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <span
+          aria-hidden="true"
+          className="h-10 w-10 animate-spin rounded-pill border-4 border-accent-2 border-t-accent"
+        />
+      </div>
+    </LoadingRegion>
+  );
+}

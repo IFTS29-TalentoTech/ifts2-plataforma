@@ -107,7 +107,7 @@ for (const vp of viewports) {
       });
       cy.contains('[data-testid="role-row"]', roleName).should('exist');
 
-      // Roles del sistema: ADMIN/BEDELIA/EDITOR ofrecen "Eliminar"; Superadministrador no.
+      // Roles del sistema: ADMIN/BEDELIA/EDITOR ofrecen "Eliminar" (ADMIN se llama "Rectoría / Dirección"); Superadministrador no.
       cy.contains('[data-testid="role-row"]', 'Superadministrador')
         .contains('button', 'Eliminar')
         .should('not.exist');

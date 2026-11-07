@@ -1,8 +1,9 @@
 'use client';
 
 /**
- * Filtros de Novedades (año y categoría). Es un formulario GET común: funciona sin JavaScript
- * (botón "Filtrar") y, con JavaScript, se envía solo al cambiar un desplegable.
+ * Filtros de Novedades (año y categoría). Es un formulario GET común: con JavaScript se envía solo
+ * al cambiar un desplegable (no hay botón, A17) y sin JavaScript queda el botón "Filtrar" dentro de
+ * <noscript>, así el filtro sigue funcionando (mejora progresiva).
  * Se usan <select> nativos (teclado y lectores de pantalla resueltos por el navegador) con los
  * mismos estilos de borde y foco del kit. Las opciones vienen de la API (`availableYears`, `categories`).
  */
@@ -75,9 +76,11 @@ export function NewsFilters({
           ))}
         </select>
       </div>
-      <Button type="submit" variant="secondary">
-        Filtrar
-      </Button>
+      <noscript>
+        <Button type="submit" variant="secondary">
+          Filtrar
+        </Button>
+      </noscript>
     </form>
   );
 }
