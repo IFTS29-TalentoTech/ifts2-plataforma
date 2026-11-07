@@ -27,7 +27,7 @@ Los elementos sin permiso no se muestran; la API igual responde 403.
 ## Reglas importantes
 
 - Eliminar solo contenido no publicado / archivado / oculto, con confirmación. Los usuarios no se eliminan: se desactivan.
-- Usuarios: el rol se cambia con "Cambiar rol" (formulario + confirmación), nunca al tocar un desplegable; sobre el propio usuario no hay acciones.
+- Usuarios: en la tarjeta "Usuarios del panel" de Configuración cada persona se toca y abre su menú (cambiar rol, restablecer contraseña, desactivar o reactivar); "Gestionar usuarios" abre la ventana con el alta y la lista completa. Las acciones y sus reglas están en un solo lugar, `configuracion/user-actions.tsx`, que usan las dos pantallas. El rol se cambia con un formulario y una confirmación, nunca al tocar un desplegable; sobre el propio usuario no hay acciones.
 - Roles (RF11): el selector de usuarios ofrece solo roles con `assignable: true` (anti-escalada); un rol con usuarios no se elimina (también ADMIN, BEDELIA y EDITOR se pueden eliminar si no tienen usuarios); SUPERADMIN no se edita ni se elimina. La interfaz oculta lo que la sesión no puede usar, pero quien protege es la API.
 - Archivar un documento adjunto a contenido visible: 409 `requiresConfirmation`, segunda confirmación y reintento con `force`.
 - El App Secret y la contraseña SMTP nunca se muestran ni vuelven a pedirse; la clave temporal de un usuario se muestra una sola vez.

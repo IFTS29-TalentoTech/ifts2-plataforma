@@ -276,6 +276,26 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 **Pruebas.** Cypress `panel-b/usuarios-y-roles.cy.ts` (cambio de rol con confirmación, propio usuario sin acciones, 390 y 1440 px) y `panel-a/capturas-crud.cy.ts` adaptado al flujo nuevo.
 
+### 2026-11-07 · Tarjeta "Usuarios del panel" con menú por persona (rama `fix/configuracion-usuarios-menu`)
+
+**Problema.** La tarjeta "Seguridad y accesos" de Configuración se titulaba "Administradores del sistema" aunque listaba a todos los usuarios, mostraba solo 6 sin avisar si había más, las fichas no hacían nada al tocarlas y el botón "+ Administrar usuarios y roles" parecía un alta. El enlace "Roles y permisos" quedaba suelto debajo.
+
+**Hecho.**
+
+- La tarjeta pasa a llamarse "Usuarios del panel" y muestra cuántos usuarios hay y cuántos están activos.
+- Cada persona se toca y abre un **menú** con sus acciones: Cambiar rol, Restablecer contraseña y Desactivar o Reactivar. La ficha propia y la de quien tiene más permisos no abren menú y explican por qué.
+- Arriba a la derecha, **Gestionar usuarios** (abre la ventana con el alta y la lista completa) y, solo para el Superadministrador, **Roles y permisos**. Si hay más de 6 personas, un enlace "Ver los N restantes".
+- Las acciones sobre un usuario se movieron a `configuracion/user-actions.tsx`: la tarjeta y la ventana usan las mismas reglas, formularios y confirmaciones.
+- Componente nuevo del kit: `DropdownMenu` (Radix, `@radix-ui/react-dropdown-menu`), accesible con teclado y lectores de pantalla.
+
+**Pruebas.** Cypress `panel-b/usuarios-y-roles.cy.ts` suma el menú de la tarjeta (390 y 1440 px, con axe). Los specs que abrían la ventana usan el texto nuevo "Gestionar usuarios".
+
+### 2026-11-07 · Las pruebas E2E usan su propia base (rama `fix/configuracion-usuarios-menu`)
+
+**Problema.** `pnpm e2e` corría contra la base de desarrollo. Cada corrida dejaba usuarios y roles de prueba ("Rol 18", "Docentes invitados…", "Persona de prueba") que no se pueden borrar (los usuarios solo se desactivan): la base llegó a 70 usuarios y 28 roles, las listas se hicieron largas (las flechas de scroll tapaban opciones) y pruebas como E2E-10 dependían de lo que había dejado la corrida anterior.
+
+**Hecho.** `pnpm e2e` prepara una base propia, `ifts2_e2e` (`scripts/lib/e2e-db.mjs`): la vacía, aplica las migraciones y carga la semilla demo antes de cada corrida, y la API y las tareas de Cypress la usan. Solo acepta una base llamada `ifts2_e2e` en `localhost:5433`, así nunca puede vaciar la de desarrollo. `--reset` ya no hace falta (se ignora); `--keep-db` reutiliza la base E2E.
+
 ## Estado actual (06/11/2026)
 
 - **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).
@@ -289,7 +309,7 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 - **Producto:** galería y plantel (RF09, RF10), plan por año navegable (Q17), "Prioridad visual" en la moderación (Q84), barra inferior móvil del Figma (Q65), documentos públicos de Ingreso (Q62), remitente SMTP (Q100).
 - **Escala:** un proceso web se satura cerca de 300-360 pedidos/s (se resuelve con CDN o más procesos); el límite de frecuencia es en memoria (Q29).
 - **Documentación:** regenerar DER, tablas y PDF; capturas de Roles y permisos (ver arriba).
-- **Cuidado:** `pnpm e2e --reset` y `pnpm db:reset` borran la base de desarrollo y los corre una persona, no un agente.
+- **Cuidado:** `pnpm db:reset` borra la base de desarrollo y lo corre una persona, no un agente. `pnpm e2e` ya no la toca: usa su propia base `ifts2_e2e`.
 
 ## Dificultades y soluciones (de la fundación)
 

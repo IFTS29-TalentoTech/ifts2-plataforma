@@ -154,7 +154,7 @@ for (const vp of viewports) {
       const email = `dir20.${tag}@ifts2.local`;
       cy.loginAsApi('ADMIN');
       cy.visit('/panel/configuracion');
-      cy.contains('button', 'Administrar usuarios y roles').click();
+      cy.contains('button', 'Gestionar usuarios').click();
       cy.get('[role="dialog"]').within(() => {
         cy.contains('Solo ves los roles cuyos permisos también tenés vos');
         cy.byLabel('Nombre y apellido').type('Otra Dirección');
