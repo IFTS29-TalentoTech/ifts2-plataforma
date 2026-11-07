@@ -11,7 +11,8 @@ import { cn } from '@/lib/cn';
  *   nombre, y cada diapositiva como "diapositiva n de N".
  * - Mejora progresiva: la pista es un contenedor con scroll horizontal y `scroll-snap`; sin
  *   JavaScript se puede desplazar con el dedo, el mouse o el teclado (la pista recibe foco y las
- *   flechas ← → la desplazan). Con JavaScript se suman botones Anterior/Siguiente y puntos.
+ *   flechas la desplazan de forma nativa). Con JavaScript se suman botones Anterior/Siguiente y
+ *   puntos, y las flechas ← → / Inicio / Fin de la pista pasan de diapositiva.
  * - Los controles aparecen solo si hay algo para desplazar (con 3 tarjetas visibles en escritorio no
  *   se muestran; en el celular sí). Los botones se deshabilitan en los extremos.
  * - Respeta `prefers-reduced-motion`: el desplazamiento es instantáneo, sin animación.
@@ -92,6 +93,21 @@ export function Carousel({
 
   const controls = overflow && total > 1;
 
+  /** ← → pasan de diapositiva e Inicio/Fin van a los extremos (con la pista enfocada). */
+  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (!controls || e.altKey || e.ctrlKey || e.metaKey) return;
+    const targets: Record<string, number> = {
+      ArrowRight: active + 1,
+      ArrowLeft: active - 1,
+      Home: 0,
+      End: total - 1,
+    };
+    const target = targets[e.key];
+    if (target === undefined) return;
+    e.preventDefault(); // en vez del desplazamiento nativo, que puede dejar la pista entre dos diapositivas
+    goTo(target);
+  }
+
   return (
     <section
       aria-roledescription="carrusel"
@@ -104,6 +120,7 @@ export function Carousel({
         // Foco en la pista: así quien navega con teclado puede desplazarla con las flechas aun si
         // las diapositivas no tienen nada enfocable (requisito de axe "scrollable-region-focusable").
         tabIndex={0}
+        onKeyDown={onKeyDown}
         className={cn(
           'relative flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth rounded-xl pb-1 motion-reduce:scroll-auto',
           'focus-visible:outline-none focus-visible:shadow-focus',
