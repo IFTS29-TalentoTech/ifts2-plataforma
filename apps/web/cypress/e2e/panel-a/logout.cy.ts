@@ -11,17 +11,18 @@ for (const vp of VIEWPORTS) {
 
     for (const failure of ['red', 'HTTP 500'] as const) {
       it(`${failure}: informa el fallo, permanece en el panel y permite reintentar`, () => {
-        // Los fallos se simulan en el navegador; el segundo intento usa el endpoint real.
-        cy.intercept(
-          { method: 'POST', url: '/api/v1/auth/logout', times: 1 },
-          failure === 'red'
-            ? { forceNetworkError: true }
-            : {
-                statusCode: 500,
-                headers: { 'content-type': 'application/problem+json' },
-                body: { status: 500, code: 'internal', detail: 'Error interno.' },
-              },
-        ).as('failedLogout');
+        // El navegador puede reintentar conexiones cortadas antes de que fetch rechace.
+        // Se simula la caída completa hasta el reintento explícito de la persona.
+        let failing = true;
+        cy.intercept('POST', '/api/v1/auth/logout', (req) => {
+          if (!failing) return req.continue();
+          if (failure === 'red') return req.destroy();
+          req.reply({
+            statusCode: 500,
+            headers: { 'content-type': 'application/problem+json' },
+            body: { status: 500, code: 'internal', detail: 'Error interno.' },
+          });
+        }).as('failedLogout');
         cy.contains('button', 'Cerrar sesión').filter(':visible').click();
         cy.wait('@failedLogout');
         cy.get('[role="alert"]:visible')
@@ -33,6 +34,9 @@ for (const vp of VIEWPORTS) {
         cy.contains('button', 'Cerrar sesión').filter(':visible').should('be.enabled');
         cy.a11y();
 
+        cy.then(() => {
+          failing = false;
+        });
         cy.intercept('POST', '/api/v1/auth/logout').as('retryLogout');
         cy.contains('button', 'Cerrar sesión').filter(':visible').click();
         cy.wait('@retryLogout').its('response.statusCode').should('eq', 204);
