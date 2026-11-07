@@ -10,14 +10,15 @@
  *   "Próximo evento" (reunión del 06/10).
  * - RF07: enlaces de interés (SIU, Aula virtual, Tutoría, Mi Argentina) en pestaña nueva con
  *   `rel="noopener noreferrer"`.
- * - "Vida en la cocina": galería de fotos del Figma como grilla estática (sin carrusel). Sale del ajuste
- *   `student_gallery` (ruta | título | descripción por línea; provisorias, ADR-035/Q63). RF09 (galería con
- *   categorías administrables) sigue siendo Could: esto es solo la presentación del Figma.
+ * - "Vida en la cocina": carrusel editable desde Configuración -> Galerías (RF09, ADR-036), con filtro
+ *   por categoría si alguna diapositiva la tiene (US-30). Si no hay diapositivas cargadas (o la API de galería falla) se usa el ajuste `student_gallery` como respaldo
+ *   (ruta | título | descripción por línea; fotos provisorias, ADR-035/Q63).
  */
 import type { Metadata } from 'next';
 import { Card, EmptyState } from '@/components/ui';
 import { ExamCallCard, NoticeCard, ScheduleCard } from '@/features/public/academic-parts';
-import { loadStudents } from '@/features/public/data';
+import { loadSlides, loadStudents } from '@/features/public/data';
+import { GalleryFilter } from '@/features/public/gallery-filter';
 import { LinkCard, PageHero, PhotoCard, Section, SectionError } from '@/features/public/parts';
 import { getSiteInfo } from '@/lib/site';
 
@@ -26,7 +27,20 @@ export const metadata: Metadata = { title: 'Estudiantes' };
 export const revalidate = 60;
 
 export default async function Page() {
-  const [site, res] = await Promise.all([getSiteInfo(), loadStudents()]);
+  const site = await getSiteInfo();
+  const [res, gallery] = await Promise.all([
+    loadStudents(),
+    loadSlides(
+      'STUDENTS',
+      site.gallery.map((g) => ({
+        key: g.src,
+        src: g.src,
+        title: g.title,
+        caption: g.description,
+        alt: '',
+      })),
+    ),
+  ]);
   const d = res.ok ? res.data : null;
 
   return (
@@ -115,19 +129,25 @@ export default async function Page() {
             )}
           </Section>
 
-          {site.gallery.length > 0 && (
+          {gallery.length > 0 && (
             <Section
               eyebrow="Comunidad estudiantil"
               title="Vida en la cocina"
               id="vida-en-la-cocina"
             >
-              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="galeria">
-                {site.gallery.map((g) => (
-                  <li key={g.src}>
-                    <PhotoCard src={g.src} title={g.title} description={g.description} />
-                  </li>
-                ))}
-              </ul>
+              <div data-testid="galeria">
+                <GalleryFilter
+                  label="Vida en la cocina"
+                  slideClassName="w-[85%] sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)]"
+                  slides={gallery.map((g) => ({
+                    key: g.key,
+                    category: g.category ?? '',
+                    node: (
+                      <PhotoCard src={g.src} title={g.title} description={g.caption} alt={g.alt} />
+                    ),
+                  }))}
+                />
+              </div>
             </Section>
           )}
 

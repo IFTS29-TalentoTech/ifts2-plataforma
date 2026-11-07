@@ -23,7 +23,7 @@ flowchart TB
 
   subgraph API["apps/api (Express 5)"]
     MW["middleware: helmet, CORS, Origin (CSRF),<br/>attachAuth, rate limit, validate (zod), errores RFC 7807"]
-    MOD["modules/* (autodescubiertos)<br/>health · auth · users · audit · integrations · files · categories · publications · social · dashboard · ..."]
+    MOD["modules/* (autodescubiertos)<br/>health · auth · users · audit · integrations · files · categories · publications · social · dashboard · gallery · teachers · ..."]
     CTX["req.ctx (AppContext)"]
     INFRA["infra/: storage · mailer · instagram · crypto · logger"]
     MW --> MOD --> CTX --> INFRA

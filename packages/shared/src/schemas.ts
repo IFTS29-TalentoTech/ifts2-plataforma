@@ -3,6 +3,8 @@ import {
   CATEGORY_KINDS,
   CONTENT_PAGES,
   DOCUMENT_KINDS,
+  GALLERY_AREAS,
+  GALLERY_MAX_PER_AREA,
   NOTICE_AUDIENCES,
   NOTICE_VIEW_STATUSES,
   PUBLICATION_ORIGINS,
@@ -447,6 +449,17 @@ export const socialListQuery = paginationQuery.extend({
   source: enumOf('El origen', ['instagram', 'manual'] as const).optional(),
 });
 
+/**
+ * Query de POST /social/sync. `full=true` fuerza la carga completa (ignora la marca del último fetch
+ * exitoso); sin él, la sincronización es incremental cuando corresponde (ADR-038).
+ */
+export const socialSyncQuery = z.object({
+  full: enumOf('El parámetro full', ['true', 'false'] as const)
+    .optional()
+    .transform((v) => v === 'true'),
+});
+export type SocialSyncQuery = z.infer<typeof socialSyncQuery>;
+
 export const socialApproveInput = z
   .object({
     title: optionalText('El título', 160),
@@ -694,6 +707,110 @@ export const linkUpdateInput = linkInput
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
 
+// ---------- galerías (RF09, ADR-036) ----------
+
+const galleryText = (label: string, max: number) =>
+  z
+    .string({ invalid_type_error: `${label} no es válido.` })
+    .trim()
+    .max(max, `${label} no puede superar los ${max} caracteres.`);
+
+/** Campos de texto de una diapositiva (también llegan como campos del multipart al subir la imagen). */
+export const galleryTextFields = z.object({
+  title: galleryText('El título', 80).default(''),
+  caption: galleryText('La descripción', 200).default(''),
+  /** Texto alternativo de la foto; vacío = decorativa (el texto de la tarjeta ya la describe). */
+  alt: galleryText('El texto alternativo', 200).default(''),
+  /** Categoría libre y corta (RF09, US-30) con la que el sitio filtra la galería; vacía = sin categoría. */
+  category: galleryText('La categoría', 40).default(''),
+});
+
+/** Alta de una diapositiva: el archivo va aparte (campo `file`); acá el área y los textos. */
+export const galleryCreateFields = galleryTextFields.extend({
+  area: enumOf('El área', GALLERY_AREAS),
+});
+export type GalleryCreateFields = z.infer<typeof galleryCreateFields>;
+
+export const galleryUpdateInput = galleryTextFields
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+export type GalleryUpdateInput = z.infer<typeof galleryUpdateInput>;
+
+/** GET /public/gallery: el área es obligatoria. */
+export const publicGalleryQuery = z.object({ area: enumOf('El área', GALLERY_AREAS) });
+
+export const galleryListQuery = z.object({ area: enumOf('El área', GALLERY_AREAS).optional() });
+
+/** Nuevo orden de una galería: los ids de TODAS sus diapositivas, en el orden deseado. */
+export const galleryOrderInput = z.object({
+  area: enumOf('El área', GALLERY_AREAS),
+  ids: z
+    .array(uuid('El identificador'))
+    .min(1, 'Indicá el orden de las diapositivas.')
+    .max(GALLERY_MAX_PER_AREA, `Una galería admite hasta ${GALLERY_MAX_PER_AREA} diapositivas.`),
+});
+export type GalleryOrderInput = z.infer<typeof galleryOrderInput>;
+
+// ---------- plantel docente (RF10, US-29) ----------
+
+export const TEACHER_MAX_SUBJECTS = 12;
+
+const teacherText = (label: string, max: number) =>
+  z
+    .string({ invalid_type_error: `${label} no es válido.` })
+    .trim()
+    .max(max, `${label} no puede superar los ${max} caracteres.`);
+
+/**
+ * Materias a cargo: lista de textos cortos. Se recortan, se descartan los vacíos y se quitan los
+ * repetidos (sin distinguir mayúsculas), así quien escribe "una por línea" no tiene que cuidarlo.
+ */
+const teacherSubjects = z
+  .array(teacherText('Cada materia', 120), { invalid_type_error: 'Las materias no son válidas.' })
+  .transform((list) => {
+    const seen = new Set<string>();
+    return list.filter((s) => {
+      const k = s.toLocaleLowerCase('es');
+      if (!s || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  })
+  .pipe(
+    z
+      .array(z.string())
+      .max(TEACHER_MAX_SUBJECTS, `Se admiten hasta ${TEACHER_MAX_SUBJECTS} materias.`),
+  );
+
+export const teacherInput = z.object({
+  name: teacherText('El nombre', 100).min(1, 'El nombre es obligatorio.'),
+  role: teacherText('El cargo', 80).default(''),
+  subjects: teacherSubjects.default([]),
+  /** Al crear: visible por defecto. Ocultar es la baja lógica (no borra nada). */
+  visible: z.boolean({ invalid_type_error: 'La visibilidad no es válida.' }).default(true),
+});
+export type TeacherInput = z.infer<typeof teacherInput>;
+
+export const teacherUpdateInput = z
+  .object({
+    name: teacherText('El nombre', 100).min(1, 'El nombre es obligatorio.'),
+    role: teacherText('El cargo', 80),
+    subjects: teacherSubjects,
+    visible: z.boolean({ invalid_type_error: 'La visibilidad no es válida.' }),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+export type TeacherUpdateInput = z.infer<typeof teacherUpdateInput>;
+
+/** Nuevo orden del plantel: los ids de TODAS las personas (visibles y ocultas), en el orden deseado. */
+export const teacherOrderInput = z.object({
+  ids: z
+    .array(uuid('El identificador'))
+    .min(1, 'Indicá el orden del plantel.')
+    .max(200, 'El plantel no puede superar las 200 personas.'),
+});
+export type TeacherOrderInput = z.infer<typeof teacherOrderInput>;
+
 export const contentPageParam = enumOf('La página', CONTENT_PAGES);
 
 export const contentSectionInput = z.object({
@@ -726,6 +843,8 @@ export type ContactInput = z.infer<typeof contactInput>;
 export const instagramConfigInput = z
   .object({
     mode: enumOf('El modo', ['demo', 'real'] as const),
+    /** Método de conexión: OAuth (App ID y Secret) o token pegado (sin App ID ni Secret). */
+    connectionMethod: enumOf('El método de conexión', ['oauth', 'token'] as const),
     appId: z.string().trim().min(1, 'El App ID es obligatorio.').max(100),
     /** Si no viene, se conserva el secreto guardado. */
     appSecret: z.string().trim().min(1, 'El App Secret no puede estar vacío.').max(200).optional(),

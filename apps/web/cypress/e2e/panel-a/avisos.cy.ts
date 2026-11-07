@@ -82,10 +82,11 @@ for (const vp of VIEWPORTS) {
       seedExpiredNotice(expiredTitle);
       publicTitles().then((t) => expect(t).to.not.include(expiredTitle));
       cy.visit('/panel/avisos');
-      cy.contains('li', expiredTitle).contains('Vencido');
-      // Filtro Vencidos.
+      // Filtro Vencidos primero: con la semilla demo completa hay más avisos que una página y el nuevo
+      // puede quedar en la segunda de "Todos".
       cy.contains('label', 'Estado').parent().find('button[role="combobox"]').click();
       cy.contains('[role="option"]', 'Vencidos').click();
+      cy.contains('li', expiredTitle).contains('Vencido');
       cy.contains('li', expiredTitle).contains('button', 'Reactivar').click();
       cy.get('[role="dialog"]').should('contain', 'Reactivar aviso vencido');
       cy.get('[role="dialog"] button[type="submit"]').click();

@@ -22,4 +22,4 @@ mmdc -i der-academico.mmd -o der-academico.svg -p puppeteer.config.json -b white
 | `der-acceso-y-auditoria`       | User, Session, AuditLog                                     |
 | `der-publicaciones-y-redes`    | Category, SocialPost, Publication, InstagramToken, IntegrationConfig |
 | `der-academico`                | Notice, Document, AcademicTerm, Schedule, ExamCall, Category |
-| `der-sitio`                    | SiteSetting, ContentSection, ExternalLink, ContactMessage   |
+| `der-sitio`                    | SiteSetting, ContentSection, ExternalLink, ContactMessage, GalleryItem, Teacher |

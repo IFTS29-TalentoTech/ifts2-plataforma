@@ -14,10 +14,14 @@ import { cn } from '@/lib/cn';
 import { formatBytes } from '../lib/format';
 
 /** Devuelve un mensaje si el archivo no se puede subir, o null si está bien. */
-export function validateFile(file: File): string | null {
-  const allowed: readonly string[] = FILE_LIMITS.allowedMime;
+export function validateFile(file: File, imagesOnly = false): string | null {
+  const allowed: readonly string[] = imagesOnly
+    ? FILE_LIMITS.allowedMime.filter((m) => m !== 'application/pdf')
+    : FILE_LIMITS.allowedMime;
   if (!allowed.includes(file.type)) {
-    return 'Ese tipo de archivo no está permitido. Subí un PDF o una imagen (JPG, PNG o WebP).';
+    return imagesOnly
+      ? 'Ese tipo de archivo no está permitido. Subí una imagen (JPG, PNG o WebP).'
+      : 'Ese tipo de archivo no está permitido. Subí un PDF o una imagen (JPG, PNG o WebP).';
   }
   const max = file.type === 'application/pdf' ? FILE_LIMITS.pdfMaxBytes : FILE_LIMITS.imageMaxBytes;
   if (file.size > max) {
@@ -32,6 +36,7 @@ export function FileField({
   onChange,
   error,
   current,
+  imagesOnly = false,
 }: {
   label: string;
   file: File | null;
@@ -40,10 +45,12 @@ export function FileField({
   error?: string;
   /** Nombre del archivo actual (al actualizar un archivo existente). */
   current?: string | null;
+  /** Solo imágenes (JPG, PNG o WebP): oculta PDF del selector, del mensaje y de la validación. */
+  imagesOnly?: boolean;
 }) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
-  const localError = file ? validateFile(file) : null;
+  const localError = file ? validateFile(file, imagesOnly) : null;
   const message = localError ?? error ?? undefined;
   return (
     <div className="flex flex-col gap-1.5">
@@ -84,13 +91,19 @@ export function FileField({
         type="file"
         data-testid="file-input"
         aria-label={label}
-        accept="application/pdf,image/jpeg,image/png,image/webp"
+        accept={
+          imagesOnly
+            ? 'image/jpeg,image/png,image/webp'
+            : 'application/pdf,image/jpeg,image/png,image/webp'
+        }
         className="sr-only"
         tabIndex={-1}
         onChange={(e) => onChange(e.target.files?.[0] ?? null)}
       />
       <p id={`${id}-hint`} className="text-xs text-font-strong">
-        PDF hasta 10 MB o imagen (JPG, PNG, WebP) hasta 5 MB.
+        {imagesOnly
+          ? 'Imagen (JPG, PNG, WebP) hasta 5 MB.'
+          : 'PDF hasta 10 MB o imagen (JPG, PNG, WebP) hasta 5 MB.'}
       </p>
       {message && (
         <p id={`${id}-error`} role="alert" className="text-sm font-medium text-danger-text">

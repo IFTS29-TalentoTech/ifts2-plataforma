@@ -8,6 +8,10 @@
  *    estado (una descartada sigue descartada; una vinculada sigue vinculada). Solo a las todavía
  *    `DETECTED` se les refresca la URL de la imagen porque las de Instagram expiran.
  *  - Todo queda `DETECTED`: NADA llega al sitio sin aprobación humana (AGENTS.md, regla 4).
+ *  - Incremental (ADR-038): cada fetch exitoso guarda una marca y la siguiente sincronización pide solo lo
+ *    posterior (con margen de solapamiento). Es completa la primera vez, al forzarla (`force`) y cuando
+ *    cambia la cuenta (id de Graph), el hashtag o el método de conexión. Un fetch fallido NO avanza la marca.
+ *    Las reglas puras están en `sync-window.ts`.
  *  - Si Instagram falla, se responde 502 con un mensaje claro, se registra el motivo para el Resumen
  *    y no se rompe nada más: el panel y el sitio siguen funcionando y existe la carga manual.
  */
@@ -17,9 +21,12 @@ import {
   captionHasHashtag,
   InstagramApiError,
   InstagramNotConfiguredError,
+  normalizeHashtag,
+  type FetchCoverage,
   type InstagramMedia,
 } from '../../infra/instagram';
 import { audit } from '../audit/audit.service';
+import { nextCoveredUntil, planSync, type FullReason, type SyncIdentity } from './sync-window';
 import { renewInstagramTokenIfNeeded, saveTokenState, type TokenRenewal } from './token.service';
 
 /** Cuántas publicaciones (que cumplan el hashtag) se traen como máximo por sincronización. */
@@ -35,6 +42,14 @@ export interface SyncResult {
   /** `true` si se usó el cliente de demostración (sin cuenta real conectada). */
   demo: boolean;
   lastSyncAt: string;
+  /** Tipo de esta sincronización: `incremental` (solo lo posterior al último fetch exitoso) o `full`. */
+  mode: 'incremental' | 'full';
+  /** Por qué fue completa (primera vez, forzada, cambió la cuenta/hashtag/método); `null` si fue incremental. */
+  fullReason: FullReason | null;
+  /** Cota inferior pedida a Instagram (ISO); `null` en la carga completa. */
+  since: string | null;
+  /** Momento (ISO) en que terminó este fetch exitoso. */
+  lastFetchAt: string;
   /** Resultado de la renovación del token hecha antes de sincronizar (para el cron). */
   token: TokenRenewal;
 }
@@ -63,7 +78,12 @@ async function recordOutcome(ctx: AppContext, ok: boolean, error?: string) {
  */
 export async function syncInstagram(
   ctx: AppContext,
-  opts: { userId?: string | null; trigger: 'manual' | 'cron' | 'scheduler' },
+  opts: {
+    userId?: string | null;
+    trigger: 'manual' | 'cron' | 'scheduler';
+    /** Fuerza la carga completa aunque haya una marca de fetch anterior. */
+    force?: boolean;
+  },
 ): Promise<SyncResult> {
   const hashtag = await getConfiguredHashtag(ctx);
   if (!hashtag) {
@@ -78,9 +98,42 @@ export async function syncInstagram(
   // 2) Resolver el cliente DESPUÉS de renovar para usar el token nuevo.
   const client = await ctx.getInstagramClient();
 
+  const previous = await ctx.integrations.get('instagram_sync');
+  const stored = await ctx.integrations.get('instagram');
+  // Las pendientes recientes se vuelven a traer para refrescar su imagen (las URLs de Instagram vencen).
+  const oldestPending = await ctx.prisma.socialPost.findFirst({
+    where: { platform: 'INSTAGRAM', status: 'DETECTED' },
+    orderBy: { postedAt: 'asc' },
+    select: { postedAt: true },
+  });
+
   let media: InstagramMedia[];
+  let plan: ReturnType<typeof planSync>;
+  let coverage = null as FetchCoverage | null;
+  let identity: SyncIdentity;
+  const startedAt = new Date(); // la marca nueva es el inicio del fetch: lo publicado durante él se verá después
   try {
-    media = await client.fetchRecentMedia({ limit: SYNC_LIMIT, hashtag });
+    // Llamada liviana (`/me?fields=id`): si cambió la cuenta, lo guardado no sirve y se carga todo.
+    identity = {
+      accountId: await client.getAccountId(),
+      hashtag: normalizeHashtag(hashtag) ?? hashtag.toLowerCase(),
+      connection: client.kind === 'fake' ? 'demo' : (stored?.connectionMethod ?? 'oauth'),
+    };
+    plan = planSync({
+      state: previous,
+      identity,
+      force: opts.force,
+      oldestPending: oldestPending?.postedAt ?? null,
+      now: startedAt,
+    });
+    media = await client.fetchRecentMedia({
+      limit: SYNC_LIMIT,
+      hashtag,
+      ...(plan.since ? { since: plan.since.toISOString() } : {}),
+      onCoverage: (c) => {
+        coverage = c;
+      },
+    });
   } catch (e) {
     if (e instanceof InstagramNotConfiguredError) {
       // No es una caída de Instagram: falta configurar. No se marca como error de sincronización.
@@ -140,6 +193,25 @@ export async function syncInstagram(
   }
 
   await recordOutcome(ctx, true);
+  // Recién ahora, con las publicaciones ya guardadas, se avanza la marca (un fallo antes no la mueve).
+  const lastFetchAt = new Date();
+  try {
+    await ctx.integrations.set('instagram_sync', {
+      lastFetchAt: lastFetchAt.toISOString(),
+      coveredUntil: nextCoveredUntil({
+        mode: plan.mode,
+        startedAt,
+        coverage,
+        previous: previous ? new Date(previous.coveredUntil) : null,
+      }).toISOString(),
+      mode: plan.mode,
+      count: matching.length,
+      ...identity,
+    });
+  } catch (e) {
+    // Sin marca la próxima será completa: más pesada pero correcta. No se hace fallar la sincronización.
+    ctx.logger.warn({ err: (e as Error).message }, 'no se pudo guardar la marca de sincronización');
+  }
   await audit.log(ctx.prisma, {
     userId: opts.userId ?? null,
     action: 'social.sync',
@@ -149,6 +221,8 @@ export async function syncInstagram(
       matched: matching.length,
       created: inserted.count,
       demo: client.kind === 'fake',
+      mode: plan.mode,
+      ...(plan.fullReason ? { fullReason: plan.fullReason } : {}),
     },
   });
 
@@ -157,7 +231,11 @@ export async function syncInstagram(
     matched: matching.length,
     alreadyKnown: matching.length - fresh.length,
     demo: client.kind === 'fake',
-    lastSyncAt: new Date().toISOString(),
+    lastSyncAt: lastFetchAt.toISOString(),
+    mode: plan.mode,
+    fullReason: plan.fullReason,
+    since: plan.since ? plan.since.toISOString() : null,
+    lastFetchAt: lastFetchAt.toISOString(),
     token,
   };
 }

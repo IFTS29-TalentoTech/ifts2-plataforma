@@ -142,7 +142,7 @@ Todas las confirmaciones del panel funcionan igual: aparece una ventana que expl
 El sistema detecta publicaciones de la cuenta del instituto con el hashtag acordado y las deja **pendientes**. Vos decidís cuáles se muestran en el sitio.
 
 1. Entrá a **Publicaciones**. En la pestaña **De redes sociales** ves tres solapas: **Pendientes**, **Aprobadas** y **Descartadas**.
-2. (Opcional) Tocá **Sincronizar con Instagram** para buscar publicaciones nuevas ahora.
+2. (Opcional) Tocá **Sincronizar con Instagram** para buscar publicaciones nuevas ahora. El sistema recuerda el último fetch exitoso y trae solo lo nuevo; ves la fecha en **Último fetch exitoso**. Si cambiaste la cuenta o el hashtag, la primera sincronización es completa sola. Si una publicación vieja no aparece, usá **Sincronización completa** (pide confirmación).
 3. En una publicación pendiente, tocá **Moderar**.
 4. Revisá la imagen y el texto. Podés ajustar el **Título en el sitio**, el **Resumen**, la **Categoría**, dónde se muestra (**Novedades** y/o carrusel de **Inicio**) y las fechas **Visible desde / hasta**.
 5. Tildá **«Confirmo que existe consentimiento para publicar imágenes de estudiantes»**. Es obligatorio.
@@ -275,6 +275,8 @@ En **Configuración → Seguridad y accesos** (o en el menú lateral, ítem **Ro
 
 ![Usuarios y roles](../capturas/panel/b-configuracion-usuarios-1440.png)
 
+![Roles y permisos](../capturas/panel/b-roles-1440.png)
+
 ### 5.8 Configurar Instagram y el correo _(requiere el permiso «Integraciones»; Administración lo tiene por defecto)_
 
 Entrá a **Configuración** y abrí la pestaña **Integraciones**. Allí se conectan los servicios externos; mientras no se configuren, el sitio funciona en **modo demostración** con datos de ejemplo.
@@ -326,6 +328,16 @@ En **Mensajes** aparecen las consultas enviadas desde el sitio. Podés filtrarla
 ![Configuración](../capturas/panel/b-configuracion-1440.png)
 
 ![Confirmar cambios de configuración](../capturas/panel/b-configuracion-confirmar-cambios-1440.png)
+
+### 5.11 Galerías y plantel docente _(Administración y Comunicación)_
+
+- **Galerías** (menú **Galerías**): son las fotos del carrusel «Vida en la cocina» de Estudiantes y la foto de La carrera. **Agregar diapositiva** → elegir la foto (JPG, PNG o WebP, hasta 5 MB) → completar título, descripción y, si querés, una **categoría** (por ejemplo, «Eventos») → **Guardar diapositiva**. Con **Subir** y **Bajar** cambiás el orden y con **Eliminar** la quitás (pide confirmación). Si alguna diapositiva tiene categoría, Estudiantes muestra botones para filtrar (Todas, Eventos…).
+
+![Galerías](../capturas/panel/b-galerias-1440.png)
+- **Plantel docente** (menú **Plantel docente**): **Agregar docente** → nombre (obligatorio), cargo, materias a cargo (una por línea) y, si la persona dio su consentimiento, una foto → **Guardar docente**. **Ocultar** saca a la persona del sitio sin borrarla y **Mostrar** la vuelve a poner. **Eliminar** solo aparece para quienes están ocultas y pide confirmación. La sección **Plantel docente** de Institucional solo se ve si hay al menos una persona visible.
+
+![Plantel docente](../capturas/panel/b-plantel-1440.png)
+- Los datos de demostración (los docentes con sus ilustraciones y las fotos provisorias) son ficticios: reemplazalos por los reales antes de publicar el sitio.
 
 ## 6. Operaciones de datos (crear, leer, actualizar y eliminar)
 

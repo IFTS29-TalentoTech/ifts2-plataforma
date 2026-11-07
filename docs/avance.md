@@ -4,6 +4,32 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-07 · Categorías de galería y plantel docente (RF09 completo, RF10, ADR-036 y ADR-037, rama `feat/publico-fiel-al-figma`)
+
+**Hecho.** (1) **RF09/US-30:** `GalleryItem.category` (migración aditiva `20261107120000_galeria_categoria`), esquema zod, API, campo con sugerencias en el panel y **filtro por categoría accesible en Estudiantes** (botones con `aria-pressed`, se muestra solo si hay categorías). (2) **RF10/US-29:** modelo `Teacher` y migración `20261107130000_plantel` (también concede `teachers:manage` a los ADMIN y EDITOR existentes), módulo de API `teachers` (alta, edición, foto, orden, baja lógica y eliminación manual solo de personas ocultas, 409 si siguen visibles, todo auditado), lectura pública `/public/teachers`, página `/panel/plantel` (y pestaña de Configuración) y sección **Plantel docente** en Institucional (no se dibuja si no hay personas visibles). (3) **Semilla demo:** 6 docentes **ficticios** (nombres inventados, ilustraciones en lugar de fotos, uno oculto) y categorías provisorias en la galería (Prácticas, Ingredientes, Platos, Perfil); producción deja el plantel vacío. Las bases que ya tenían las diapositivas provisorias reciben su categoría al volver a correr `pnpm db:seed` (solo si siguen sin categoría).
+
+**Pruebas.** `shared` (teachers y categorías), API (`teachers.test.ts`, 16 casos; categorías en `gallery.test.ts`) y Cypress: `public/plantel.cy.ts`, `panel-b/plantel.cy.ts`, filtro de `public/carrusel.cy.ts` y categoría en `panel-b/galerias.cy.ts` (390 y 1440 px, con axe).
+
+**Decisiones y preguntas.** ADR-037 y Q138 (datos reales del plantel) y Q139 (consentimiento de fotos).
+
+**Dificultad.** `prisma generate` falla con EPERM mientras un `pnpm dev` tiene abierto el motor de Prisma en Windows. Se regeneró el cliente en una carpeta temporal y se copiaron todos los archivos menos el `.dll` (el motor es el mismo; el esquema viaja en el cliente). Para uso normal: detener `pnpm dev`, `pnpm db:migrate`, volver a levantar.
+
+### 2026-11-07 · Carrusel editable y galerías (RF09, ADR-036, rama `feat/publico-fiel-al-figma`)
+
+**Hecho.** Modelo `GalleryItem` y migración `20261107075740_galeria` (aditiva; también concede `gallery:manage` a los ADMIN y EDITOR existentes). Módulo de API `gallery` (alta con imagen a WebP de 1600 px, textos, reemplazo de foto, orden, eliminación manual auditada, hasta 10 por área) y lectura pública `/public/gallery`. Componente `Carousel` accesible (scroll-snap, botones, puntos, teclado, sin reproducción automática). Sección **Galerías** del panel (`/panel/galerias` y pestaña de Configuración) con subir, editar, Subir/Bajar y eliminar con confirmación. Estudiantes y La carrera usan el carrusel; sin diapositivas se usa el respaldo (`student_gallery`, `career_image`). La semilla crea las diapositivas provisorias solo si el área está vacía.
+
+**Pruebas.** API (`gallery.test.ts`, 18 casos), `shared` (7 casos nuevos) y Cypress: `public/carrusel.cy.ts` (semántica, botones, puntos, teclado, axe, 390 y 1440 px) y `panel-b/galerias.cy.ts` (flujo completo del EDITOR, 403 de BEDELIA).
+
+**Para correr.** `pnpm db:migrate` (con el servidor de desarrollo apagado si falla el cliente de Prisma en Windows: EPERM) y `pnpm db:seed`.
+
+**Pendiente.** Categorías de la galería (RF09 completo); reemplazar las fotos provisorias por las del instituto con consentimiento (Q63).
+
+### 2026-11-07 · Instagram: conexión con token pegado (sin App ID ni Secret)
+
+**Hecho.** La configuración de Instagram tiene `connectionMethod` (`oauth` o `token`). Con `token`, pegar el token alcanza: pasa a modo real, el cliente Graph funciona solo con el token y se puede probar la conexión. La tarjeta de Configuración tiene un selector de método y muestra solo el formulario correspondiente. Cambiar de método descarta lo conectado con el otro. Pruebas: 5 casos nuevos de API (`integrations.test.ts`) y un spec Cypress (`integraciones-a11y`). ADR-020 enmendado.
+
+**Pendiente.** Probar contra Meta real (cuenta profesional y token generado en el panel de Meta); la renovación automática del token no se verificó con tokens pegados.
+
 ### 2026-11-07 · Pantallas públicas fieles al Figma (rama `feat/publico-fiel-al-figma`)
 
 **Hecho.** Fotos del Figma como **provisorias** (ADR-035, Q63): 13 imágenes webp (472 KB) en `apps/web/public/img/provisorio/`. Inicio: titular corto + frase ancla como subtítulo (resuelve Q64) y las dos fotos del encabezado; La carrera: foto junto al perfil; Estudiantes: galería "Vida en la cocina" (grilla estática); Ingreso: foto en el encabezado; Novedades: portadas de demostración y bloque neutro sin portada; logo configurable en el encabezado. Todo sale de ajustes nuevos de `SiteSetting` (`hero_title`, `hero_eyebrow`, `logo_url`, `hero_image_1/2`, `career_image`, `ingreso_image`, `student_gallery`) editables en Configuración; los valores del IFTS están solo en la semilla (hay que correr `pnpm db:seed`, idempotente).
@@ -343,6 +369,16 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 **Pruebas.** Cypress `recorrido`, `smoke`, `degradacion`, `integraciones-a11y` (axe) y `mi-cuenta` en verde; medido en el navegador: alto de página = alto de ventana.
 
+## Sincronización incremental de Instagram (07/11/2026, ADR-038)
+
+- `sync.service.ts` + `sync-window.ts`: cada fetch exitoso registra `lastFetchAt`, la marca y la identidad (id de cuenta de Graph, hashtag, método) en `IntegrationConfig` (`instagram_sync`); la siguiente trae solo lo posterior (margen de 6 h) y corta la paginación al ver una publicación vieja. Completa la primera vez, con `POST /social/sync?full=true` y al cambiar cuenta, hashtag o método. Un fetch fallido no avanza la marca. `InstagramClient` suma `since`, `onCoverage` y `getAccountId()` (doble incluido).
+- Panel: botón secundario "Sincronización completa" (con `ConfirmDialog`) y "Último fetch exitoso" en Publicaciones, Resumen y Configuración.
+- **Pruebas:** unitarias (`sync-window`, corte de paginación, doble) y de API (incremental, margen, fallo, forzada, cambio de cuenta/hashtag/método, sin duplicar, 401/403/400) + Cypress corto. **Sin verificar:** contra una cuenta real de Meta.
+
+## Semilla demo completa (07/11/2026)
+
+`prisma/seed.ts` (`seedDemoExtras`) suma datos ficticios para que la demo muestre todo: publicaciones en todos los estados y años, publicaciones de redes detectada / aprobada / descartada, avisos para cada público y en cada estado, llamados pasados, próximos y sin publicar, mensajes en cada estado, una cuenta desactivada, un enlace oculto y auditoría de varias personas. Es idempotente y solo corre en modo demo. Lo único que carga el equipo a mano es el token de Instagram. Verificado en una base descartable: dos corridas seguidas sin duplicados.
+
 ## Estado actual (06/11/2026)
 
 - **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).
@@ -352,8 +388,8 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 - **Con servicios reales (faltan cuentas o credenciales):** probar Instagram contra una cuenta profesional y una app de Meta del cliente (`GraphInstagramClient` solo se probó contra un servidor simulado); SMTP real (remitente, Q100) y `S3Storage` contra un servicio real.
 - **Despliegue:** hosting, base y dominio sin definir (ADR-15, Q13, Q14); `deploy.yml` y `lighthouse.yml` de la CI; enlaces del repositorio y de la aplicación en `docs/entrega/Enlaces.md` (`[completar]`).
-- **Con el cliente:** datos de ingreso (Q122), ubicación de materias por año (Q120), nombres de la resolución (Q121), URL de SIU Guaraní, Mi Argentina y Tutoría (Q6), nombres finales Ingreso/Inscripciones (Q20, Q22), hashtag definitivo (Q1), a quién se entregan las credenciales del Superadministrador en producción (Q123), fotos y galería (Q63).
-- **Producto:** galería y plantel (RF09, RF10), plan por año navegable (Q17), "Prioridad visual" en la moderación (Q84), barra inferior móvil del Figma (Q65), documentos públicos de Ingreso (Q62), remitente SMTP (Q100).
+- **Con el cliente:** datos de ingreso (Q122), ubicación de materias por año (Q120), nombres de la resolución (Q121), URL de SIU Guaraní, Mi Argentina y Tutoría (Q6), nombres finales Ingreso/Inscripciones (Q20, Q22), hashtag definitivo (Q1), a quién se entregan las credenciales del Superadministrador en producción (Q123), fotos y galería (Q63), plantel docente real (Q138) y consentimiento de fotos (Q139).
+- **Producto:** plan por año navegable (Q17), "Prioridad visual" en la moderación (Q84), barra inferior móvil del Figma (Q65), documentos públicos de Ingreso (Q62), remitente SMTP (Q100).
 - **Escala:** un proceso web se satura cerca de 300-360 pedidos/s (se resuelve con CDN o más procesos); el límite de frecuencia es en memoria (Q29).
 - **Documentación:** regenerar DER, tablas y PDF; capturas de Roles y permisos (ver arriba).
 - **Cuidado:** `pnpm db:reset` borra la base de desarrollo y lo corre una persona, no un agente. `pnpm e2e` ya no la toca: usa su propia base `ifts2_e2e`.

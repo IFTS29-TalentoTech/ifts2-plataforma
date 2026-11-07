@@ -20,6 +20,28 @@ export interface FetchMediaOptions {
   limit?: number;
   /** Si se indica, solo se devuelven las que lo contienen en la leyenda (RF04). */
   hashtag?: string;
+  /**
+   * Sincronización incremental: no traer publicaciones MÁS VIEJAS que este instante (ISO). Instagram
+   * devuelve las más nuevas primero, así que el cliente corta la paginación al llegar a una más vieja.
+   * Sin `since` se hace la carga completa (hasta `limit` / el tope de páginas).
+   */
+  since?: string;
+  /**
+   * Se llama una vez al terminar el recorrido con cuánto del listado se cubrió. Es un canal aparte para
+   * no cambiar el tipo de retorno (un arreglo). Ver `FetchCoverage`.
+   */
+  onCoverage?: (coverage: FetchCoverage) => void;
+}
+
+/** Hasta dónde llegó un recorrido de `fetchRecentMedia`. Lo usa el servicio para decidir la próxima cota. */
+export interface FetchCoverage {
+  /**
+   * `true` si se vio TODO lo posterior a `since` (o todo el listado): se llegó al final de la lista o a
+   * una publicación más vieja que `since`. `false` si se cortó antes por `limit` o por el tope de páginas.
+   */
+  complete: boolean;
+  /** Fecha (ISO) de la publicación más vieja examinada (con o sin hashtag), o `null` si no vio ninguna. */
+  oldestScanned: string | null;
 }
 
 export interface InstagramClient {
@@ -30,6 +52,11 @@ export interface InstagramClient {
    */
   fetchRecentMedia(opts?: FetchMediaOptions): Promise<InstagramMedia[]>;
   testConnection(): Promise<ConnectionTest>;
+  /**
+   * Id de usuario de la cuenta conectada (no secreto), con una llamada liviana (`/me?fields=id`). Sirve
+   * para detectar que se cambió de cuenta y entonces hacer una carga completa (ADR-038).
+   */
+  getAccountId(): Promise<string>;
 }
 
 /** Se lanza cuando faltan credenciales o la cuenta no está conectada. La API lo traduce a 422 claro. */

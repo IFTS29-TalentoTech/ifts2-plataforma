@@ -14,8 +14,8 @@ Prioridad: **M** = Debe · **S** = Debería · **C** = Podría. Origen: **Negoci
 | RF06 | Mostrar solo horarios y mesas del ciclo público vigente; calendario académico y mesas cargados por archivo, con casilla para destacar eventos próximos | M | Negocio | 04, 10, 12 |
 | RF07 | Accesos directos a SIU Guaraní, Aula virtual, Mi Argentina y Tutoría | M | Negocio | 04 |
 | RF08 | Formulario de contacto a correo institucional | S | Negocio | sin diseño |
-| RF09 | Galería con descripción y categoría | C | Negocio | sin diseño |
-| RF10 | Plantel docente y materias a cargo | S | Negocio | 02 (parcial) |
+| RF09 | Galería con descripción y categoría. **Implementado (ADR-036):** carrusel editable con foto, título, descripción, texto alternativo y categoría en Estudiantes y La carrera; Estudiantes filtra por categoría | C | Negocio | 03, 04 (carrusel) |
+| RF10 | Plantel docente y materias a cargo. **Implementado (ADR-037):** alta, edición, orden, baja lógica (ocultar) y eliminación manual solo de personas ocultas; sección en Institucional | S | Negocio | 02 (parcial; sin diseño del plantel) |
 | RF11 | Rol **Superadministrador** que crea, edita y elimina roles y define qué permisos tiene cada uno; los usuarios reciben un rol. Son cuatro roles de sistema iniciales: SUPERADMIN, ADMIN, BEDELIA y EDITOR | M | Negocio | 12 (sin Figma: se arma con componentes existentes) |
 
 ## No funcionales

@@ -376,16 +376,19 @@ export function PhotoCard({
   src,
   title,
   description,
+  alt = '',
 }: {
   src: string;
   title: string;
   description?: string;
+  /** Texto alternativo; vacío = decorativa (el pie de la tarjeta ya la describe). */
+  alt?: string;
 }) {
   return (
     <figure className="relative overflow-hidden rounded-xl shadow-card">
       <Cover
         src={src}
-        alt=""
+        alt={alt}
         width={800}
         height={534}
         className="aspect-[3/2]"

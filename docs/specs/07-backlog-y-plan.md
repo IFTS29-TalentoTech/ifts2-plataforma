@@ -48,8 +48,8 @@ Prioridad M / S / C como en `01-requerimientos.md`. Una historia = una rama = un
 | US-26 | Como administrador quiero gestionar usuarios (incluso crear otros administradores) y asignarles un rol | M | RF05 | E2E-12 |
 | US-27 | Como visitante quiero enviar una consulta | S | RF08 | E2E-14 |
 | US-28 | Como bedelía quiero leer y marcar mensajes de contacto | S | RF08 | Bandeja con estados |
-| US-29 | Como editor quiero gestionar el plantel docente y mostrar el plan con correlatividades | S | RF10 | Alta, baja lógica y visibilidad |
-| US-30 | Como editor quiero gestionar la galería | C | RF09 | Imagen con descripción y categoría |
+| US-29 | Como editor quiero gestionar el plantel docente y mostrar el plan con correlatividades | S | RF10 | Alta, baja lógica y visibilidad (ADR-037); el plan con correlatividades se muestra en La carrera (Q17, Q134) |
+| US-30 | Como editor quiero gestionar la galería | C | RF09 | Imagen con descripción y categoría; filtro por categoría en Estudiantes (ADR-036) |
 | US-31 | Como equipo quiero degradación controlada, límites de frecuencia y respaldos | M | RNF03, RNF06 | Pruebas de falla de servicios; restauración probada |
 | US-32 | Como equipo quiero documentación técnica y manual de usuario | M | RNF01 | Manual con tareas típicas de los editores |
 | US-33 | Como usuario autorizado quiero eliminar contenido no vigente con confirmación | M | Consigna | E2E-16; auditoría; 409 si está vigente o referenciado |

@@ -63,6 +63,12 @@ export type NoticeViewStatus = (typeof NOTICE_VIEW_STATUSES)[number];
 export const CATEGORY_KINDS = ['PUBLICATION', 'NOTICE', 'GALLERY'] as const;
 export type CategoryKind = (typeof CATEGORY_KINDS)[number];
 
+/** Galerías editables del sitio (RF09, ADR-036): carrusel de Estudiantes y fotos de La carrera. */
+export const GALLERY_AREAS = ['STUDENTS', 'CAREER'] as const;
+export type GalleryArea = (typeof GALLERY_AREAS)[number];
+/** Máximo de diapositivas por galería (Q10: imágenes acotadas y livianas). */
+export const GALLERY_MAX_PER_AREA = 10;
+
 export const CONTENT_PAGES = ['institucional', 'carrera', 'ingreso'] as const;
 export type ContentPage = (typeof CONTENT_PAGES)[number];
 

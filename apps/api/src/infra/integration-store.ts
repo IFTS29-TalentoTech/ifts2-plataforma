@@ -8,6 +8,11 @@ import type { Db } from './prisma';
  */
 export interface InstagramStoredConfig {
   mode: 'demo' | 'real';
+  /**
+   * Cómo se conecta la cuenta: `oauth` (App ID + Secret + inicio de sesión de Meta) o `token` (se pega un
+   * token de acceso y no hacen falta App ID ni Secret). Si falta se asume `oauth` (configuraciones viejas).
+   */
+  connectionMethod?: 'oauth' | 'token';
   appId?: string;
   appSecret?: string;
   accessToken?: string;
@@ -17,6 +22,28 @@ export interface InstagramStoredConfig {
   lastError?: string | null;
 }
 
+/**
+ * Estado de la sincronización incremental de Instagram (ADR-038). Se guarda aparte de `instagram` para
+ * que ni "Guardar configuración" ni "Desconectar" lo pisen, y porque en modo demostración no existe la
+ * fila `instagram`. No contiene secretos: solo fechas, un conteo, el id de la cuenta y la configuración con la que se sincronizó.
+ */
+export interface InstagramSyncState {
+  /** Cuándo terminó el último fetch EXITOSO (ISO). Es lo que se muestra en el panel. */
+  lastFetchAt: string;
+  /** Instante (ISO) hasta el cual ya se vio todo lo publicado: de acá parte la próxima incremental. */
+  coveredUntil: string;
+  /** Tipo del último fetch exitoso. */
+  mode: 'incremental' | 'full';
+  /** Publicaciones con el hashtag que trajo ese fetch. */
+  count: number;
+  /** Id de usuario de Instagram (Graph `/me?fields=id`) de la cuenta sincronizada. No es un secreto. */
+  accountId: string;
+  /** Hashtag normalizado con el que se sincronizó. */
+  hashtag: string;
+  /** Método de conexión ('oauth' | 'token') o 'demo'. Si cambia o cambia la cuenta o el hashtag, la próxima es completa. */
+  connection: string;
+}
+
 export interface MailStoredConfig {
   contactToEmail?: string;
   smtpUrl?: string;
@@ -24,6 +51,7 @@ export interface MailStoredConfig {
 
 export interface StoredConfigs {
   instagram: InstagramStoredConfig;
+  instagram_sync: InstagramSyncState;
   mail: MailStoredConfig;
 }
 export type IntegrationName = keyof StoredConfigs;

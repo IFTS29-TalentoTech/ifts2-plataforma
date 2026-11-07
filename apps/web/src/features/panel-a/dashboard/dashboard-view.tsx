@@ -129,7 +129,7 @@ export function DashboardView({ perms }: { perms: PermissionList }) {
         {canSocial && (
           <button
             type="button"
-            onClick={sync}
+            onClick={() => sync()}
             disabled={syncing}
             aria-busy={syncing || undefined}
             className={
@@ -400,7 +400,7 @@ export function DashboardView({ perms }: { perms: PermissionList }) {
                 <Button
                   variant="secondary"
                   className="justify-start"
-                  onClick={sync}
+                  onClick={() => sync()}
                   loading={syncing}
                 >
                   <RefreshCw className="h-4 w-4" aria-hidden="true" />
@@ -437,6 +437,15 @@ export function DashboardView({ perms }: { perms: PermissionList }) {
                     : 'sin sincronizar'}
                 </strong>
               </p>
+              {d.instagram.lastFetchAt && (
+                <p className="mt-1 flex justify-between text-xs" data-testid="ig-last-fetch">
+                  <span>Último fetch exitoso:</span>
+                  <strong>
+                    {formatDateTimeAR(d.instagram.lastFetchAt)}
+                    {d.instagram.lastSyncMode === 'full' ? ' (completo)' : ' (incremental)'}
+                  </strong>
+                </p>
+              )}
             </div>
           )}
         </aside>

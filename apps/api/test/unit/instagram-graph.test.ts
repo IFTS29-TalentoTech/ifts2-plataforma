@@ -5,6 +5,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   exchangeCodeForToken,
+  FakeInstagramClient,
   GraphInstagramClient,
   InstagramApiError,
   InstagramNotConfiguredError,
@@ -147,6 +148,96 @@ describe('fetchRecentMedia', () => {
     await expect(client({ accessToken: undefined }).fetchRecentMedia()).rejects.toThrow(
       /falta conectar la cuenta/,
     );
+  });
+});
+
+describe('fetchRecentMedia incremental (since)', () => {
+  const at = (iso: string) => iso;
+  const media = () => [
+    { id: 'n2', caption: '#t', timestamp: at('2026-11-07T10:00:00.000Z') },
+    { id: 'n1', caption: '#t', timestamp: at('2026-11-06T10:00:00.000Z') },
+    { id: 'v1', caption: '#t', timestamp: at('2026-10-01T10:00:00.000Z') },
+    { id: 'v2', caption: '#t', timestamp: at('2026-09-01T10:00:00.000Z') },
+    { id: 'v3', caption: '#t', timestamp: at('2026-08-01T10:00:00.000Z') },
+    { id: 'v4', caption: '#t', timestamp: at('2026-07-01T10:00:00.000Z') },
+  ];
+
+  it('corta la paginación al llegar a una publicación más vieja que since y no la devuelve', async () => {
+    mock.media = media(); // páginas de 2 => 3 páginas en total
+    let cov: unknown;
+    const out = await client().fetchRecentMedia({
+      hashtag: '#t',
+      since: '2026-11-05T00:00:00.000Z',
+      onCoverage: (c) => (cov = c),
+    });
+    expect(out.map((m) => m.id)).toEqual(['n2', 'n1']);
+    // La 1.ª página ya tiene todo lo nuevo pero no una vieja: hay que mirar la 2.ª para confirmar el corte.
+    expect(mock.callsTo('/me/media')).toHaveLength(2);
+    expect(cov).toEqual({ complete: true, oldestScanned: '2026-09-01T10:00:00.000Z' });
+  });
+
+  it('sin since recorre todo (carga completa) y lo informa como completo', async () => {
+    mock.media = media();
+    let cov: { complete: boolean } | undefined;
+    const out = await client().fetchRecentMedia({ hashtag: '#t', onCoverage: (c) => (cov = c) });
+    expect(out).toHaveLength(6);
+    expect(mock.callsTo('/me/media')).toHaveLength(3);
+    expect(cov?.complete).toBe(true);
+  });
+
+  it('si se corta por el tope de páginas o por el límite, la cobertura NO es completa', async () => {
+    mock.media = media();
+    let cov: { complete: boolean; oldestScanned: string | null } | undefined;
+    await client({ maxPages: 1 }).fetchRecentMedia({
+      hashtag: '#t',
+      since: '2026-01-01T00:00:00.000Z',
+      onCoverage: (c) => (cov = c),
+    });
+    expect(cov).toEqual({ complete: false, oldestScanned: '2026-11-06T10:00:00.000Z' });
+    await client().fetchRecentMedia({ hashtag: '#t', limit: 1, onCoverage: (c) => (cov = c) });
+    expect(cov?.complete).toBe(false);
+  });
+
+  it('el doble de demostración respeta since y la misma interfaz', async () => {
+    const fake = new FakeInstagramClient([
+      {
+        id: 'a',
+        caption: '#t',
+        mediaType: 'IMAGE',
+        mediaUrl: 'x',
+        permalink: 'p',
+        timestamp: '2026-11-07T00:00:00.000Z',
+      },
+      {
+        id: 'b',
+        caption: '#t',
+        mediaType: 'IMAGE',
+        mediaUrl: 'x',
+        permalink: 'p',
+        timestamp: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+    const out = await fake.fetchRecentMedia({ hashtag: '#t', since: '2026-06-01T00:00:00.000Z' });
+    expect(out.map((m) => m.id)).toEqual(['a']);
+    expect(fake.lastSince).toBe('2026-06-01T00:00:00.000Z');
+    expect(await fake.getAccountId()).toBe('demo-account');
+  });
+});
+
+describe('getAccountId', () => {
+  it('lee el id con una llamada liviana a /me?fields=id', async () => {
+    mock.accountId = '17841400';
+    expect(await client().getAccountId()).toBe('17841400');
+    expect(mock.callsTo('/me')[0]!.query.get('fields')).toBe('id');
+  });
+
+  it('error de token: mensaje claro y sin filtrar el token', async () => {
+    mock.mediaError = { status: 400, body: TOKEN_ERROR_BODY };
+    const err = await client()
+      .getAccountId()
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(InstagramApiError);
+    expect((err as Error).message).not.toContain(TOKEN);
   });
 });
 

@@ -41,3 +41,7 @@ Todo `/integrations/*` se protege con el permiso `integrations:manage` del catá
 - Los secretos nunca aparecen en respuestas, logs ni auditoría (solo nombres de campos).
 - `GraphInstagramClient` quedó completo después (paginación, filtro por hashtag, canje de código OAuth y renovación del token a los ~50 días; ver ADR-030), pero **sigue sin verificarse contra la API real de Meta**: solo se probó contra un servidor simulado.
 - `S3Storage` implementado pero no probado contra un servicio real (sin credenciales).
+
+## Enmienda (07/11/2026): método de conexión de Instagram
+
+La configuración guarda `connectionMethod`: `oauth` (App ID + Secret + inicio de sesión de Meta) o `token` (se pega un token de acceso y no hacen falta App ID ni Secret). Antes pegar un token no pasaba a modo real y la API exigía igualmente App ID y Secret, así que en un equipo local (donde Meta no acepta la redirección OAuth) no había forma de conectar. Las configuraciones previas sin el campo se tratan como `oauth`. Cambiar de método descarta el token y vuelve a demostración. La pantalla ofrece un selector y muestra solo el formulario del método elegido.

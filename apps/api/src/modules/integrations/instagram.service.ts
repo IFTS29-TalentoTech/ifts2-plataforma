@@ -19,11 +19,14 @@ export async function instagramView(ctx: AppContext) {
   const { config, integrations, prisma } = ctx;
   const stored = await integrations.get('instagram');
   const tokenRow = await prisma.instagramToken.findUnique({ where: { id: 1 } });
+  const syncState = await integrations.get('instagram_sync');
   const hashtagRow = await prisma.siteSetting.findUnique({ where: { key: 'instagram_hashtag' } });
 
   const env = config.instagram;
   const envReal = env.provider === 'graph' && !!env.appId && !!env.appSecret;
   const mode = stored ? stored.mode : envReal ? 'real' : 'demo';
+  /** `token`: se conectó pegando un token (sin App ID ni Secret). Las configuraciones viejas son `oauth`. */
+  const method = stored?.connectionMethod ?? 'oauth';
   const appId = stored?.appId ?? (stored ? undefined : env.appId);
   const hasSecret = !!(stored?.appSecret ?? (stored ? undefined : env.appSecret));
   const hasToken = !!stored?.accessToken;
@@ -31,7 +34,8 @@ export async function instagramView(ctx: AppContext) {
   const now = Date.now();
 
   let status: InstagramStatus;
-  if (mode === 'demo' || !appId || !hasSecret) status = 'demo';
+  const incomplete = method === 'token' ? !hasToken : !appId || !hasSecret;
+  if (mode === 'demo' || incomplete) status = 'demo';
   else if (stored?.lastError || (hasToken && expiresAt && expiresAt.getTime() <= now))
     status = 'error';
   else if (!hasToken) status = 'credentials_saved';
@@ -50,6 +54,7 @@ export async function instagramView(ctx: AppContext) {
     /** true => el panel muestra el aviso "modo demostración". */
     demoMode: status === 'demo',
     mode,
+    connectionMethod: method,
     source: stored ? 'panel' : envReal ? 'env' : 'none',
     appIdMasked: maskSecret(appId),
     appSecretMasked: hasSecret ? '••••••••' : null,
@@ -61,6 +66,11 @@ export async function instagramView(ctx: AppContext) {
     lastSyncAt: tokenRow?.lastSyncAt ?? null,
     lastSyncOk: tokenRow?.lastSyncOk ?? null,
     lastError,
+    /** Momento del último fetch EXITOSO (ADR-038); `lastSyncAt` es el último intento, sea cual sea su resultado. */
+    lastFetchAt: syncState?.lastFetchAt ?? null,
+    /** Tipo del último fetch exitoso: 'incremental' (solo lo nuevo) o 'full' (carga completa). */
+    lastSyncMode: syncState?.mode ?? null,
+    lastFetchCount: syncState?.count ?? null,
     hashtag: hashtagRow?.value ?? null,
     /** Dirección exacta que el cliente debe registrar en su app de Meta (copiable). */
     redirectUri: env.redirectUri,

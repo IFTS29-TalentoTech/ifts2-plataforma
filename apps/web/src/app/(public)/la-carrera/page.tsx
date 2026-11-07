@@ -6,13 +6,14 @@
  *   plan por año y correlatividades) se dibuja como bloques en orden. El plan (por área formativa, con
  *   horas y correlatividades) viene de la Res. MEGC 1202/07; la ubicación por año no figura en los
  *   documentos del cliente y queda como [a confirmar] (Q120). No se inventa.
- * - Foto junto al perfil profesional (`career_image`, provisoria exportada del Figma, ADR-035/Q63);
- *   sin imagen configurada el perfil vuelve a ser una tarjeta más. El plan "por año" del Figma NO se
+ * - Foto(s) junto al perfil profesional: carrusel editable desde Configuración -> Galerías (RF09,
+ *   ADR-036); sin diapositivas se usa `career_image` como respaldo (provisoria del Figma, ADR-035/Q63);
+ *   sin ninguna imagen el perfil vuelve a ser una tarjeta más. El plan "por año" del Figma NO se
  *   dibuja: la ubicación de cada materia por año no está confirmada (Q120).
  */
 import type { Metadata } from 'next';
-import { Card, EmptyState, Eyebrow } from '@/components/ui';
-import { loadContent } from '@/features/public/data';
+import { Card, Carousel, EmptyState, Eyebrow } from '@/components/ui';
+import { loadContent, loadSlides } from '@/features/public/data';
 import { Markdown } from '@/features/public/markdown';
 import { Cover, PageHero, Section, SectionError } from '@/features/public/parts';
 import { getSiteInfo } from '@/lib/site';
@@ -22,11 +23,20 @@ export const metadata: Metadata = { title: 'La carrera' };
 export const revalidate = 60;
 
 export default async function Page() {
-  const [site, content] = await Promise.all([getSiteInfo(), loadContent('carrera')]);
+  const site = await getSiteInfo();
+  const [content, photos] = await Promise.all([
+    loadContent('carrera'),
+    loadSlides(
+      'CAREER',
+      site.careerImage
+        ? [{ key: site.careerImage, src: site.careerImage, title: '', caption: '', alt: '' }]
+        : [],
+    ),
+  ]);
   const sections = content.ok ? [...content.data.sections].sort((a, b) => a.order - b.order) : [];
   const [intro, ...others] = sections;
   // El perfil profesional va a dos columnas (texto + foto) cuando hay foto; si no, queda en la grilla.
-  const profile = site.careerImage ? others.find((x) => x.slug === 'perfil') : undefined;
+  const profile = photos.length > 0 ? others.find((x) => x.slug === 'perfil') : undefined;
   const rest = others.filter((x) => x !== profile);
 
   return (
@@ -58,15 +68,20 @@ export default async function Page() {
                   </h2>
                   <Markdown source={profile.body} />
                 </div>
-                <div className="overflow-hidden rounded-xl shadow-popover">
-                  <Cover
-                    src={site.careerImage}
-                    alt=""
-                    width={640}
-                    height={427}
-                    sizes="(min-width: 1024px) 560px, 100vw"
-                  />
-                </div>
+                <Carousel
+                  label="Fotos de la carrera"
+                  slides={photos.map((p) => (
+                    <div key={p.key} className="overflow-hidden rounded-xl shadow-popover">
+                      <Cover
+                        src={p.src}
+                        alt={p.alt}
+                        width={640}
+                        height={427}
+                        sizes="(min-width: 1024px) 560px, 100vw"
+                      />
+                    </div>
+                  ))}
+                />
               </div>
             )}
             <div className="grid gap-4 md:grid-cols-2">

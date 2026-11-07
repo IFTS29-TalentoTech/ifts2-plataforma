@@ -28,6 +28,9 @@ export interface DashboardDto {
     status: InstagramStatus;
     ok: boolean;
     lastSyncAt: string | null;
+    /** Último fetch exitoso y su tipo (ADR-038). */
+    lastFetchAt?: string | null;
+    lastSyncMode?: 'incremental' | 'full' | null;
     error?: string;
     tokenExpiresAt?: string;
     hashtag: string | null;
@@ -75,6 +78,9 @@ export interface SyncResultDto {
   alreadyKnown: number;
   demo: boolean;
   lastSyncAt: string;
+  /** `incremental` (solo lo posterior al último fetch exitoso) o `full` (carga completa). */
+  mode: 'incremental' | 'full';
+  lastFetchAt: string;
 }
 
 /** Elemento de GET /publications. */

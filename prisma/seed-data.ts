@@ -5,6 +5,59 @@ import { CORRELATIVIDADES, PLAN } from './seed-plan';
 
 export const PLACEHOLDER_URL = 'https://pendiente.invalid/a-confirmar';
 
+/**
+ * Diapositivas iniciales de las galerías editables (RF09, ADR-036). Son las imágenes PROVISORIAS del
+ * Figma (ADR-035, Q63); el instituto las cambia desde Configuración -> Galerías.
+ */
+export interface GallerySeed {
+  area: 'STUDENTS' | 'CAREER';
+  image: string;
+  title: string;
+  caption: string;
+  alt: string;
+  /** Categoría provisoria para el filtro (US-30); sale del tema de cada foto, no de contenido institucional. */
+  category: string;
+}
+
+const STUDENT_GALLERY: GallerySeed[] = [
+  {
+    area: 'STUDENTS',
+    image: '/img/provisorio/vida-cocina-1.webp',
+    title: 'Cocina compartida',
+    category: 'Prácticas',
+    caption: 'Prácticas en equipo y aprendizaje colaborativo.',
+    alt: '',
+  },
+  {
+    area: 'STUDENTS',
+    image: '/img/provisorio/vida-cocina-2.webp',
+    title: 'Ingredientes frescos',
+    category: 'Ingredientes',
+    caption: 'Selección y preparación de materia prima local.',
+    alt: '',
+  },
+  {
+    area: 'STUDENTS',
+    image: '/img/provisorio/vida-cocina-3.webp',
+    title: 'Presentación final',
+    category: 'Platos',
+    caption: 'Técnica, sabor y presentación en cada plato.',
+    alt: '',
+  },
+];
+
+export const GALLERY: GallerySeed[] = [
+  ...STUDENT_GALLERY,
+  {
+    area: 'CAREER',
+    image: '/img/provisorio/la-carrera-perfil.webp',
+    title: '',
+    category: 'Perfil',
+    caption: '',
+    alt: '',
+  },
+];
+
 export const SETTINGS: Record<string, string> = {
   institution_name: 'Instituto de Formación Técnica Superior N.° 2 DE 20',
   institution_short: 'IFTS N.° 2',
@@ -30,12 +83,9 @@ export const SETTINGS: Record<string, string> = {
   hero_image_2: '/img/provisorio/inicio-sarten.webp',
   career_image: '/img/provisorio/la-carrera-perfil.webp',
   ingreso_image: '/img/provisorio/ingreso-hero.webp',
+  // Respaldo (ADR-036): se usa solo si no hay diapositivas cargadas en la galería editable.
   // Una tarjeta por línea: ruta | título | descripción.
-  student_gallery: [
-    '/img/provisorio/vida-cocina-1.webp | Cocina compartida | Prácticas en equipo y aprendizaje colaborativo.',
-    '/img/provisorio/vida-cocina-2.webp | Ingredientes frescos | Selección y preparación de materia prima local.',
-    '/img/provisorio/vida-cocina-3.webp | Presentación final | Técnica, sabor y presentación en cada plato.',
-  ].join('\n'),
+  student_gallery: STUDENT_GALLERY.map((g) => `${g.image} | ${g.title} | ${g.caption}`).join('\n'),
   // instagram_hashtag: [definir con el cliente] (Q1). Solo se carga en la semilla demo.
 };
 
@@ -225,3 +275,65 @@ export const SYSTEM_ROLES = [
   },
   { key: 'EDITOR', name: 'Comunicación', description: 'Publicaciones, redes y novedades.' },
 ] as const;
+
+/**
+ * PLANTEL DE DEMOSTRACIÓN (RF10, ADR-037). Personas FICTICIAS: los nombres son obviamente inventados
+ * ("Docente de ejemplo") y no corresponden a nadie del instituto. Se cargan SOLO con SEED_MODE=demo,
+ * para poder mostrar la pantalla de Institucional y el panel; producción deja el plantel vacío y el
+ * instituto carga el real (Q138). Las materias son nombres del plan de estudios ya sembrado
+ * (Res. MEGC 1202/07). Sin fotos: no hay imágenes de personas con consentimiento. La última está
+ * oculta a propósito, para mostrar la baja lógica.
+ */
+export interface TeacherSeed {
+  name: string;
+  /** Ilustración de ejemplo (no es una foto de una persona real): ver apps/web/public/img/provisorio/docentes. */
+  photo: string;
+  role: string;
+  subjects: string[];
+  visible: boolean;
+}
+
+export const DEMO_TEACHERS: TeacherSeed[] = [
+  {
+    name: 'Mariana Quiroga',
+    photo: '/img/provisorio/docentes/docente-1.webp',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Elaboraciones a base de carnes', 'Cocina nacional e internacional'],
+    visible: true,
+  },
+  {
+    name: 'Julián Bertolini',
+    photo: '/img/provisorio/docentes/docente-2.webp',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Elaboraciones de Panadería', 'Pastelería básica', 'Repostería'],
+    visible: true,
+  },
+  {
+    name: 'Lucía Ferrante',
+    photo: '/img/provisorio/docentes/docente-3.webp',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Elementos de Química', 'Nutrición'],
+    visible: true,
+  },
+  {
+    name: 'Martín Olivera',
+    photo: '/img/provisorio/docentes/docente-4.webp',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Introducción general a la microempresa', 'Comercialización'],
+    visible: true,
+  },
+  {
+    name: 'Sofía Ledesma',
+    photo: '/img/provisorio/docentes/docente-5.webp',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Organización de eventos gastronómicos'],
+    visible: true,
+  },
+  {
+    name: 'Esteban Rinaldi (oculto)',
+    photo: '/img/provisorio/docentes/docente-6.webp',
+    role: 'Profesor/a (demostración)',
+    subjects: ['Taller de Francés técnico'],
+    visible: false,
+  },
+];
