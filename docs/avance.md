@@ -296,6 +296,22 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 **Hecho.** `pnpm e2e` prepara una base propia, `ifts2_e2e` (`scripts/lib/e2e-db.mjs`): la vacía, aplica las migraciones y carga la semilla demo antes de cada corrida, y la API y las tareas de Cypress la usan. Solo acepta una base llamada `ifts2_e2e` en `localhost:5433`, así nunca puede vaciar la de desarrollo. `--reset` ya no hace falta (se ignora); `--keep-db` reutiliza la base E2E.
 
+### 2026-11-07 · Portada manual ante fallas y cambios simultáneos (A10, rama `fix/A10-portada-manual`)
+
+**Problema (pendiente de A10 tras el PR #12).** En `POST /publications/:id/cover` la portada anterior se decidía con un dato leído **antes** de la transacción. Una transacción fallida dejaba la imagen subida huérfana (y si la publicación se eliminaba en el medio, respondía 500). Dos subidas simultáneas dejaban una imagen huérfana, y una subida mientras otro guardaba un formulario con la portada vieja podía dejar la publicación **apuntando a una imagen borrada**.
+
+**Hecho (`apps/api/src/modules/publications/cover.service.ts`).**
+
+- La subida y el `PATCH` con `coverUrl` cambian la portada con un UPDATE condicional ("solo si sigue siendo la esperada"): si otro cambio ganó, **409** sin guardar nada. Se distingue **404** (no existe) de **409** (cambió).
+- Precondición opcional del cliente, `expectedCoverUrl` (en la subida va en el multipart). El formulario web la manda con la portada que vio al abrirse; el `PATCH` del formulario ya no reenviaba `coverUrl`.
+- Si la transacción falla, la imagen nueva se borra solo si nadie la usa; ante una confirmación ambigua o la base caída, se conserva.
+- La portada anterior se borra después de confirmar y solo si ya nadie la usa (también al eliminar una publicación). Un error posterior a la confirmación nunca borra archivos.
+- Sin migraciones. No se tocó la solución del PR #12 (aprobación de Instagram).
+
+**Pruebas.** 14 nuevas en `apps/api/test/api/publications.test.ts` ("portada ante fallas y cambios simultáneos (A10)"), deterministas (se intercepta la transacción): precondición vieja, otro cambio confirmado en el medio, dos subidas simultáneas reales (una 200 y otra 409, queda un solo archivo y es el referenciado), transacción fallida, publicación eliminada en el medio (404), confirmación ambigua, falla al borrar la anterior, portada anterior usada por otra publicación, formulario viejo en el `PATCH`, cambio a dirección externa y `PATCH` sin portada. Todas verifican base y almacenamiento. Contra el código anterior fallan 9 de las 14.
+
+**Trabajo posterior (no incluido).** Los archivos huérfanos históricos del almacenamiento no se limpian. Si hiciera falta, un script que solo **liste** las imágenes sin referencia, para revisarlas a mano (sin borrado automático, por la regla del proyecto).
+
 ## Estado actual (06/11/2026)
 
 - **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).

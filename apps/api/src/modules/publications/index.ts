@@ -16,11 +16,15 @@
  * venía de Instagram, la publicación de redes vuelve a "pendiente" para poder aprobarla o descartarla.
  *
  * Permisos: `publications:manage` y `publications:delete` (EDITOR y ADMIN; BEDELIA no).
+ *
+ * Portada (A10): los cambios usan concurrencia optimista y nunca dejan una publicación apuntando a una
+ * imagen borrada. Reglas en `cover.service.ts`.
  */
 import { Router } from 'express';
 import type { Prisma } from '@prisma/client';
 import {
   idParam,
+  publicationCoverUploadFields,
   publicationCreateInput,
   publicationListQuery,
   publicationReactivateInput,
@@ -33,12 +37,12 @@ import { z } from 'zod';
 import type { AppContext } from '../../context';
 import { errors } from '../../infra/errors';
 import { storeUpload } from '../../infra/storage';
-import { isStorageKey } from '../../lib/cover';
 import { pageArgs, toPage } from '../../lib/pagination';
 import { requirePermission } from '../../middleware/auth';
 import { uploadSingle } from '../../middleware/upload';
 import { valid, validate } from '../../middleware/validate';
 import { audit } from '../audit/audit.service';
+import { guardedPublicationUpdate, removeCoverIfUnused } from './cover.service';
 import {
   isExpired,
   publicationInclude,
@@ -81,11 +85,6 @@ function assertCoverUrl(next: string | null | undefined, current?: string | null
       { coverUrl: ['Usá una dirección web completa o subí la imagen como archivo.'] },
     );
   }
-}
-
-/** Borra del almacenamiento la portada anterior si era una imagen propia (sin fallar si no existe). */
-async function removeStoredCover(ctx: AppContext, coverUrl: string | null | undefined) {
-  if (isStorageKey(coverUrl)) await ctx.storage.remove(coverUrl).catch(() => undefined);
 }
 
 function assertWindow(from: Date | null | undefined, until: Date | null | undefined) {
@@ -172,19 +171,24 @@ router.patch(
   manage,
   validate({ params: idParam, body: publicationUpdateInput }),
   async (req, res) => {
-    const body = valid<PublicationUpdateInput>(req, 'body');
+    const { expectedCoverUrl, ...data } = valid<PublicationUpdateInput>(req, 'body');
     const current = await load(req.ctx, req.valid.params.id);
-    await assertCategory(req.ctx, body.categoryId);
-    assertCoverUrl(body.coverUrl, current.coverUrl);
+    await assertCategory(req.ctx, data.categoryId);
+    // Portada esperada: la que vio el cliente (si la manda) o la leída recién. Se verifica de nuevo,
+    // de forma atómica, en el UPDATE condicional de la transacción.
+    const touchesCover = data.coverUrl !== undefined || expectedCoverUrl !== undefined;
+    const expected = expectedCoverUrl !== undefined ? expectedCoverUrl : current.coverUrl;
+    assertCoverUrl(data.coverUrl, expected);
     // La ventana se valida mezclando lo enviado con lo guardado.
     assertWindow(
-      body.visibleFrom !== undefined ? body.visibleFrom : current.visibleFrom,
-      body.visibleUntil !== undefined ? body.visibleUntil : current.visibleUntil,
+      data.visibleFrom !== undefined ? data.visibleFrom : current.visibleFrom,
+      data.visibleUntil !== undefined ? data.visibleUntil : current.visibleUntil,
     );
     const updated = await req.ctx.prisma.$transaction(async (tx) => {
-      const p = await tx.publication.update({
+      // 404 si se eliminó en el medio; 409 si la portada ya no es la esperada (no se guarda nada).
+      await guardedPublicationUpdate(tx, current.id, touchesCover ? expected : undefined, data);
+      const p = await tx.publication.findUniqueOrThrow({
         where: { id: current.id },
-        data: body,
         include: publicationInclude,
       });
       await audit.fromReq(
@@ -193,14 +197,16 @@ router.patch(
           action: 'publication.update',
           entity: 'Publication',
           entityId: current.id,
-          detail: { fields: Object.keys(body) },
+          detail: { fields: Object.keys(data) },
         },
         tx,
       );
       return p;
     });
-    if (body.coverUrl !== undefined && body.coverUrl !== current.coverUrl) {
-      await removeStoredCover(req.ctx, current.coverUrl);
+    // Confirmado: la portada reemplazada es exactamente `expected` (lo garantizó la condición). Se borra
+    // solo si ya nadie la usa; un fallo acá no deshace nada.
+    if (data.coverUrl !== undefined && data.coverUrl !== expected) {
+      await removeCoverIfUnused(req.ctx, expected);
     }
     res.json(await toPublicationView(req.ctx.storage, updated));
   },
@@ -215,7 +221,16 @@ router.post(
   async (req, res) => {
     if (!req.file)
       throw errors.validation('Elegí una imagen para subir.', { file: ['Falta la imagen.'] });
+    const fields = publicationCoverUploadFields.safeParse(req.body ?? {});
+    if (!fields.success) {
+      throw errors.validation('La portada esperada no es válida.', {
+        expectedCoverUrl: fields.error.issues.map((i) => i.message),
+      });
+    }
     const current = await load(req.ctx, req.valid.params.id);
+    // Portada que se va a reemplazar: la que vio el cliente (si la manda) o la leída recién.
+    const expected =
+      fields.data.expectedCoverUrl !== undefined ? fields.data.expectedCoverUrl : current.coverUrl;
     const stored = await storeUpload(
       req.ctx.storage,
       { buffer: req.file.buffer, originalName: req.file.originalname },
@@ -225,20 +240,30 @@ router.post(
       await req.ctx.storage.remove(stored.key).catch(() => undefined);
       throw errors.unsupported('La portada debe ser una imagen (JPG, PNG o WebP).');
     }
-    const updated = await req.ctx.prisma.$transaction(async (tx) => {
-      const p = await tx.publication.update({
-        where: { id: current.id },
-        data: { coverUrl: stored.key },
-        include: publicationInclude,
+    let updated: PublicationRow;
+    try {
+      updated = await req.ctx.prisma.$transaction(async (tx) => {
+        // 404 si se eliminó en el medio; 409 si otro cambio la ganó (no se pisa nada).
+        await guardedPublicationUpdate(tx, current.id, expected, { coverUrl: stored.key });
+        const p = await tx.publication.findUniqueOrThrow({
+          where: { id: current.id },
+          include: publicationInclude,
+        });
+        await audit.fromReq(
+          req,
+          { action: 'publication.cover', entity: 'Publication', entityId: current.id },
+          tx,
+        );
+        return p;
       });
-      await audit.fromReq(
-        req,
-        { action: 'publication.cover', entity: 'Publication', entityId: current.id },
-        tx,
-      );
-      return p;
-    });
-    await removeStoredCover(req.ctx, current.coverUrl);
+    } catch (e) {
+      // La imagen recién subida se descarta solo si no quedó referenciada (confirmación ambigua o base
+      // caída: se conserva).
+      await removeCoverIfUnused(req.ctx, stored.key);
+      throw e;
+    }
+    // Confirmado: de acá en adelante nada borra la imagen nueva. La anterior, solo si ya nadie la usa.
+    await removeCoverIfUnused(req.ctx, expected);
     res.json(await toPublicationView(req.ctx.storage, updated));
   },
 );
@@ -394,7 +419,7 @@ router.delete(
         tx,
       );
     });
-    await removeStoredCover(req.ctx, p.coverUrl);
+    await removeCoverIfUnused(req.ctx, p.coverUrl);
     res.status(204).end();
   },
 );

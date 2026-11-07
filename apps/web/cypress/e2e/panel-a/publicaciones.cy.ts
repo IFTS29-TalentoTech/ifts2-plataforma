@@ -164,5 +164,43 @@ for (const vp of VIEWPORTS) {
       cy.contains('Publicación eliminada').should('be.visible');
       cy.contains('li', title).should('not.exist');
     });
+
+    it('portada (A10): se sube desde el formulario y no pisa un cambio hecho mientras estaba abierto', () => {
+      const title = unique('Con portada');
+      const coverOf = () =>
+        cy.api('GET', `/publications?q=${encodeURIComponent(title)}`).its('body.items.0.coverUrl');
+      cy.visit('/panel/publicaciones');
+      cy.contains('[role="tab"]', 'Propias del sitio').click();
+      // Alta con portada (precondición "sin portada").
+      cy.contains('button', 'Nueva publicación').click();
+      cy.contains('label', 'Título').parent().find('input').type(title);
+      cy.contains('label', 'Resumen').parent().find('textarea').type('Con imagen.');
+      cy.get('#portada').selectFile('cypress/fixtures/cover.png');
+      cy.contains('button', 'Crear borrador').click();
+      cy.contains('Publicación creada como borrador').should('be.visible');
+      cy.contains('Se guardó, pero la portada no se pudo subir').should('not.exist');
+      coverOf().should('match', /^covers\/.+\.webp$/);
+
+      // Mientras el formulario de edición está abierto, otra persona cambia la portada.
+      cy.contains('li', title).contains('button', 'Editar').click();
+      cy.contains('[role="dialog"]', 'Editar publicación').should('be.visible');
+      coverOf().then((seen) => {
+        cy.api('GET', `/publications?q=${encodeURIComponent(title)}`).then((r) => {
+          const id = r.body.items[0].id as string;
+          cy.api('PATCH', `/publications/${id}`, {
+            coverUrl: 'https://cdn.ejemplo.com/de-otra-persona.jpg',
+            expectedCoverUrl: seen,
+          })
+            .its('status')
+            .should('eq', 200);
+        });
+      });
+      cy.get('#portada').selectFile('cypress/fixtures/cover.png');
+      cy.contains('button', 'Guardar cambios').click();
+      // Se guardan los textos, pero la portada NO pisa la de la otra persona: aviso claro.
+      cy.contains('Se guardó, pero la portada no se pudo subir').should('be.visible');
+      cy.contains('La portada cambió').should('be.visible');
+      coverOf().should('eq', 'https://cdn.ejemplo.com/de-otra-persona.jpg');
+    });
   });
 }

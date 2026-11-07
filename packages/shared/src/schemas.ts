@@ -334,14 +334,42 @@ export const publicationCreateInput = publicationBase.superRefine((v, ctx) => {
 });
 export type PublicationCreateInput = z.infer<typeof publicationCreateInput>;
 
+/**
+ * Precondición de concurrencia (A10): la portada que el cliente vio al abrir el formulario. Si se
+ * envía, el cambio se aplica SOLO si la portada guardada sigue siendo esa; si alguien la cambió en el
+ * medio, la API responde 409 y no pisa nada. `null` = "no tenía portada". Si no se envía, la API usa la
+ * portada que lee al recibir el pedido.
+ */
+const expectedCoverUrl = z
+  .string({ invalid_type_error: 'La portada esperada no es válida.' })
+  .max(2000, 'La portada esperada no puede superar los 2000 caracteres.')
+  .nullable()
+  .optional();
+
 export const publicationUpdateInput = publicationBase
   .partial()
+  .extend({ expectedCoverUrl })
   .superRefine((v, ctx) => {
     windowRefine(v, ctx);
     eventRefine(v, ctx);
   })
-  .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+  // La precondición sola no es un cambio.
+  .refine((v) => Object.keys(v).some((k) => k !== 'expectedCoverUrl'), {
+    message: 'No hay cambios para guardar.',
+  });
 export type PublicationUpdateInput = z.infer<typeof publicationUpdateInput>;
+
+/**
+ * Campos de texto que acompañan a `POST /publications/:id/cover` (multipart). `expectedCoverUrl`
+ * vacío = "no tenía portada"; ausente = sin precondición del cliente.
+ */
+export const publicationCoverUploadFields = z.object({
+  expectedCoverUrl: z
+    .string({ invalid_type_error: 'La portada esperada no es válida.' })
+    .max(2000, 'La portada esperada no puede superar los 2000 caracteres.')
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === '' ? null : v)),
+});
 
 /** Programar / reactivar con nueva vigencia. */
 export const publicationScheduleInput = z
