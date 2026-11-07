@@ -48,6 +48,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
   useToast,
 } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -91,8 +92,46 @@ const TEXT_FIELDS: { key: TextKey; label: string; hint?: string }[] = [
   { key: 'footer_text', label: 'Texto del pie de página' },
 ];
 
+/** Encabezado de Inicio (titular corto + frase institucional como subtítulo; resuelve Q64). */
+const HOME_FIELDS: { key: TextKey; label: string; hint?: string }[] = [
+  {
+    key: 'hero_eyebrow',
+    label: 'Rótulo sobre el titular de Inicio',
+    hint: 'Ejemplo: Educación pública · Formación técnica. Vacío = se usa el subtítulo institucional.',
+  },
+  {
+    key: 'hero_title',
+    label: 'Titular de Inicio',
+    hint: 'Título corto y destacado. Vacío = se usa la frase institucional como titular.',
+  },
+  {
+    key: 'tagline',
+    label: 'Frase institucional',
+    hint: 'Se muestra debajo del titular de Inicio.',
+  },
+];
+
+/** Imágenes del sitio público: ruta del sitio (/img/...) o dirección https. Vacío = sin imagen. */
+const IMAGE_FIELDS: { key: TextKey; label: string; hint?: string }[] = [
+  { key: 'logo_url', label: 'Logo del encabezado' },
+  { key: 'hero_image_1', label: 'Inicio: imagen principal' },
+  { key: 'hero_image_2', label: 'Inicio: imagen secundaria' },
+  { key: 'career_image', label: 'La carrera: imagen del perfil' },
+  { key: 'ingreso_image', label: 'Ingreso: imagen del encabezado' },
+];
+
+/** Galería "Vida en la cocina" de Estudiantes: una tarjeta por línea (ruta | título | descripción). */
+const GALLERY_FIELD: { key: TextKey; label: string; hint: string } = {
+  key: 'student_gallery',
+  label: 'Galería de Estudiantes',
+  hint: 'Una tarjeta por línea con este formato: /img/foto.webp | Título | Descripción. Hasta 6.',
+};
+
+/** Todos los campos de texto de la pantalla (para cargar, comparar y rotular). */
+const ALL_FIELDS = [...TEXT_FIELDS, ...HOME_FIELDS, ...IMAGE_FIELDS, GALLERY_FIELD];
+
 const LABELS: Record<string, string> = {
-  ...Object.fromEntries(TEXT_FIELDS.map((f) => [f.key, f.label])),
+  ...Object.fromEntries(ALL_FIELDS.map((f) => [f.key, f.label])),
   exam_enrollment_open: 'Inscripciones a mesas SIU habilitadas',
 };
 
@@ -123,7 +162,7 @@ export function ConfiguracionScreen({
   useResetOn(settings.data, () => {
     if (!settings.data) return;
     const next: Partial<Record<TextKey, string>> = {};
-    for (const f of TEXT_FIELDS) next[f.key] = settings.data[f.key] ?? '';
+    for (const f of ALL_FIELDS) next[f.key] = settings.data[f.key] ?? '';
     setForm(next);
     setEnrollment(settings.data.exam_enrollment_open);
     setErrors({});
@@ -133,7 +172,7 @@ export function ConfiguracionScreen({
   const changes = useMemo(() => {
     const out: Record<string, string | boolean> = {};
     if (!settings.data) return out;
-    for (const f of TEXT_FIELDS) {
+    for (const f of ALL_FIELDS) {
       const now = (form[f.key] ?? '').trim();
       if (now !== (settings.data[f.key] ?? '')) out[f.key] = now;
     }
@@ -244,6 +283,46 @@ export function ConfiguracionScreen({
                   className={f.key === 'footer_text' ? 'md:col-span-2' : undefined}
                 />
               ))}
+            </div>
+          </Card>
+
+          <Card
+            className="flex flex-col gap-4 lg:col-span-3"
+            role="region"
+            aria-labelledby="card-sitio"
+          >
+            <div>
+              <Eyebrow>Sitio público</Eyebrow>
+              <h2 id="card-sitio" className="font-display text-lg font-bold text-accent-3">
+                Encabezado de Inicio e imágenes
+              </h2>
+              <p className="text-sm text-font-strong">
+                Las imágenes son una ruta del sitio (por ejemplo /img/foto.webp) o una dirección
+                https completa. Las que vienen cargadas son provisorias hasta tener las del
+                instituto.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {[...HOME_FIELDS, ...IMAGE_FIELDS].map((f) => (
+                <Input
+                  key={f.key}
+                  label={f.label}
+                  hint={f.hint}
+                  value={form[f.key] ?? ''}
+                  onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+                  error={errors[f.key]}
+                  className={f.key === 'tagline' ? 'md:col-span-2' : undefined}
+                />
+              ))}
+              <Textarea
+                label={GALLERY_FIELD.label}
+                hint={GALLERY_FIELD.hint}
+                rows={4}
+                value={form[GALLERY_FIELD.key] ?? ''}
+                onChange={(e) => setForm((s) => ({ ...s, [GALLERY_FIELD.key]: e.target.value }))}
+                error={errors[GALLERY_FIELD.key]}
+                className="md:col-span-2"
+              />
             </div>
           </Card>
 

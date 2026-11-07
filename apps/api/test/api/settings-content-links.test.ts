@@ -43,6 +43,46 @@ describe('/settings', () => {
     }
   });
 
+  it('PUT guarda titular corto, imágenes y galería; /public/settings los publica y vaciar los quita', async () => {
+    const res = await as(admin.cookie).put('/api/v1/settings', {
+      hero_title: 'Titular corto',
+      hero_image_1: '/img/provisorio/inicio-plato.webp',
+      logo_url: 'https://cdn.example.org/logo.webp',
+      student_gallery: '/img/a.webp | Cocina | Equipo\n/img/b.webp | Solo título',
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      hero_title: 'Titular corto',
+      hero_image_1: '/img/provisorio/inicio-plato.webp',
+      hero_image_2: null,
+    });
+
+    const pub = await request(t.app).get('/api/v1/public/settings');
+    expect(pub.body).toMatchObject({
+      hero_title: 'Titular corto',
+      logo_url: 'https://cdn.example.org/logo.webp',
+    });
+    expect(pub.body.hero_image_2).toBeUndefined();
+
+    // Vaciar un valor lo quita de la vista pública (la pantalla usa su valor por defecto).
+    await as(admin.cookie).put('/api/v1/settings', { hero_title: '', hero_image_1: '' });
+    const pub2 = await request(t.app).get('/api/v1/public/settings');
+    expect(pub2.body.hero_title).toBeUndefined();
+    expect(pub2.body.hero_image_1).toBeUndefined();
+    expect(pub2.body.logo_url).toBe('https://cdn.example.org/logo.webp');
+  });
+
+  it('PUT rechaza imágenes que no son una ruta del sitio ni una dirección web (400)', async () => {
+    const res = await as(admin.cookie).put('/api/v1/settings', {
+      career_image: 'javascript:alert(1)',
+      student_gallery: 'sin ruta | Título',
+    });
+    expect(res.status).toBe(400);
+    expect(Object.keys(res.body.errors ?? {})).toEqual(
+      expect.arrayContaining(['career_image', 'student_gallery']),
+    );
+  });
+
   it('PUT guarda parcialmente, normaliza el hashtag, tipa el booleano y audita solo las claves', async () => {
     const res = await as(admin.cookie).put('/api/v1/settings', {
       institution_name: 'Instituto de Prueba',

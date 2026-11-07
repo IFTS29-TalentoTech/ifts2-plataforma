@@ -1,4 +1,4 @@
-import type { SettingKey } from '@ifts2/shared';
+import { parseGallery, type GalleryItem, type SettingKey } from '@ifts2/shared';
 import { api } from './api';
 
 /**
@@ -18,6 +18,18 @@ export interface SiteInfo {
   instagramUrl: string;
   facebookUrl: string;
   tagline: string;
+  /** Titular corto de Inicio (Q64). Vacío = se usa la frase institucional como titular. */
+  heroTitle: string;
+  /** Rótulo sobre el titular de Inicio. Vacío = se usa el subtítulo institucional. */
+  heroEyebrow: string;
+  /** Imágenes del sitio: ruta propia (/img/...) o https; vacías = sin imagen (ADR-035). */
+  logoUrl: string;
+  heroImage1: string;
+  heroImage2: string;
+  careerImage: string;
+  ingresoImage: string;
+  /** Galería "Vida en la cocina" de Estudiantes. */
+  gallery: GalleryItem[];
 }
 
 /** Valores genéricos mientras no hay configuración (nunca texto de una institución concreta). */
@@ -33,6 +45,14 @@ const GENERIC: SiteInfo = {
   instagramUrl: '',
   facebookUrl: '',
   tagline: '',
+  heroTitle: '',
+  heroEyebrow: '',
+  logoUrl: '',
+  heroImage1: '',
+  heroImage2: '',
+  careerImage: '',
+  ingresoImage: '',
+  gallery: [],
 };
 
 export function toSiteInfo(s: Partial<Record<SettingKey, string>>): SiteInfo {
@@ -49,6 +69,14 @@ export function toSiteInfo(s: Partial<Record<SettingKey, string>>): SiteInfo {
     instagramUrl: s.instagram_url ?? '',
     facebookUrl: s.facebook_url ?? '',
     tagline: s.tagline ?? '',
+    heroTitle: s.hero_title ?? '',
+    heroEyebrow: s.hero_eyebrow ?? '',
+    logoUrl: s.logo_url ?? '',
+    heroImage1: s.hero_image_1 ?? '',
+    heroImage2: s.hero_image_2 ?? '',
+    careerImage: s.career_image ?? '',
+    ingresoImage: s.ingreso_image ?? '',
+    gallery: parseGallery(s.student_gallery),
   };
 }
 
