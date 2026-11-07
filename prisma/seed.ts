@@ -39,11 +39,20 @@ type SystemKey = (typeof SYSTEM_ROLES)[number]['key'];
 /**
  * Roles del sistema (RF11). Idempotente y respetuosa: si el rol ya existe NO pisa su nombre ni sus
  * permisos (el Superadministrador pudo haberlos cambiado desde el panel); solo asegura isSystem.
- * Devuelve el id de cada rol por clave.
+ *
+ * Decisión sobre roles eliminados: ADMIN, BEDELIA y EDITOR se pueden eliminar a mano desde el panel.
+ * Para que una re-ejecución de la semilla en producción NO los resucite, en modo `prod` esos tres se
+ * crean solo en el primer arranque (cuando la tabla Role está vacía). SUPERADMIN se asegura siempre
+ * (es imprescindible). En modo `demo` se recrean siempre, porque los usuarios de demostración los
+ * necesitan. Para revertir la decisión basta con quitar la condición `firstBoot`.
+ * Devuelve el id de cada rol que existe, por clave.
  */
-async function seedRoles(): Promise<Record<SystemKey, string>> {
-  const ids = {} as Record<SystemKey, string>;
+async function seedRoles(): Promise<Partial<Record<SystemKey, string>>> {
+  const ids: Partial<Record<SystemKey, string>> = {};
+  const firstBoot = (await prisma.role.count()) === 0;
   for (const r of SYSTEM_ROLES) {
+    const exists = await prisma.role.findUnique({ where: { key: r.key } });
+    if (!exists && r.key !== 'SUPERADMIN' && mode !== 'demo' && !firstBoot) continue;
     const perms = r.key === 'SUPERADMIN' ? [] : DEFAULT_ROLE_PERMISSIONS[r.key];
     const role = await prisma.role.upsert({
       where: { key: r.key },
@@ -58,7 +67,7 @@ async function seedRoles(): Promise<Record<SystemKey, string>> {
     });
     ids[r.key] = role.id;
   }
-  log(`roles del sistema listos (${SYSTEM_ROLES.length})`);
+  log(`roles del sistema listos (${Object.keys(ids).length} de ${SYSTEM_ROLES.length})`);
   return ids;
 }
 
@@ -535,10 +544,10 @@ async function main() {
     throw new Error('La semilla demo nunca se carga en producción (NODE_ENV=production).');
   }
   const roles = await seedRoles();
-  const admin = await seedAdmin(roles.SUPERADMIN);
+  const admin = await seedAdmin(roles.SUPERADMIN!);
   await seedSettingsAndLinks();
   await seedContent();
-  if (mode === 'demo') await seedDemo(admin.id, roles);
+  if (mode === 'demo') await seedDemo(admin.id, roles as Record<SystemKey, string>);
   log('listo');
 }
 

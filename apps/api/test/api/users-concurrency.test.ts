@@ -141,7 +141,7 @@ describe('protección del último administrador', () => {
     await request(t.app)
       .post(`/api/v1/users/${admin.user.id}/deactivate`)
       .set('Cookie', admin.cookie)
-      .expect(422); // desactivarse a uno mismo sigue siendo 422
+      .expect(409); // último Superadministrador (incluso si es uno mismo): 409
     expect(await activeAdmins()).toBe(1);
     expect(await testPrisma.session.count({ where: { userId: admin.user.id } })).toBe(1);
     expect(await mutationLogs()).toHaveLength(1);

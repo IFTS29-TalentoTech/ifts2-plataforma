@@ -194,15 +194,25 @@ describe('reglas del rol SUPERADMIN y de eliminación', () => {
     expect((await api(cookie).del(`/roles/${id}`)).status).toBe(409);
   });
 
-  it('un rol del sistema se renombra pero no se elimina', async () => {
+  it('un rol del sistema se renombra y, sin usuarios, se puede eliminar (auditado)', async () => {
     const { cookie } = await loginAs(t.app, 'SUPERADMIN');
     const id = await ensureRole('EDITOR');
     const renamed = await api(cookie).patch(`/roles/${id}`, { name: 'Prensa' });
     expect(renamed.status).toBe(200);
-    expect(renamed.body).toMatchObject({ key: 'EDITOR', name: 'Prensa' });
+    expect(renamed.body).toMatchObject({ key: 'EDITOR', name: 'Prensa', deletable: true });
+    expect((await api(cookie).del(`/roles/${id}`)).status).toBe(204);
+    expect(await testPrisma.role.count({ where: { id } })).toBe(0);
+    const log = await testPrisma.auditLog.findFirstOrThrow({ where: { action: 'role.delete' } });
+    expect(log.detail).toMatchObject({ key: 'EDITOR' });
+  });
+
+  it('un rol del sistema con usuarios asignados no se elimina (409)', async () => {
+    const { cookie } = await loginAs(t.app, 'SUPERADMIN');
+    const id = await ensureRole('BEDELIA');
+    await createUser({ role: 'BEDELIA' });
     const del = await api(cookie).del(`/roles/${id}`);
     expect(del.status).toBe(409);
-    expect(del.body.detail).toBe('Los roles del sistema no se eliminan.');
+    expect(del.body.detail).toBe('Reasigná a los usuarios antes de eliminar el rol.');
   });
 
   it('un rol con usuarios no se elimina (409 con mensaje claro); sin usuarios sí, y se audita', async () => {

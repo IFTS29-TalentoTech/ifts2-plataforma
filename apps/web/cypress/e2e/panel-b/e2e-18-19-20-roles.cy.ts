@@ -107,6 +107,14 @@ for (const vp of viewports) {
       });
       cy.contains('[data-testid="role-row"]', roleName).should('exist');
 
+      // Roles del sistema: ADMIN/BEDELIA/EDITOR ofrecen "Eliminar"; Superadministrador no.
+      cy.contains('[data-testid="role-row"]', 'Superadministrador')
+        .contains('button', 'Eliminar')
+        .should('not.exist');
+      cy.contains('[data-testid="role-row"]', 'Administrador')
+        .contains('button', 'Eliminar')
+        .should('exist');
+
       // El último Superadministrador no se puede quitar (409).
       cy.api('GET', '/auth/me').then((me) => {
         cy.api('GET', '/roles').then((roles) => {
