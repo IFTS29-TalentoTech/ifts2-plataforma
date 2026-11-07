@@ -11,7 +11,7 @@
  *    Un bot que completa el señuelo recibe 201 igual (no se entera) y no se guarda nada.
  * 2. RNF08 / Ley 25.326: el consentimiento es obligatorio (lo valida `contactInput`).
  * 3. El mensaje se GUARDA SIEMPRE primero; recién después se intenta enviar el correo. Si el correo
- *    falla (o no hay destino configurado) el mensaje se conserva con `mailSent=false` y se responde 201.
+ *    falla, no hay destinatario o se usa la consola (sin SMTP), el mensaje queda con `mailSent=false` y se responde 201.
  * 4. Privacidad: ni el correo ni el mensaje se escriben en logs ni en la auditoría.
  */
 import { Router } from 'express';
@@ -93,7 +93,11 @@ router.post(
           text: `Nombre: ${oneLine(input.name)}\nCorreo: ${input.email}\n\n${input.message}`,
           replyTo: input.email,
         });
-        await prisma.contactMessage.update({ where: { id: saved.id }, data: { mailSent: true } });
+        // La consola solo registra el asunto: no confirma un envío real. El doble de pruebas
+        // (fake) sí registra el envío para comprobar este flujo sin usar un servidor SMTP.
+        if (mailer.kind !== 'console') {
+          await prisma.contactMessage.update({ where: { id: saved.id }, data: { mailSent: true } });
+        }
       } else {
         logger.warn(
           'contacto: no hay correo de destino configurado; el mensaje quedó solo en el panel',
