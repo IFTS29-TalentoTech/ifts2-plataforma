@@ -17,6 +17,7 @@ import { IntegrationStore } from './infra/integration-store';
 import { createInstagramClient, type InstagramClient } from './infra/instagram';
 import { createLogger, type Logger } from './infra/logger';
 import { createMailer, type Mailer } from './infra/mailer';
+import { downloadImage } from './infra/media-download';
 import { createPrisma, type Db } from './infra/prisma';
 import { createStorage, type StorageProvider } from './infra/storage';
 import { attachAuth } from './middleware/auth';
@@ -38,6 +39,7 @@ export interface CreateAppOptions {
   instagramClient?: InstagramClient;
   /** Doble de `fetch` para integraciones salientes (pruebas). */
   fetch?: typeof fetch;
+  downloadImage?: AppContext['downloadImage'];
 }
 
 export const API_PREFIX = '/api/v1';
@@ -50,6 +52,7 @@ export function buildContext(opts: CreateAppOptions = {}): AppContext {
   const fetchFn: typeof fetch = opts.fetch ?? ((input, init) => fetch(input, init));
   return {
     fetch: fetchFn,
+    downloadImage: opts.downloadImage ?? downloadImage,
     config,
     logger,
     prisma,

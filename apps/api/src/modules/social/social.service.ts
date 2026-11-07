@@ -20,7 +20,7 @@ import type { Prisma, SocialPost } from '@prisma/client';
 import type { SocialApproveInput, SocialManualInput, SocialStatus } from '@ifts2/shared';
 import type { AppContext } from '../../context';
 import { AppError, errors } from '../../infra/errors';
-import { downloadImage, MediaDownloadError } from '../../infra/media-download';
+import { MediaDownloadError } from '../../infra/media-download';
 import { storeUpload } from '../../infra/storage';
 import { resolveCoverSrc } from '../../lib/cover';
 import { audit } from '../audit/audit.service';
@@ -141,7 +141,7 @@ async function copyImageToStorage(ctx: AppContext, post: SocialPost): Promise<st
     const host = new URL(post.mediaUrl).hostname;
     buffer = host.endsWith('.invalid')
       ? await demoPlaceholder()
-      : await downloadImage(post.mediaUrl, ctx.fetch);
+      : await ctx.downloadImage(post.mediaUrl);
   } catch (e) {
     const detail = e instanceof MediaDownloadError ? e.message : 'No pudimos descargar la imagen.';
     const hint = isManual

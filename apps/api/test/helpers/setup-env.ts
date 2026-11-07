@@ -1,12 +1,12 @@
 import path from 'node:path';
 import { config } from 'dotenv';
+import { requireTestDatabaseUrl } from './test-database';
 
 // Se ejecuta antes de cada archivo de prueba: fija un entorno de prueba aislado.
 config({ path: path.resolve(import.meta.dirname, '../../../../.env'), quiet: true });
 
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL =
-  process.env.TEST_DATABASE_URL ?? 'postgresql://ifts2:ifts2@localhost:5433/ifts2_test';
+process.env.DATABASE_URL = requireTestDatabaseUrl();
 process.env.APP_ORIGIN = 'http://localhost:3000';
 process.env.API_ORIGIN = 'http://localhost:4000';
 process.env.STORAGE_PROVIDER = 'memory';
