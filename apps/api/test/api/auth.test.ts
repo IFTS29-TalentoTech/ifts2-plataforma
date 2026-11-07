@@ -1,9 +1,10 @@
 import request from 'supertest';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sha256 } from '../../src/infra/crypto';
 import { cookieFrom, loginAs, loginWith } from '../helpers/auth';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { resetDb, testPrisma } from '../helpers/db';
+import { verifyTestDatabase } from '../helpers/test-database';
 import { createUser, TEST_PASSWORD } from '../helpers/factories';
 
 let t: TestApp;
@@ -121,16 +122,85 @@ describe('GET /auth/me', () => {
 });
 
 describe('POST /auth/logout', () => {
-  it('cierra la sesión: la cookie deja de servir', async () => {
+  it('204 elimina la cookie y revoca solo la sesión actual: ya no permite /auth/me', async () => {
     const { cookie, user } = await loginAs(t.app, 'EDITOR');
+    const other = cookieFrom(await loginWith(t.app, user.email, TEST_PASSWORD));
+    const res = await request(t.app).post('/api/v1/auth/logout').set('Cookie', cookie);
+    expect(res.status).toBe(204);
+    expect(res.headers['set-cookie']).toEqual([
+      expect.stringMatching(
+        /^ifts2_session=; Path=\/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax$/,
+      ),
+    ]);
+    expect(
+      await testPrisma.session.count({ where: { tokenHash: sha256(cookie.split('=')[1]!) } }),
+    ).toBe(0);
+    expect(await testPrisma.session.count({ where: { userId: user.id } })).toBe(1);
+    expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie)).status).toBe(401);
+    expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', other)).status).toBe(200);
+  });
+  it('es idempotente sin sesión', async () => {
+    expect((await request(t.app).post('/api/v1/auth/logout')).status).toBe(204);
+  });
+  it('un segundo logout con la misma cookie sigue devolviendo 204', async () => {
+    const { cookie } = await loginAs(t.app, 'EDITOR');
+    for (let i = 0; i < 2; i++) {
+      const res = await request(t.app).post('/api/v1/auth/logout').set('Cookie', cookie);
+      expect(res.status).toBe(204);
+      expect(res.headers['set-cookie']).toBeDefined();
+    }
+    expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie)).status).toBe(401);
+  });
+  it.each(['vencida', 'usuario inactivo'] as const)(
+    'también revoca una sesión que attachAuth omite: %s',
+    async (reason) => {
+      const { cookie, user } = await loginAs(t.app, 'EDITOR');
+      if (reason === 'vencida') {
+        await testPrisma.session.updateMany({
+          where: { userId: user.id },
+          data: { expiresAt: new Date(Date.now() - 1000) },
+        });
+      } else {
+        await testPrisma.user.update({ where: { id: user.id }, data: { active: false } });
+      }
+      expect((await request(t.app).post('/api/v1/auth/logout').set('Cookie', cookie)).status).toBe(
+        204,
+      );
+      expect(await testPrisma.session.count({ where: { userId: user.id } })).toBe(0);
+    },
+  );
+  it('un fallo real de PostgreSQL al revocar da 500, conserva la cookie y permite reintentar', async () => {
+    const { cookie, user } = await loginAs(t.app, 'EDITOR');
+    // A04: ninguna operación de DDL fuera de la base descartable verificada.
+    await verifyTestDatabase(testPrisma);
+    await testPrisma.$executeRawUnsafe(`
+      CREATE FUNCTION fail_logout_a09() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'A09: revocación no disponible'; END $$
+    `);
+    const log = vi.spyOn(t.ctx.logger, 'error');
+    try {
+      await testPrisma.$executeRawUnsafe(`
+        CREATE TRIGGER fail_logout_a09 BEFORE DELETE ON "Session"
+        FOR EACH ROW EXECUTE FUNCTION fail_logout_a09()
+      `);
+      const res = await request(t.app).post('/api/v1/auth/logout').set('Cookie', cookie);
+      expect(res.status).toBe(500);
+      expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
+      expect(res.body).toMatchObject({ status: 500, code: 'internal' });
+      expect(res.headers['set-cookie']).toBeUndefined();
+      expect(log).toHaveBeenCalled();
+      expect(await testPrisma.session.count({ where: { userId: user.id } })).toBe(1);
+      expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie)).status).toBe(200);
+    } finally {
+      log.mockRestore();
+      await testPrisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS fail_logout_a09 ON "Session"');
+      await testPrisma.$executeRawUnsafe('DROP FUNCTION fail_logout_a09()');
+    }
     expect((await request(t.app).post('/api/v1/auth/logout').set('Cookie', cookie)).status).toBe(
       204,
     );
     expect(await testPrisma.session.count({ where: { userId: user.id } })).toBe(0);
     expect((await request(t.app).get('/api/v1/auth/me').set('Cookie', cookie)).status).toBe(401);
-  });
-  it('es idempotente sin sesión', async () => {
-    expect((await request(t.app).post('/api/v1/auth/logout')).status).toBe(204);
   });
 });
 

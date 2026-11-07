@@ -80,10 +80,13 @@ router.post(
   },
 );
 
-/** POST /auth/logout: cierra la sesión actual (idempotente). */
+/** POST /auth/logout: 204 solo tras revocar la sesión de la cookie (o si ya no existe). */
 router.post('/logout', async (req, res) => {
-  if (req.auth) {
-    await req.ctx.prisma.session.deleteMany({ where: { id: req.auth.sessionId } });
+  const token = req.cookies?.[req.ctx.config.session.cookieName];
+  if (typeof token === 'string' && token) {
+    // También revoca sesiones vencidas o de usuarios inactivos, que attachAuth no carga.
+    // Si PostgreSQL falla, el error se propaga y la cookie se conserva para reintentar.
+    await req.ctx.prisma.session.deleteMany({ where: { tokenHash: sha256(token) } });
   }
   clearSessionCookie(req, res);
   res.status(204).end();
