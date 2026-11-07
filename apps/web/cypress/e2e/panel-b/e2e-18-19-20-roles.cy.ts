@@ -111,9 +111,13 @@ for (const vp of viewports) {
       cy.contains('[data-testid="role-row"]', 'Superadministrador')
         .contains('button', 'Eliminar')
         .should('not.exist');
-      cy.contains('[data-testid="role-row"]', 'Administrador')
-        .contains('button', 'Eliminar')
-        .should('exist');
+      cy.api('GET', '/roles').then((roles) => {
+        const admin = roles.body.items.find((x: RoleRow) => x.key === 'ADMIN');
+        expect(admin, 'rol ADMIN').not.to.eq(undefined);
+        cy.contains('[data-testid="role-row"]', admin.name)
+          .contains('button', 'Eliminar')
+          .should('exist');
+      });
 
       // El último Superadministrador no se puede quitar (409).
       cy.api('GET', '/auth/me').then((me) => {
