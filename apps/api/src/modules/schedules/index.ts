@@ -79,6 +79,11 @@ async function updateCurrent(
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
       throw errors.conflict('El horario cambió durante la operación. Recargá y revisá su estado.');
     }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+      throw errors.conflict(
+        'El archivo fue eliminado durante la operación. Recargá y elegí un documento disponible.',
+      );
+    }
     throw error;
   }
 }
