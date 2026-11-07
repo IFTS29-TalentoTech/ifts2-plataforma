@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { PanelShell } from '@/components/layout/panel-shell';
-import { api } from '@/lib/api';
-import { cookieHeader, requireSession } from '@/lib/session';
+import { ApiUnavailable } from '@/components/layout/api-unavailable';
+import { api, ApiError } from '@/lib/api';
+import { cookieHeader, getSession } from '@/lib/session';
 import { getSiteInfo } from '@/lib/site';
 
 // El panel es siempre dinámico (depende de la sesión).
@@ -15,7 +16,16 @@ interface Dashboard {
 
 /** Protege todo /panel/* (excepto /panel/login): sin sesión válida redirige al login. */
 export default async function Layout({ children }: { children: ReactNode }) {
-  const session = await requireSession();
+  // Si la API no responde (status 0 o 5xx) se muestra un aviso claro en lugar del error genérico;
+  // sin sesión válida se redirige al login como siempre.
+  let session;
+  try {
+    session = await getSession();
+  } catch (e) {
+    if (e instanceof ApiError && (e.status === 0 || e.status >= 500)) return <ApiUnavailable />;
+    throw e;
+  }
+  if (!session) redirect('/panel/login');
   // Tras un restablecimiento de clave la API bloquea todo (403) hasta que se cambie: pantalla propia.
   if (session.mustChangePassword) redirect('/panel/login/cambiar-clave');
   const cookie = await cookieHeader();
