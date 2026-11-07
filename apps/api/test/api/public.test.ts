@@ -3,6 +3,7 @@
  * contenido vencido, pausado, sin publicar, programado a futuro o de un ciclo que no es el público.
  */
 import request from 'supertest';
+import { isPublicationVisible } from '@ifts2/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { loginAs } from '../helpers/auth';
@@ -373,6 +374,237 @@ describe('GET /public/publications', () => {
     expect((await get('/publications?category=no-es-uuid')).status).toBe(400);
     expect((await get('/publications?year=abc')).status).toBe(400);
     expect((await get('/publications?archived=quizas')).status).toBe(400);
+  });
+});
+
+describe('histórico de publicaciones programadas (A05)', () => {
+  const at = (iso: string) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(iso));
+  };
+
+  beforeEach(() => at('2026-06-15T12:00:00.000Z'));
+
+  it('separa vigentes e históricas y excluye estados y ventanas nunca elegibles', async () => {
+    const past = new Date('2026-06-01T12:00:00.000Z');
+    const end = new Date('2026-06-10T12:00:00.000Z');
+    const future = new Date('2026-07-01T12:00:00.000Z');
+    const live = [];
+    const archived = [];
+    const hidden = [];
+    for (const status of ['PUBLISHED', 'SCHEDULED'] as const) {
+      live.push(await createPublicationAt({ status, visibleFrom: past, visibleUntil: future }));
+      archived.push(await createPublicationAt({ status, visibleFrom: past, visibleUntil: end }));
+      hidden.push(await createPublicationAt({ status, visibleFrom: future }));
+    }
+    archived.push(await createPublicationAt({ visibleUntil: end }));
+    for (const status of ['DRAFT', 'PAUSED'] as const) {
+      hidden.push(await createPublicationAt({ status, visibleFrom: past, visibleUntil: end }));
+    }
+    for (const visibleFrom of [null, future, end]) {
+      hidden.push(
+        await createPublicationAt({ status: 'SCHEDULED', visibleFrom, visibleUntil: end }),
+      );
+    }
+    hidden.push(await createPublicationAt({ status: 'SCHEDULED' }));
+    hidden.push(
+      await createPublicationAt({ status: 'SCHEDULED', visibleFrom: end, visibleUntil: past }),
+    );
+
+    const current = await get('/publications');
+    const history = await get('/publications?archived=true');
+    expect(current.status).toBe(200);
+    expect(history.status).toBe(200);
+    const ids = (items: { id: string }[]) => items.map((p) => p.id).sort();
+    expect(ids(current.body.items)).toEqual(ids(live));
+    expect(current.body.total).toBe(live.length);
+    expect(ids(history.body.items)).toEqual(ids(archived));
+    expect(history.body.total).toBe(archived.length);
+    expect(ids((await get('/home')).body.publications)).toEqual(ids(live));
+    expect(new Set([...ids(current.body.items), ...ids(history.body.items)]).size).toBe(
+      live.length + archived.length,
+    );
+    for (const p of live) {
+      expect(isPublicationVisible(p, new Date())).toBe(true);
+      expect((await get(`/publications/${p.id}`)).status).toBe(200);
+      expect((await get(`/publications/${p.id}?archived=true`)).status).toBe(404);
+    }
+    for (const p of archived) {
+      expect(isPublicationVisible(p, new Date(p.visibleUntil!.getTime() - 1))).toBe(true);
+      expect((await get(`/publications/${p.id}`)).status).toBe(404);
+      const detail = await get(`/publications/${p.id}?archived=true`);
+      expect(detail.status).toBe(200);
+      expect(detail.body).toMatchObject({ id: p.id, body: p.body, origin: 'MANUAL' });
+    }
+    for (const p of hidden) {
+      expect(isPublicationVisible(p, new Date())).toBe(false);
+      expect((await get(`/publications/${p.id}`)).status).toBe(404);
+      expect((await get(`/publications/${p.id}?archived=true`)).status).toBe(404);
+    }
+    expect(await testPrisma.publication.count({ where: { status: 'SCHEDULED' } })).toBe(
+      [...live, ...archived, ...hidden].filter((p) => p.status === 'SCHEDULED').length,
+    );
+  });
+
+  it.each(['PUBLISHED', 'SCHEDULED'] as const)(
+    '%s: pasa de futura a vigente y al histórico en los límites exactos, sin duplicados',
+    async (status) => {
+      const from = new Date('2026-06-15T12:00:00.000Z');
+      const until = new Date('2026-06-16T12:00:00.000Z');
+      const p = await createPublicationAt({ status, visibleFrom: from, visibleUntil: until });
+      for (const [time, visible, expired] of [
+        [from.getTime() - 1, false, false],
+        [from.getTime(), true, false],
+        [until.getTime() - 1, true, false],
+        [until.getTime(), false, true],
+      ] as const) {
+        at(new Date(time).toISOString());
+        const current = await get('/publications');
+        const history = await get('/publications?archived=true');
+        expect(current.body.total).toBe(Number(visible));
+        expect(current.body.items.map((p: { id: string }) => p.id)).toEqual(visible ? [p.id] : []);
+        expect(history.body.total).toBe(Number(expired));
+        expect(history.body.items.map((p: { id: string }) => p.id)).toEqual(expired ? [p.id] : []);
+        expect(history.body.availableYears).toEqual(
+          status === 'SCHEDULED' && time < from.getTime() ? [] : [2026],
+        );
+        expect((await get(`/publications/${p.id}`)).status).toBe(visible ? 200 : 404);
+        expect((await get(`/publications/${p.id}?archived=true`)).status).toBe(expired ? 200 : 404);
+        expect(isPublicationVisible(p, new Date())).toBe(visible);
+      }
+      expect((await testPrisma.publication.findUniqueOrThrow({ where: { id: p.id } })).status).toBe(
+        status,
+      );
+    },
+  );
+
+  it('conserva el detalle archivado de Instagram sin modificar su origen ni enlace', async () => {
+    const post = await testPrisma.socialPost.create({
+      data: {
+        externalId: 'ig-a05',
+        permalink: 'https://instagram.test/p/a05',
+        caption: 'Publicación aprobada',
+        mediaUrl: 'https://instagram.test/a05.jpg',
+        postedAt: new Date('2026-06-01T12:00:00Z'),
+      },
+    });
+    const p = await createPublicationAt({
+      visibleFrom: new Date('2026-06-01T12:00:00Z'),
+      visibleUntil: new Date('2026-06-10T12:00:00Z'),
+    });
+    await testPrisma.publication.update({
+      where: { id: p.id },
+      data: { origin: 'INSTAGRAM', socialPostId: post.id },
+    });
+    const history = await get('/publications?archived=true');
+    expect(history.body).toMatchObject({ total: 1, items: [{ id: p.id, origin: 'INSTAGRAM' }] });
+    expect((await get(`/publications/${p.id}?archived=true`)).body).toMatchObject({
+      id: p.id,
+      origin: 'INSTAGRAM',
+      permalink: post.permalink,
+    });
+    expect((await get(`/publications/${p.id}`)).status).toBe(404);
+  });
+
+  it('incluye años programados elegibles y filtra y pagina el histórico en hora de Buenos Aires', async () => {
+    const cat = await createCategory({ kind: 'PUBLICATION', name: 'Institucional' });
+    const other = await createCategory({ kind: 'PUBLICATION', name: 'Eventos' });
+    const beforeBA = new Date('2026-01-01T02:59:59.999Z');
+    const newYearBA = new Date('2026-01-01T03:00:00.000Z');
+    const expired = new Date('2026-02-01T12:00:00.000Z');
+    const selected = [];
+    for (let i = 0; i < 3; i++) {
+      selected.push(
+        await createPublicationAt({
+          status: 'SCHEDULED',
+          visibleFrom: beforeBA,
+          visibleUntil: expired,
+          categoryId: cat.id,
+          createdAt: newYearBA,
+        }),
+      );
+    }
+    const nextYear = await createPublicationAt({
+      status: 'SCHEDULED',
+      visibleFrom: newYearBA,
+      visibleUntil: expired,
+      categoryId: cat.id,
+    });
+    await createPublicationAt({
+      status: 'SCHEDULED',
+      visibleFrom: beforeBA,
+      visibleUntil: expired,
+      categoryId: other.id,
+    });
+    const fallback = await createPublicationAt({
+      visibleUntil: expired,
+      createdAt: new Date('2024-01-01T02:59:59.999Z'),
+      categoryId: other.id,
+    });
+    await createPublicationAt({
+      status: 'SCHEDULED',
+      visibleFrom: new Date('2024-06-01T12:00:00Z'),
+    });
+    await createPublicationAt({
+      status: 'SCHEDULED',
+      visibleFrom: new Date('2027-01-01T12:00:00Z'),
+    });
+    await createPublicationAt({
+      status: 'PAUSED',
+      visibleFrom: new Date('2022-01-01T12:00:00Z'),
+      visibleUntil: expired,
+    });
+    await createPublicationAt({
+      status: 'DRAFT',
+      visibleFrom: new Date('2021-01-01T12:00:00Z'),
+      visibleUntil: expired,
+    });
+    await createPublicationAt({
+      status: 'SCHEDULED',
+      visibleFrom: new Date('2020-01-01T12:00:00Z'),
+      visibleUntil: expired,
+      section: 'HOME',
+    });
+    await createPublicationAt({
+      status: 'SCHEDULED',
+      createdAt: new Date('2019-01-01T12:00:00Z'),
+      visibleUntil: expired,
+    });
+    await createPublicationAt({
+      status: 'SCHEDULED',
+      visibleFrom: new Date('2018-01-01T12:00:00Z'),
+      visibleUntil: new Date('2018-01-01T12:00:00Z'),
+    });
+
+    const url = `/publications?archived=true&year=2025&category=${cat.id}&pageSize=2`;
+    const pages = [await get(url), await get(`${url}&page=2`), await get(`${url}&page=3`)];
+    for (const [i, page] of pages.entries()) {
+      expect(page.status).toBe(200);
+      expect(page.body).toMatchObject({
+        total: 3,
+        page: i + 1,
+        pageSize: 2,
+        year: 2025,
+        archived: true,
+      });
+      expect(page.body.availableYears).toEqual([2026, 2025, 2024, 2023]);
+    }
+    const ids = pages.flatMap((r) => r.body.items.map((p: { id: string }) => p.id));
+    expect(ids).toEqual(selected.map((p) => p.id).sort());
+    expect(new Set(ids).size).toBe(3);
+    expect(pages.map((r) => r.body.items.length)).toEqual([2, 1, 0]);
+    const current = await get('/publications');
+    expect(current.body.availableYears).toEqual(pages[0]!.body.availableYears);
+    expect(
+      (await get('/publications?archived=true')).body.items.map((p: { id: string }) => p.id),
+    ).toEqual([nextYear.id]);
+    expect(
+      (await get(`/publications?archived=true&year=2023&category=${other.id}`)).body.items.map(
+        (p: { id: string }) => p.id,
+      ),
+    ).toEqual([fallback.id]);
+    expect((await get('/publications?archived=true&year=2024')).body.total).toBe(0);
+    expect((await get(`/publications?year=2024&category=${cat.id}`)).body.total).toBe(0);
   });
 });
 

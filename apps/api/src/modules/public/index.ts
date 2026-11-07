@@ -9,7 +9,8 @@
  *   GET /public/settings             datos institucionales (cabecera y pie, ADR-022)
  *
  * Garantías:
- * - Nada vencido, pausado, sin publicar, programado a futuro ni de otro ciclo sale de acá
+ * - Nada pausado, sin publicar, programado a futuro ni de otro ciclo sale de acá;
+ *   lo vencido solo se muestra al solicitar el histórico
  *   (ver public.service.ts: filtro SQL + verificación con las funciones de @ifts2/shared).
  * - Nunca salen claves de almacenamiento ni datos del panel: los archivos van como URL firmada.
  * - Si el almacenamiento falla, las URL quedan en `null` y la página sigue cargando (RNF03).
@@ -138,7 +139,9 @@ router.get('/publications', validate({ query: publicPublicationsQuery }), async 
   // Histórico: sin `year` se toma el año en curso (Buenos Aires). Vigentes: sin `year` no se filtra.
   const year = q.year ?? (q.archived ? currentYearBA(now) : undefined);
   const and: Prisma.PublicationWhereInput[] = [
-    q.archived ? expiredPublicationWhere(now) : visiblePublicationWhere(now),
+    q.archived
+      ? expiredPublicationWhere(now, prisma.publication.fields)
+      : visiblePublicationWhere(now),
     { section: { in: ['NEWS', 'BOTH'] } },
   ];
   if (q.category) and.push({ categoryId: q.category });
@@ -163,11 +166,16 @@ router.get('/publications', validate({ query: publicPublicationsQuery }), async 
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     }),
-    // Años en hora de Buenos Aires con al menos una publicación publicada de la sección Novedades.
+    // Conserva los años publicados e incluye programadas elegibles, vigentes o vencidas.
     prisma.$queryRaw<{ year: number }[]>`
       SELECT DISTINCT EXTRACT(YEAR FROM (COALESCE("visibleFrom", "createdAt") AT TIME ZONE 'UTC') AT TIME ZONE 'America/Argentina/Buenos_Aires')::int AS year
       FROM "Publication"
-      WHERE "status" = 'PUBLISHED' AND "section" IN ('NEWS', 'BOTH')
+      WHERE "section" IN ('NEWS', 'BOTH') AND (
+        "status" = 'PUBLISHED' OR (
+          "status" = 'SCHEDULED' AND "visibleFrom" <= ${now}
+          AND ("visibleUntil" IS NULL OR "visibleFrom" < "visibleUntil")
+        )
+      )
       ORDER BY year DESC`,
   ]);
 
@@ -205,7 +213,9 @@ router.get(
       where: {
         id: req.valid.params.id,
         section: { in: ['NEWS', 'HOME', 'BOTH'] },
-        ...(archived ? expiredPublicationWhere(now) : visiblePublicationWhere(now)),
+        ...(archived
+          ? expiredPublicationWhere(now, prisma.publication.fields)
+          : visiblePublicationWhere(now)),
       },
       include: publicationInclude,
     });

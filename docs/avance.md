@@ -4,6 +4,12 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-06 · Histórico de publicaciones programadas (A05)
+
+**Hecho.** El filtro SQL compartido por el listado histórico, su total y el detalle archivado admite `SCHEDULED` con una ventana no vacía ya terminada. Los años disponibles incorporan las programadas elegibles, sin adelantar las futuras. Se preservan `PUBLISHED`, Instagram, los estados y la portada; no hay migraciones ni cambios visuales o de contratos.
+
+**Pruebas.** Cinco casos de integración nuevos con reloj controlado: matriz de estados y ventanas, ambos límites para publicaciones manuales y programadas, Instagram y filtros/años/paginación en Buenos Aires. Se reprodujo el fallo antes de corregirlo. PostgreSQL 17 aislado, con base descartable marcada y verificada mediante A04; ninguna operación sobre bases de desarrollo o producción. Resultados y comandos en `docs/evidencias/2026-11-06-historico-publicaciones-a05.md`.
+
 ### 2026-10-30 · Entrega de la cátedra: documentación y empaquetado
 
 **Hecho.** `docs/entrega/`: Manual Técnico (con DER por áreas y tablas/campos derivados de `prisma/schema.prisma` por `pnpm docs:der`), Manual de Usuario (flujos con capturas, guía de Instagram para el cliente, mensajes frecuentes), Evidencias de pruebas y CRUD (3 unitarias + 2 de integración con salida real) y el PDF único `IFTS2-Etapa-3-Documentacion.pdf` (`pnpm docs:pdf`, 85 páginas). `pnpm package` genera el zip desde `HEAD` (sin `node_modules`, `.env` ni secretos). Pruebas nuevas: `apps/api/test/api/integracion-catedra.test.ts` (INT-1 e INT-2) y los specs Cypress `panel-a/capturas-crud.cy.ts` (CRUD de avisos, publicaciones, documentos y usuarios con la interfaz real) y `public/capturas-contacto.cy.ts`.

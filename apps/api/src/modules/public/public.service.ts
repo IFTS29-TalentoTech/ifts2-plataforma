@@ -60,9 +60,19 @@ export function visiblePublicationWhere(now: Date): Prisma.PublicationWhereInput
   };
 }
 
-/** Publicaciones PUBLISHED cuya vigencia terminó (el "histórico" público). */
-export function expiredPublicationWhere(now: Date): Prisma.PublicationWhereInput {
-  return { status: 'PUBLISHED', visibleUntil: { lte: now } };
+/** Histórico: conserva las programadas con una ventana no vacía que ya terminó (RF03/ADR-07). */
+export function expiredPublicationWhere(
+  now: Date,
+  fields: Prisma.PublicationFieldRefs,
+): Prisma.PublicationWhereInput {
+  return {
+    visibleUntil: { lte: now },
+    OR: [
+      { status: 'PUBLISHED' },
+      // El inicio anterior al fin vencido garantiza que llegó a ser elegible según shared.
+      { status: 'SCHEDULED', visibleFrom: { lt: fields.visibleUntil } },
+    ],
+  };
 }
 
 /** Año en Buenos Aires -> rango [desde, hasta) en UTC. */
