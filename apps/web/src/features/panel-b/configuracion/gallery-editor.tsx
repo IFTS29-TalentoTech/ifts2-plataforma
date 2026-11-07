@@ -123,7 +123,7 @@ export function GalleryEditor() {
                 <Button
                   onClick={() => setEditing({ area, item: null })}
                   disabled={full}
-                  aria-label={`Agregar una diapositiva a ${title}`}
+                  aria-label={`Agregar diapositiva a ${title}`}
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
                   Agregar diapositiva
