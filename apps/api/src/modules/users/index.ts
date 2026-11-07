@@ -15,6 +15,7 @@ import { generateTempPassword, hashPassword } from '../../lib/password';
 import { requirePermission } from '../../middleware/auth';
 import { valid, validate } from '../../middleware/validate';
 import { audit } from '../audit/audit.service';
+import { userTransaction } from './transaction';
 
 export const mountPath = '/users';
 export const router = Router();
@@ -35,10 +36,7 @@ const select = {
 
 const DUP_EMAIL = { email: ['Ya existe un usuario con ese correo.'] };
 
-async function countOtherActiveAdmins(
-  db: Prisma.TransactionClient | import('@prisma/client').PrismaClient,
-  exceptId: string,
-) {
+async function countOtherActiveAdmins(db: Prisma.TransactionClient, exceptId: string) {
   return db.user.count({ where: { role: 'ADMIN', active: true, NOT: { id: exceptId } } });
 }
 
@@ -110,22 +108,21 @@ router.patch('/:id', validate({ params: idParam, body: userUpdateInput }), async
   const { id } = req.valid.params as { id: string };
   const body = valid<UserUpdateInput>(req, 'body');
   const { prisma } = req.ctx;
-  const current = await prisma.user.findUnique({ where: { id } });
-  if (!current) throw errors.notFound('No encontramos al usuario.');
-
-  if (body.email && body.email !== current.email) {
-    if (await prisma.user.findUnique({ where: { email: body.email } })) {
-      throw errors.conflict('Ya existe un usuario con ese correo.', DUP_EMAIL);
+  const user = await userTransaction(prisma, async (tx) => {
+    const current = await tx.user.findUnique({ where: { id } });
+    if (!current) throw errors.notFound('No encontramos al usuario.');
+    if (body.email && body.email !== current.email) {
+      if (await tx.user.findUnique({ where: { email: body.email } })) {
+        throw errors.conflict('Ya existe un usuario con ese correo.', DUP_EMAIL);
+      }
     }
-  }
-  if (body.role && body.role !== 'ADMIN' && current.role === 'ADMIN' && current.active) {
-    if ((await countOtherActiveAdmins(prisma, id)) === 0) {
-      throw errors.unprocessable(
-        'No podés sacarle el rol de administrador al último administrador activo.',
-      );
+    if (body.role && body.role !== 'ADMIN' && current.role === 'ADMIN' && current.active) {
+      if ((await countOtherActiveAdmins(tx, id)) === 0) {
+        throw errors.unprocessable(
+          'No podés sacarle el rol de administrador al último administrador activo.',
+        );
+      }
     }
-  }
-  const user = await prisma.$transaction(async (tx) => {
     const u = await tx.user.update({ where: { id }, data: body, select });
     await audit.fromReq(
       req,
@@ -140,6 +137,11 @@ router.patch('/:id', validate({ params: idParam, body: userUpdateInput }), async
     if (body.role && body.role !== current.role)
       await tx.session.deleteMany({ where: { userId: id } });
     return u;
+  }).catch((error: unknown) => {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      throw errors.conflict('Ya existe un usuario con ese correo.', DUP_EMAIL);
+    }
+    throw error;
   });
   res.json(user);
 });
@@ -147,18 +149,18 @@ router.patch('/:id', validate({ params: idParam, body: userUpdateInput }), async
 router.post('/:id/deactivate', validate({ params: idParam }), async (req, res) => {
   const { id } = req.valid.params as { id: string };
   const { prisma } = req.ctx;
-  const current = await prisma.user.findUnique({ where: { id } });
-  if (!current) throw errors.notFound('No encontramos al usuario.');
-  if (id === req.auth!.user.id)
-    throw errors.unprocessable('No podés desactivar tu propio usuario.');
-  if (
-    current.role === 'ADMIN' &&
-    current.active &&
-    (await countOtherActiveAdmins(prisma, id)) === 0
-  ) {
-    throw errors.unprocessable('No podés desactivar al último administrador activo.');
-  }
-  const user = await prisma.$transaction(async (tx) => {
+  const user = await userTransaction(prisma, async (tx) => {
+    const current = await tx.user.findUnique({ where: { id } });
+    if (!current) throw errors.notFound('No encontramos al usuario.');
+    if (id === req.auth!.user.id)
+      throw errors.unprocessable('No podés desactivar tu propio usuario.');
+    if (
+      current.role === 'ADMIN' &&
+      current.active &&
+      (await countOtherActiveAdmins(tx, id)) === 0
+    ) {
+      throw errors.unprocessable('No podés desactivar al último administrador activo.');
+    }
     const u = await tx.user.update({ where: { id }, data: { active: false }, select });
     await tx.session.deleteMany({ where: { userId: id } }); // revoca sesiones: no puede seguir entrando
     await audit.fromReq(req, { action: 'user.deactivate', entity: 'User', entityId: id }, tx);
