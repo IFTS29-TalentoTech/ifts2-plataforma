@@ -30,6 +30,8 @@ import {
 } from './types';
 
 export interface GraphOptions {
+  /** `token`: alcanza con el token de acceso (sin App ID ni Secret). Por defecto `oauth`. */
+  method?: 'oauth' | 'token';
   appId?: string;
   appSecret?: string;
   accessToken?: string;
@@ -134,7 +136,7 @@ export class GraphInstagramClient implements InstagramClient {
   }
 
   private requireToken(): string {
-    if (!this.opts.appId || !this.opts.appSecret) {
+    if (this.opts.method !== 'token' && (!this.opts.appId || !this.opts.appSecret)) {
       throw new InstagramNotConfiguredError(
         'Instagram no está configurado: cargá el App ID y el App Secret en Configuración.',
       );

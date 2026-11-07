@@ -4,6 +4,12 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-07 · Instagram: conexión con token pegado (sin App ID ni Secret)
+
+**Hecho.** La configuración de Instagram tiene `connectionMethod` (`oauth` o `token`). Con `token`, pegar el token alcanza: pasa a modo real, el cliente Graph funciona solo con el token y se puede probar la conexión. La tarjeta de Configuración tiene un selector de método y muestra solo el formulario correspondiente. Cambiar de método descarta lo conectado con el otro. Pruebas: 5 casos nuevos de API (`integrations.test.ts`) y un spec Cypress (`integraciones-a11y`). ADR-020 enmendado.
+
+**Pendiente.** Probar contra Meta real (cuenta profesional y token generado en el panel de Meta); la renovación automática del token no se verificó con tokens pegados.
+
 ### 2026-11-07 · Pantallas públicas fieles al Figma (rama `feat/publico-fiel-al-figma`)
 
 **Hecho.** Fotos del Figma como **provisorias** (ADR-035, Q63): 13 imágenes webp (472 KB) en `apps/web/public/img/provisorio/`. Inicio: titular corto + frase ancla como subtítulo (resuelve Q64) y las dos fotos del encabezado; La carrera: foto junto al perfil; Estudiantes: galería "Vida en la cocina" (grilla estática); Ingreso: foto en el encabezado; Novedades: portadas de demostración y bloque neutro sin portada; logo configurable en el encabezado. Todo sale de ajustes nuevos de `SiteSetting` (`hero_title`, `hero_eyebrow`, `logo_url`, `hero_image_1/2`, `career_image`, `ingreso_image`, `student_gallery`) editables en Configuración; los valores del IFTS están solo en la semilla (hay que correr `pnpm db:seed`, idempotente).

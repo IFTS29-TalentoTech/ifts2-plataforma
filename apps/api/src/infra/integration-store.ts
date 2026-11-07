@@ -8,6 +8,11 @@ import type { Db } from './prisma';
  */
 export interface InstagramStoredConfig {
   mode: 'demo' | 'real';
+  /**
+   * Cómo se conecta la cuenta: `oauth` (App ID + Secret + inicio de sesión de Meta) o `token` (se pega un
+   * token de acceso y no hacen falta App ID ni Secret). Si falta se asume `oauth` (configuraciones viejas).
+   */
+  connectionMethod?: 'oauth' | 'token';
   appId?: string;
   appSecret?: string;
   accessToken?: string;

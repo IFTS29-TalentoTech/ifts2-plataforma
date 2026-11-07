@@ -207,7 +207,9 @@ Todas las variables, con comentarios, están en `.env.example`. Si el proveedor 
 3. Agregar el producto **Instagram** (inicio de sesión de Instagram).
 4. Registrar la **dirección de redirección** que muestra la pantalla (`<API_ORIGIN>/api/v1/integrations/instagram/callback`) en "URI de redireccionamiento de OAuth válidos".
 5. Copiar **App ID** y **App Secret** y pegarlos en la pantalla.
-6. Pulsar **Conectar con Instagram**, iniciar sesión con la cuenta del instituto, aceptar, y usar **Probar conexión**. Alternativa: pegar un token de larga duración.
+6. Pulsar **Conectar con Instagram**, iniciar sesión con la cuenta del instituto, aceptar, y usar **Probar conexión**.
+
+La pantalla pide elegir **cómo conectar**: con el inicio de sesión de Meta (pasos de arriba, necesita una dirección pública con HTTPS) o **con un token de acceso**, que se pega y alcanza (sin App ID ni App Secret; sirve también en un equipo local).
 
 Estados posibles: sin configurar (modo demostración) · credenciales guardadas, falta conectar · conectada · token por vencer · error. El cliente real contra la API de Meta (`GraphInstagramClient`) está implementado y se probó **solo contra un servidor simulado**: falta la prueba con una cuenta profesional y una app de Meta reales (ver `docs/avance.md` y _Limitaciones conocidas_ en el Manual Técnico).
 

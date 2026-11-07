@@ -24,6 +24,8 @@ export async function instagramView(ctx: AppContext) {
   const env = config.instagram;
   const envReal = env.provider === 'graph' && !!env.appId && !!env.appSecret;
   const mode = stored ? stored.mode : envReal ? 'real' : 'demo';
+  /** `token`: se conectó pegando un token (sin App ID ni Secret). Las configuraciones viejas son `oauth`. */
+  const method = stored?.connectionMethod ?? 'oauth';
   const appId = stored?.appId ?? (stored ? undefined : env.appId);
   const hasSecret = !!(stored?.appSecret ?? (stored ? undefined : env.appSecret));
   const hasToken = !!stored?.accessToken;
@@ -31,7 +33,8 @@ export async function instagramView(ctx: AppContext) {
   const now = Date.now();
 
   let status: InstagramStatus;
-  if (mode === 'demo' || !appId || !hasSecret) status = 'demo';
+  const incomplete = method === 'token' ? !hasToken : !appId || !hasSecret;
+  if (mode === 'demo' || incomplete) status = 'demo';
   else if (stored?.lastError || (hasToken && expiresAt && expiresAt.getTime() <= now))
     status = 'error';
   else if (!hasToken) status = 'credentials_saved';
@@ -50,6 +53,7 @@ export async function instagramView(ctx: AppContext) {
     /** true => el panel muestra el aviso "modo demostración". */
     demoMode: status === 'demo',
     mode,
+    connectionMethod: method,
     source: stored ? 'panel' : envReal ? 'env' : 'none',
     appIdMasked: maskSecret(appId),
     appSecretMasked: hasSecret ? '••••••••' : null,

@@ -56,6 +56,33 @@ for (const vp of viewports) {
       cy.get('[data-testid="ig-status"]').should('contain', 'Sin configurar');
     });
 
+    it('Instagram con token: se elige el método, no pide App ID ni Secret y queda conectada', () => {
+      const TOKEN = 'IGAA-token-de-prueba-largo-123456';
+      cy.loginAsApi('ADMIN');
+      cy.api('POST', '/integrations/instagram/disconnect');
+      cy.visit('/panel/configuracion');
+      cy.contains('[role="tab"]', 'Integraciones').click();
+      cy.get('[data-testid="ig-method"]').within(() => {
+        cy.get('#ig-method-oauth').should('be.checked');
+        cy.contains('label', 'Token de acceso').click();
+      });
+      // Con el método token desaparece el formulario de App ID / Secret.
+      cy.get('form[aria-label="Credenciales de Instagram"]').should('not.exist');
+      cy.get('form[aria-label="Token de acceso de Instagram"]').within(() => {
+        cy.byLabel('Token de acceso').type(TOKEN);
+        cy.byLabel('Hashtag de selección').clear().type('#ifts2');
+      });
+      cy.contains('button', 'Guardar y conectar').click();
+      cy.get('[data-testid="ig-status"]').should('contain', 'Conectada');
+      // El token no queda en pantalla.
+      cy.contains(TOKEN).should('not.exist');
+      cy.get('input').each(($i) => expect($i.val()).not.to.contain(TOKEN));
+      cy.a11y();
+      cy.contains('button', 'Desconectar').click();
+      cy.get('[role="alertdialog"]').within(() => cy.contains('button', 'Desconectar').click());
+      cy.get('[data-testid="ig-status"]').should('contain', 'Sin configurar');
+    });
+
     it('Correo: destinatario, estado y correo de prueba en modo demostración', () => {
       cy.loginAsApi('ADMIN');
       cy.visit('/panel/configuracion');

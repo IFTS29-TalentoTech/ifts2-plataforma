@@ -726,6 +726,8 @@ export type ContactInput = z.infer<typeof contactInput>;
 export const instagramConfigInput = z
   .object({
     mode: enumOf('El modo', ['demo', 'real'] as const),
+    /** Método de conexión: OAuth (App ID y Secret) o token pegado (sin App ID ni Secret). */
+    connectionMethod: enumOf('El método de conexión', ['oauth', 'token'] as const),
     appId: z.string().trim().min(1, 'El App ID es obligatorio.').max(100),
     /** Si no viene, se conserva el secreto guardado. */
     appSecret: z.string().trim().min(1, 'El App Secret no puede estar vacío.').max(200).optional(),

@@ -102,7 +102,7 @@ La configuración la carga el cliente desde el panel y se guarda cifrada (ADR-20
 | Método y ruta | Descripción |
 |---|---|
 | `GET /integrations/instagram` | `{ status: demo / credentials_saved / connected / expiring / error, statusLabel, demoMode, mode, source, appIdMasked, appSecretMasked, hasAccessToken, accessTokenMasked, username, connectedAt, tokenExpiresAt, lastSyncAt, lastSyncOk, lastError, hashtag, redirectUri, scopes, setupSteps }` |
-| `PUT /integrations/instagram` | `{ mode?: 'demo' o 'real', appId?, appSecret?, hashtag?, accessToken? }` (el secreto omitido se conserva; 422 si pide modo real sin App ID y Secret) |
+| `PUT /integrations/instagram` | `{ mode?: 'demo' o 'real', connectionMethod?: 'oauth' o 'token', appId?, appSecret?, hashtag?, accessToken? }` (el secreto omitido se conserva). Con `connectionMethod: 'token'` pegar el `accessToken` alcanza: no se piden App ID ni Secret y pasa a modo real (422 si pide modo real con ese método sin token). Con `oauth` (por defecto, y para configuraciones guardadas antes) 422 si pide modo real sin App ID y Secret. Cambiar de método descarta lo conectado con el otro y vuelve a demostración; `GET` devuelve `connectionMethod` |
 | `GET /integrations/instagram/connect` | `{ url }` de autorización OAuth (botón "Conectar con Instagram"); 422 si faltan credenciales |
 | `GET /integrations/instagram/callback` | Destino de Meta: guarda el token cifrado y redirige a `/panel/configuracion?instagram=connected` o `error` |
 | `POST /integrations/instagram/test` | "Probar conexión": `{ ok, demo, username, error }` |
