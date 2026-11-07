@@ -4,6 +4,16 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-07 · Carrusel editable y galerías (RF09, ADR-036, rama `feat/publico-fiel-al-figma`)
+
+**Hecho.** Modelo `GalleryItem` y migración `20261107075740_galeria` (aditiva; también concede `gallery:manage` a los ADMIN y EDITOR existentes). Módulo de API `gallery` (alta con imagen a WebP de 1600 px, textos, reemplazo de foto, orden, eliminación manual auditada, hasta 10 por área) y lectura pública `/public/gallery`. Componente `Carousel` accesible (scroll-snap, botones, puntos, teclado, sin reproducción automática). Sección **Galerías** del panel (`/panel/galerias` y pestaña de Configuración) con subir, editar, Subir/Bajar y eliminar con confirmación. Estudiantes y La carrera usan el carrusel; sin diapositivas se usa el respaldo (`student_gallery`, `career_image`). La semilla crea las diapositivas provisorias solo si el área está vacía.
+
+**Pruebas.** API (`gallery.test.ts`, 18 casos), `shared` (7 casos nuevos) y Cypress: `public/carrusel.cy.ts` (semántica, botones, puntos, teclado, axe, 390 y 1440 px) y `panel-b/galerias.cy.ts` (flujo completo del EDITOR, 403 de BEDELIA).
+
+**Para correr.** `pnpm db:migrate` (con el servidor de desarrollo apagado si falla el cliente de Prisma en Windows: EPERM) y `pnpm db:seed`.
+
+**Pendiente.** Categorías de la galería (RF09 completo); reemplazar las fotos provisorias por las del instituto con consentimiento (Q63).
+
 ### 2026-11-07 · Instagram: conexión con token pegado (sin App ID ni Secret)
 
 **Hecho.** La configuración de Instagram tiene `connectionMethod` (`oauth` o `token`). Con `token`, pegar el token alcanza: pasa a modo real, el cliente Graph funciona solo con el token y se puede probar la conexión. La tarjeta de Configuración tiene un selector de método y muestra solo el formulario correspondiente. Cambiar de método descarta lo conectado con el otro. Pruebas: 5 casos nuevos de API (`integrations.test.ts`) y un spec Cypress (`integraciones-a11y`). ADR-020 enmendado.

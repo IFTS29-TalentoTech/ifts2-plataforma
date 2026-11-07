@@ -24,7 +24,7 @@ El Figma vigente muestra fotografías en Inicio, La carrera, Estudiantes ("Vida 
 
 3. **Portadas de publicaciones.** `Publication.coverUrl` acepta además una ruta propia (`/img/...`): se devuelve tal cual y no pasa por el almacenamiento (`apps/api/src/lib/cover.ts`). Solo la escribe la semilla; por la API sigue exigiéndose una dirección http(s) o un archivo subido, así nadie apunta una portada a un archivo interno.
 4. **Semilla.** Los valores del IFTS (rutas, titular, rótulo, textos de la galería) están solo en `prisma/seed-data.ts`; las publicaciones de demostración reciben su portada provisoria si no tienen una (no pisa las editadas).
-5. **Accesibilidad.** Las fotos son decorativas (`alt=""`); el texto de cada tarjeta es la descripción accesible. La galería es una grilla estática, **no un carrusel** (el Figma muestra un carrusel; evita trampas de foco y no depende de JavaScript). El texto sobre las fotos va sobre un degradé del color más oscuro del tema (contraste AA).
+5. **Accesibilidad.** Las fotos son decorativas (`alt=""`); el texto de cada tarjeta es la descripción accesible. _(Actualización 07/11/2026: la galería ya no es una grilla estática sino un **carrusel editable desde el panel**, ver ADR-036; `student_gallery` y `career_image` quedan como respaldo.)_ La versión original decía: grilla estática, no un carrusel, para evitar trampas de foco y no depender de JavaScript. El texto sobre las fotos va sobre un degradé del color más oscuro del tema (contraste AA).
 6. **`next/image`.** Se mantiene la política de dominios de A06: las rutas propias pasan por el optimizador; las direcciones externas se cargan sin optimizar.
 
 ## Consecuencias

@@ -23,6 +23,7 @@ Esta matriz es el **punto de partida de la semilla**. La API no pregunta "¿sos 
 | Eliminar mensajes de contacto (`contact:delete`, solo respondidos) | ✔ | ✔ | | | |
 | Auditoría | ✔ | ✔ | | | |
 | Eliminar (DELETE) contenido no vigente | ✔ | ✔ | Avisos, horarios, llamados y documentos propios de su área | Publicaciones propias y publicaciones sociales descartadas | |
+| Galerías del sitio (`gallery:manage`: subir, editar, ordenar y eliminar las fotos del carrusel) | ✔ | ✔ | | ✔ | |
 | **Roles y permisos** (`roles:manage`: crear, editar y eliminar roles y asignar permisos; reservado a SUPERADMIN) | ✔ | | | | |
 
 ## Autenticación
@@ -152,4 +153,6 @@ Los tipos exactos de cada respuesta están en `packages/shared/src/academic.ts` 
 
 **Contacto** — `POST /public/contact` -> 201 `{ received: true }` (campo señuelo `website`; 5 envíos/hora por IP). Panel: `GET /contact-messages?status=&q=`, `PATCH /contact-messages/:id` `{ status }`, `DELETE` (permiso `contact:delete`: solo ADMIN, solo respondidos; BEDELIA recibe 403).
 
-**Público** — formas completas en `PublicHomeDto`, `PublicPublicationsDto`, `PublicPublicationDetailDto`, `PublicStudentsDto`, `PublicContentDto`, `PublicSettingsDto`. Cabecera `Cache-Control: public, max-age=20, s-maxage=30, stale-while-revalidate=30` (ajustes y contenido: 30/60/60). Los archivos llevan `downloadUrl` firmado (vigencia 30 min) o `null` si el almacenamiento falla.
+**Galerías (RF09, ADR-036)** — permiso `gallery:manage` (ADMIN y EDITOR por defecto). `GalleryItemDto`: `{ id, area: 'STUDENTS'|'CAREER', order, title, caption, alt, image, src, updatedAt }` (`image` = ruta propia `/img/...` o clave del almacenamiento; `src` = URL lista, firmada si es una clave, `null` si el almacenamiento falla). `GET /gallery?area=` -> `{ items, max }`; `POST /gallery` (multipart: `file` + `area`, `title`, `caption`, `alt`; JPG/PNG/WebP hasta 5 MB, se guarda como WebP de 1600 px) -> 201; 415 tipo no permitido, 413 grande, 422 si el área ya tiene 10; `PATCH /gallery/:id` (textos); `POST /gallery/:id/image` (multipart `file`, reemplaza la foto); `PUT /gallery/order` `{ area, ids }` (ids de todas las diapositivas del área; 409 si cambió); `DELETE /gallery/:id` (204, manual, auditado `gallery.delete`, borra el archivo propio). Lectura pública: `GET /public/gallery?area=` -> `PublicGalleryDto { area, items: [{ id, src, title, caption, alt }] }` (sin sesión; omite las que no tienen imagen utilizable).
+
+**Público** — formas completas en `PublicHomeDto`, `PublicPublicationsDto`, `PublicPublicationDetailDto`, `PublicStudentsDto`, `PublicContentDto`, `PublicSettingsDto`, `PublicGalleryDto`. Cabecera `Cache-Control: public, max-age=20, s-maxage=30, stale-while-revalidate=30` (ajustes y contenido: 30/60/60). Los archivos llevan `downloadUrl` firmado (vigencia 30 min) o `null` si el almacenamiento falla.
