@@ -180,31 +180,34 @@ export function SiteHeader({ site, panelItems, userName: userNameProp }: Props) 
               <p className="px-4 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-accent-2">
                 Gestión del sitio
               </p>
-              {panelItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={
-                    isActive(pathname, item.href) &&
-                    (item.href !== '/panel' || pathname === '/panel')
-                      ? 'page'
-                      : undefined
-                  }
-                  className={cn(
-                    'flex items-center justify-between rounded-md px-4 py-3 text-sm font-medium text-base hover:bg-accent-3 focus-visible:outline-none focus-visible:shadow-focus',
-                    item.href === '/panel'
-                      ? pathname === '/panel' && 'bg-base text-accent-3'
-                      : isActive(pathname, item.href) && 'bg-base text-accent-3',
-                  )}
-                >
-                  {item.label}
-                  {item.count ? (
-                    <span className="rounded-pill bg-accent-2 px-2 text-xs font-semibold text-accent-3">
-                      {item.count}
-                    </span>
-                  ) : null}
-                </Link>
-              ))}
+              {panelItems.map((item) => {
+                // "Resumen" (/panel) solo está activo en su propia ruta; el resto, también en subrutas.
+                const current =
+                  item.href === '/panel' ? pathname === '/panel' : isActive(pathname, item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={current ? 'page' : undefined}
+                    className={cn(
+                      'flex items-center justify-between rounded-md px-4 py-3 text-sm font-medium focus-visible:outline-none focus-visible:shadow-focus',
+                      // El color del texto va en una u otra rama, nunca en las dos: `text-base` es un color
+                      // en este tema y tailwind-merge no lo trata como conflicto con `text-accent-3`
+                      // (antes el ítem activo quedaba con texto claro sobre fondo claro).
+                      current
+                        ? 'bg-base font-semibold text-accent-3'
+                        : 'text-base hover:bg-accent-3',
+                    )}
+                  >
+                    {item.label}
+                    {item.count ? (
+                      <span className="rounded-pill bg-accent-2 px-2 text-xs font-semibold text-accent-3">
+                        {item.count}
+                      </span>
+                    ) : null}
+                  </Link>
+                );
+              })}
               {/* Cierre de sesión también en móvil (el menú lateral con el botón solo se ve en escritorio). */}
               {userName && (
                 <div className="mt-2 border-t border-accent-3 pt-2">
