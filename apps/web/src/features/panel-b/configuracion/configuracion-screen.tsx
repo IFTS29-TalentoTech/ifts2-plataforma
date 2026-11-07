@@ -56,6 +56,7 @@ import { errorText } from '../lib/format';
 import { useResetOn } from '../lib/use-reset-on';
 import { useResource } from '../lib/use-resource';
 import { ContentEditor } from './content-editor';
+import { GalleryEditor } from './gallery-editor';
 import { IntegrationsPanel } from './integrations-panel';
 import { LinksEditor } from './links-editor';
 import { useUserActions, type PanelUser } from './user-actions';
@@ -397,6 +398,7 @@ export function ConfiguracionScreen({
         <TabsList aria-label="Más configuración">
           <TabsTrigger value="contenido">Contenido de páginas</TabsTrigger>
           <TabsTrigger value="enlaces">Enlaces de interés</TabsTrigger>
+          {can(perms, 'gallery:manage') && <TabsTrigger value="galerias">Galerías</TabsTrigger>}
           {canIntegrations && <TabsTrigger value="integraciones">Integraciones</TabsTrigger>}
         </TabsList>
         <TabsContent value="contenido">
@@ -405,6 +407,11 @@ export function ConfiguracionScreen({
         <TabsContent value="enlaces">
           {can(perms, 'links:manage') && <LinksEditor perms={perms} />}
         </TabsContent>
+        {can(perms, 'gallery:manage') && (
+          <TabsContent value="galerias">
+            <GalleryEditor />
+          </TabsContent>
+        )}
         {canIntegrations && (
           <TabsContent value="integraciones">
             <IntegrationsPanel instagramResult={instagramResult} />
