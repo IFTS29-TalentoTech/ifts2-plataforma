@@ -205,12 +205,16 @@ export function DashboardView({ perms }: { perms: PermissionList }) {
             tagTone={d.pendingPosts > 0 ? 'warning' : 'success'}
             value={String(d.pendingPosts)}
             text="Posts pendientes de moderar para Novedades y Home."
+            href="/panel/publicaciones"
+            linkLabel="Ir a moderar"
           />
         )}
         {canNotices && (
           <StatCard
             eyebrow="Avisos activos"
             tag="Cartelera"
+            href="/panel/avisos"
+            linkLabel="Ver avisos"
             value={String(d.activeNotices)}
             text={
               d.noticesExpiringIn7Days > 0
@@ -497,6 +501,8 @@ function StatCard({
   value,
   text,
   testId,
+  href,
+  linkLabel,
 }: {
   eyebrow: string;
   tag: string;
@@ -504,15 +510,30 @@ function StatCard({
   value: string;
   text: string;
   testId?: string;
+  /** Enlace opcional de la tarjeta (solo si la persona tiene permiso: lo decide quien la dibuja). */
+  href?: string;
+  linkLabel?: string;
 }) {
   return (
     <Card className="flex flex-col gap-2" data-testid={testId}>
-      <div className="flex items-center justify-between gap-2">
-        <Eyebrow className="text-font-strong">{eyebrow}</Eyebrow>
-        <Badge tone={tagTone}>{tag}</Badge>
+      {/* flex-wrap: si el título y la insignia no entran juntos, la insignia pasa entera a la línea
+          de abajo (sin partir ninguno de los dos textos en dos líneas). */}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+        <Eyebrow className="whitespace-nowrap text-font-strong">{eyebrow}</Eyebrow>
+        <Badge tone={tagTone} className="whitespace-nowrap">
+          {tag}
+        </Badge>
       </div>
       <p className="font-display text-2xl font-extrabold text-accent-3">{value}</p>
       <p className="text-sm text-font-strong">{text}</p>
+      {href && linkLabel && (
+        <Link
+          href={href}
+          className="mt-auto self-start rounded-sm pt-1 text-sm font-semibold text-accent underline focus-visible:outline-none focus-visible:shadow-focus"
+        >
+          {linkLabel}
+        </Link>
+      )}
     </Card>
   );
 }
