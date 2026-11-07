@@ -171,3 +171,60 @@ it('B08: una eliminación de documento que leyó ausencia de referencias no desa
     }),
   ).toBe(0);
 });
+
+it('B08: si el documento desaparece antes de asignarlo devuelve conflicto sin cambios ni auditoría parcial', async () => {
+  const term = await createTerm({ publicCurrent: true });
+  const original = await createDocumentRow();
+  const replacement = await createDocumentRow();
+  const schedule = await createScheduleRow({
+    termId: term.id,
+    documentId: original.id,
+    published: true,
+  });
+  const validated = gate();
+  const deleted = gate();
+  const db = testPrisma.$extends({
+    query: {
+      document: {
+        async findUnique({ args, query }) {
+          const row = await query(args);
+          if (args.where.id === replacement.id && args.select?.status) {
+            validated.release();
+            await deleted.promise;
+          }
+          return row;
+        },
+      },
+    },
+  });
+  const { app } = await createTestApp({ prisma: db as unknown as PrismaClient });
+  const { cookie } = await loginAs(app, 'ADMIN');
+  const patch = request(app)
+    .patch(`/api/v1/schedules/${schedule.id}`)
+    .set('Cookie', cookie)
+    .send({ documentId: replacement.id, notes: 'no debe persistir' })
+    .then((res) => res);
+  await validated.promise;
+  await request(app)
+    .post(`/api/v1/documents/${replacement.id}/archive`)
+    .set('Cookie', cookie)
+    .send({})
+    .expect(200);
+  await request(app)
+    .delete(`/api/v1/documents/${replacement.id}`)
+    .set('Cookie', cookie)
+    .expect(204);
+  deleted.release();
+  const response = await patch;
+  expect(response.status).toBe(409);
+  expect(response.headers['content-type']).toContain('application/problem+json');
+  expect(await testPrisma.schedule.findUniqueOrThrow({ where: { id: schedule.id } })).toEqual(
+    schedule,
+  );
+  expect(await testPrisma.auditLog.count({ where: { entityId: schedule.id } })).toBe(0);
+  expect(
+    await testPrisma.auditLog.count({
+      where: { entityId: replacement.id, action: 'document.delete' },
+    }),
+  ).toBe(1);
+});
