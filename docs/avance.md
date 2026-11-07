@@ -15,6 +15,7 @@ afirma una "ficha de preinscripción activa". Nuevo `hasPendingConfirmation` en 
 axe). Resultados en `docs/evidencias/2026-11-07-indicador-ingreso-a14.md`; decisión en ADR-034.
 
 **Pendiente.** Q133: definir si el año de ingreso seguirá siendo una estimación.
+
 ### 2026-11-07 · Inscripciones: enlace de alumnos y estado efectivo (A07, A08)
 
 **Hecho.** Rama `fix/inscripciones-siu-y-estado` desde `develop` (`f0c236f`). **A07:** los enlaces
@@ -260,6 +261,7 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 **Pruebas.** En `apps/api/test/api/social.test.ts`, "aprobación ante fallas parciales (A10)": falla al copiar la imagen, falla dentro de la transacción, confirmación ambigua y falla al releer la base después de confirmar, verificando registro y archivo en cada caso. La doble aprobación simultánea ya estaba cubierta (una 201, otra 409, un solo archivo).
 
 **Relacionado, sin cambios.** `documents` tiene el mismo patrón, pero lo posterior a la transacción (`toDocumentDto`) no puede fallar. En `publications/:id/cover` el riesgo es el inverso (si falla la transacción, el archivo queda huérfano), de menor gravedad.
+
 ### 2026-11-07 · Ventana "Usuarios y roles" más clara (rama `usuarios-y-roles`)
 
 **Problema.** En la ventana de usuarios el nombre y el correo quedaban en una columna angosta (el correo se cortaba en dos), cada fila repetía el nombre en el rótulo del desplegable, el rol se guardaba apenas se tocaba el desplegable (sin confirmación) y se ofrecía "Desactivar" sobre el propio usuario.
