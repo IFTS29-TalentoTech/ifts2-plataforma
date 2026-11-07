@@ -41,20 +41,35 @@ function synchronizeAdminChecks() {
   let arrivals = 0;
   let release!: () => void;
   const barrier = new Promise<void>((resolve) => (release = resolve));
+  let winnerCommitted!: () => void;
+  const winner = new Promise<void>((resolve) => (winnerCommitted = resolve));
   const conflicts: unknown[] = [];
   const original = testPrisma.$transaction.bind(testPrisma);
   const transaction = vi
     .spyOn(testPrisma, '$transaction')
     .mockImplementation(async (operation, options) => {
+      let first = false;
       try {
-        return await original(async (tx) => {
+        const result = await original(async (tx) => {
           const count = tx.user.count.bind(tx.user);
           vi.spyOn(tx.user, 'count').mockImplementation((args) => {
             const result = (async () => {
               const value = await count(args);
               // Ambas transacciones leen PostgreSQL antes de permitir cualquiera de las escrituras.
               if (arrivals < 2) {
-                if (++arrivals === 2) release();
+                first = ++arrivals === 1;
+                if (!first) {
+                  const update = tx.user.update.bind(tx.user);
+                  // Ambas transacciones leyeron el mismo estado. Solo el ganador escribe
+                  // antes del commit; el perdedor prueba una escritura sobre su snapshot obsoleto.
+                  vi.spyOn(tx.user, 'update').mockImplementation((data) => {
+                    const result = winner.then(() => update(data));
+                    return Object.defineProperty(result, Symbol.toStringTag, {
+                      value: 'PrismaPromise',
+                    }) as ReturnType<typeof update>;
+                  });
+                }
+                if (arrivals === 2) release();
                 await barrier;
               }
               return value;
@@ -65,6 +80,8 @@ function synchronizeAdminChecks() {
           });
           return operation(tx);
         }, options);
+        if (first) winnerCommitted();
+        return result;
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
           conflicts.push(error);
