@@ -219,6 +219,20 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 **Pendiente de documentación.** Regenerar las tablas de campos y el DER del Manual Técnico (`pnpm docs:der`) y el PDF (`pnpm docs:pdf`): reflejan el esquema del 30/10 (enum `Role`) y todavía no la tabla `Role`. Sumar capturas de la pantalla **Roles y permisos** al Manual de Usuario.
 
+### 2026-11-07 · Ventana "Usuarios y roles" más clara (rama `usuarios-y-roles`)
+
+**Problema.** En la ventana de usuarios el nombre y el correo quedaban en una columna angosta (el correo se cortaba en dos), cada fila repetía el nombre en el rótulo del desplegable, el rol se guardaba apenas se tocaba el desplegable (sin confirmación) y se ofrecía "Desactivar" sobre el propio usuario.
+
+**Hecho.**
+
+- Cada fila muestra a la persona a lo ancho (nombre, correo completo y último ingreso) y el rol como etiqueta.
+- El rol se cambia con un botón **Cambiar rol**: abre un formulario que muestra qué permite cada rol y, al guardar, pide confirmación con el `ConfirmDialog` único. Avisa que se cierran las sesiones abiertas de esa persona.
+- El usuario propio aparece como "(vos)" y sin acciones; los usuarios con más permisos dicen que solo los administra un Superadministrador.
+- El formulario de alta muestra la descripción del rol elegido y, para el Superadministrador, el enlace "Ver qué puede hacer cada rol".
+- Los usuarios de demostración tienen nombres de persona ("Directora de prueba", "Bedel de prueba", "Editora de prueba"), para no confundirlos con los roles.
+
+**Pruebas.** Cypress `panel-b/usuarios-y-roles.cy.ts` (cambio de rol con confirmación, propio usuario sin acciones, 390 y 1440 px) y `panel-a/capturas-crud.cy.ts` adaptado al flujo nuevo.
+
 ## Estado actual (06/11/2026)
 
 - **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).
