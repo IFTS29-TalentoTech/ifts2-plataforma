@@ -84,6 +84,8 @@ jobs:
       APP_ORIGIN: http://localhost:3000
       API_ORIGIN: http://localhost:4000
       APP_ENCRYPTION_KEY: ZGV2LW9ubHktZXhhbXBsZS1rZXktMzItYnl0ZXMhISE=
+      STORAGE_SIGNING_SECRET: ci-disposable-storage-signing-secret
+      REVALIDATE_SECRET: ci-disposable-revalidation-secret
       SEED_MODE: demo
       SEED_ADMIN_EMAIL: admin@ifts2.local
       SEED_ADMIN_PASSWORD: Cambiame-123!
@@ -103,4 +105,6 @@ jobs:
         if: failure()
         with:
           name: cypress-screenshots
-          path: apps/web/cypress/screenshots
+          path: |
+            apps/web/cypress/screenshots
+            .e2e-logs
