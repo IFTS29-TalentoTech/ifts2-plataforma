@@ -39,4 +39,6 @@ export const PANEL_NAV: PanelNavItem[] = [
   { href: '/panel/horarios', label: 'Horarios', permission: 'schedules:manage' },
   { href: '/panel/archivo', label: 'Archivo', permission: 'documents:manage' },
   { href: '/panel/configuracion', label: 'Configuración', permission: 'settings:manage' },
+  // RF11: solo el Superadministrador (roles:manage) ve este ítem.
+  { href: '/panel/roles', label: 'Roles y permisos', permission: 'roles:manage' },
 ];

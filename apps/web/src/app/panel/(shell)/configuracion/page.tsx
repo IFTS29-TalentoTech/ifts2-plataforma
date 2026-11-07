@@ -16,7 +16,7 @@ export default async function Page({
   searchParams: Promise<{ instagram?: string }>;
 }) {
   const session = await requireSession();
-  if (!can(session.role, 'settings:manage')) {
+  if (!can(session.permissions, 'settings:manage')) {
     return (
       <Placeholder title="Configuración" description="No tenés permiso para ver esta sección." />
     );
@@ -24,7 +24,7 @@ export default async function Page({
   const { instagram } = await searchParams;
   return (
     <ConfiguracionScreen
-      role={session.role}
+      perms={session.permissions}
       instagramResult={instagram === 'connected' || instagram === 'error' ? instagram : undefined}
     />
   );

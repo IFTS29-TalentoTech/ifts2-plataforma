@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import type { Role } from '@ifts2/shared';
+import type { PermissionList } from '@ifts2/shared';
 import { OwnPublicationsTab } from './own-publications-tab';
 import { SocialPostsTab } from './social-posts-tab';
 
@@ -12,7 +12,7 @@ import { SocialPostsTab } from './social-posts-tab';
  *  - "Propias del sitio": publicaciones del sitio (editar, pausar, programar, reactivar, eliminar).
  * Tras cada cambio se refresca el layout (`router.refresh`) para que el contador del menú se actualice.
  */
-export function PublicacionesView({ role }: { role: Role }) {
+export function PublicacionesView({ perms }: { perms: PermissionList }) {
   const router = useRouter();
   const refreshNav = () => router.refresh();
   return (
@@ -22,7 +22,7 @@ export function PublicacionesView({ role }: { role: Role }) {
         <TabsTrigger value="propias">Propias del sitio</TabsTrigger>
       </TabsList>
       <TabsContent value="redes">
-        <SocialPostsTab role={role} onChanged={refreshNav} />
+        <SocialPostsTab perms={perms} onChanged={refreshNav} />
       </TabsContent>
       <TabsContent value="propias">
         <OwnPublicationsTab onChanged={refreshNav} />

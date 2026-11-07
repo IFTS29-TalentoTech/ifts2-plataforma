@@ -45,7 +45,7 @@ flowchart TB
 
 1. El navegador llama a `/api/v1/...` en el origen de la web; Next lo reenvía a la API (la cookie de sesión queda de primer nivel). Los Server Components llaman directo a la API y reenvían la cookie.
 2. La API aplica: `helmet`, CORS (solo `APP_ORIGIN`), límite de tamaño, verificación de `Origin` en métodos mutantes, `attachAuth` (cookie -> sesión en base, hash del token) y luego el router del módulo.
-3. El módulo valida con zod (`validate`), exige permiso (`requirePermission`, matriz en `packages/shared`), usa servicios solo desde `req.ctx`, audita (`audit.fromReq`) y responde. Cualquier error sale como Problem Details.
+3. El módulo valida con zod (`validate`), exige permiso (`requirePermission`, permisos efectivos del rol, leídos de la base en cada pedido; catálogo en `packages/shared`), usa servicios solo desde `req.ctx`, audita (`audit.fromReq`) y responde. Cualquier error sale como Problem Details.
 
 ## Módulos de la API
 
@@ -54,6 +54,7 @@ flowchart LR
   R["src/routes.ts<br/>lee src/modules/*/index.ts"] --> H[health]
   R --> A[auth]
   R --> U[users]
+  R --> RO["roles · permissions<br/>(RF11, solo SUPERADMIN)"]
   R --> AU[audit]
   R --> I[integrations]
   R --> F[files]
@@ -62,6 +63,15 @@ flowchart LR
 ```
 
 Cada carpeta exporta `{ mountPath, router }`; agregar un módulo no requiere editar archivos compartidos (`apps/api/README.md`).
+
+**Roles y permisos (RF11, ADR-031).**
+
+- **Catálogo.** El catálogo de acciones es fijo y vive en `packages/shared/src/permissions.ts`.
+- **Roles.** Los roles y sus permisos son datos: tablas `Role` y `RolePermission`.
+- **Lectura en cada pedido.** `attachAuth` carga los permisos efectivos del rol en cada pedido, así que un cambio rige sin volver a iniciar sesión.
+- **Superadministrador.** SUPERADMIN tiene todo por código.
+- **Lógica compartida.** La anti-escalada y la regla del último SUPERADMIN están en `modules/roles/roles.service.ts` y las usan `roles` y `users`.
+- **Control automático.** `test/api/route-permissions.test.ts` falla si alguna ruta del panel no declara permiso.
 
 ## Servicios con interfaz, configurables sin tocar código
 

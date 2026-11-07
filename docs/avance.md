@@ -148,3 +148,33 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 **Contenido real (Q61).** La semilla (prod y demo) carga el plan de estudios por área con horas y las 13 correlatividades de la Res. MEGC 1202/07 (`prisma/seed-plan.ts`) y el requisito "secundario completo". Pendientes con el cliente: ubicación por año (Q120), nombres de la resolución (Q121), fechas y documentación de ingreso (Q122).
 
 **Pendiente.** Probar Instagram y SMTP reales; el techo de un solo proceso web ronda 300-360 pedidos/s en saturación (se resuelve con CDN o más procesos); `pnpm e2e --reset` borra la base de desarrollo y debe correrlo una persona (Prisma bloquea el reset a agentes).
+
+## Roles y permisos configurables (rama `feat/US-36-roles-configurables`, 2026-11-06)
+
+**Hecho (RF11, US-36, ADR-18 ampliada, ADR-031).**
+
+- **Datos.** Tablas `Role` y `RolePermission`, y `User.roleId` en lugar del enum. La migración conserva los datos y promueve al ADMIN activo más antiguo a SUPERADMIN.
+- **Catálogo.** Vive en `packages/shared`, agrupado por recurso.
+- **API.**
+  - Permisos leídos en cada pedido.
+  - Módulos nuevos `roles` (`GET/POST /roles`, `GET/PATCH/DELETE /roles/:id`, `PUT /roles/:id/permissions`) y `permissions` (`GET /permissions`).
+  - `/users` con `roleId`, anti-escalada y la regla de que siempre quede al menos un SUPERADMIN activo (409).
+  - `GET /auth/me` devuelve los permisos efectivos.
+- **Web.**
+  - Pantalla `/panel/roles`: tabla, diálogo con casillas por recurso, confirmaciones y aviso de rol con usuarios.
+  - El selector de roles del diálogo de usuarios ofrece solo los roles asignables.
+  - Todos los chequeos de la interfaz usan los permisos de la sesión.
+- **Semilla.** Crea los roles del sistema y al Superadministrador inicial, y suma `direccion@ifts2.local` como ADMIN de demostración.
+
+**Pruebas.**
+
+- API: `roles.test.ts`, anti-escalada y último SUPERADMIN en `users.test.ts`, y `route-permissions.test.ts`, que recorre todas las rutas.
+- `shared`: catálogo y validación de permisos.
+- Cypress: `e2e-18-19-20-roles.cy.ts` a 390 y 1440 px.
+
+**Dificultades.**
+
+- El enum `Role` de PostgreSQL chocaba con la tabla nueva del mismo nombre: la migración lo renombra primero.
+- La prueba nueva de rutas encontró `POST /social/cron` sin permiso. Es intencional, porque usa `CRON_SECRET`, y quedó documentado como excepción (Q127).
+
+**Preguntas nuevas.** Q126 (un ADMIN no administra a usuarios con más permisos) y Q127 (excepciones a "toda ruta declara permiso").

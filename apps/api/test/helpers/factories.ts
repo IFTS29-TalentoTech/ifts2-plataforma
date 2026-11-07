@@ -1,4 +1,4 @@
-import type { Role } from '@ifts2/shared';
+import { DEFAULT_ROLE_PERMISSIONS, type SystemRoleKey } from '@ifts2/shared';
 import { hashPassword } from '../../src/lib/password';
 import { testPrisma } from './db';
 
@@ -6,11 +6,45 @@ export const TEST_PASSWORD = 'Prueba-12345';
 let seq = 0;
 const next = () => ++seq;
 
+/**
+ * Asegura que exista un rol del sistema con sus permisos iniciales (como la semilla) y devuelve su id.
+ * `resetDb` vacía todas las tablas, así que cada prueba los recrea al usarlos.
+ */
+export async function ensureRole(key: SystemRoleKey) {
+  const perms = key === 'SUPERADMIN' ? [] : DEFAULT_ROLE_PERMISSIONS[key];
+  const role = await testPrisma.role.upsert({
+    where: { key },
+    create: {
+      key,
+      name: key === 'SUPERADMIN' ? 'Superadministrador' : `Rol ${key}`,
+      isSystem: true,
+      permissions: { create: perms.map((permission) => ({ permission })) },
+    },
+    update: {},
+  });
+  return role.id;
+}
+
+/** Rol propio (no del sistema) con los permisos indicados. */
+export function createRole(over: Partial<{ name: string; permissions: string[] }> = {}) {
+  const n = next();
+  return testPrisma.role.create({
+    data: {
+      key: `PROPIO_${n}`,
+      name: over.name ?? `Rol propio ${n}`,
+      permissions: { create: (over.permissions ?? []).map((permission) => ({ permission })) },
+    },
+  });
+}
+
 export async function createUser(
   over: Partial<{
     email: string;
     name: string;
-    role: Role;
+    /** Rol del sistema por clave (se crea si falta)... */
+    role: SystemRoleKey;
+    /** ...o un rol ya creado por id (tiene prioridad). */
+    roleId: string;
     password: string;
     active: boolean;
     mustChangePassword: boolean;
@@ -22,7 +56,7 @@ export async function createUser(
     data: {
       email: over.email ?? `usuario${n}@prueba.local`,
       name: over.name ?? `Usuario ${n}`,
-      role: over.role ?? 'EDITOR',
+      roleId: over.roleId ?? (await ensureRole(over.role ?? 'EDITOR')),
       active: over.active ?? true,
       mustChangePassword: over.mustChangePassword ?? false,
       passwordHash: await hashPassword(password),

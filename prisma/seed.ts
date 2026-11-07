@@ -1,9 +1,10 @@
 /**
  * Semilla idempotente. Dos modos (SEED_MODE):
- *   prod  -> administrador inicial (desde SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD), ajustes y enlaces
+ *   prod  -> roles del sistema, superadministrador inicial (desde SEED_ADMIN_EMAIL /
+ *            SEED_ADMIN_PASSWORD), ajustes y enlaces
  *            reales y el contenido de las páginas estancas (plan de estudios). Los enlaces
  *            "a confirmar" quedan visible=false. NUNCA carga datos de demostración.
- *   demo  -> todo lo de prod + un usuario por rol, ciclos, avisos, publicaciones, documentos, llamados,
+ *   demo  -> todo lo de prod + un usuario por rol (Rectoría, Bedelía, Comunicación), ciclos, avisos, publicaciones, documentos, llamados,
  *            integraciones en modo demostración.
  * Se puede ejecutar varias veces sin duplicar.
  *
@@ -16,7 +17,8 @@ import { PrismaClient } from '@prisma/client';
 import { hash } from '@node-rs/argon2';
 import { encryptJson } from '../apps/api/src/infra/crypto';
 import { FAKE_MEDIA } from '../apps/api/src/infra/instagram/fake';
-import { CONTENT, LINKS, SETTINGS } from './seed-data';
+import { DEFAULT_ROLE_PERMISSIONS } from '../packages/shared/src/permissions';
+import { CONTENT, LINKS, SETTINGS, SYSTEM_ROLES } from './seed-data';
 
 export const DEMO_PASSWORD = 'Demo-2026-ifts2';
 
@@ -32,30 +34,59 @@ const log = (m: string) => console.log(`[seed:${mode}] ${m}`);
 
 // ---------------------------------------------------------------- prod (y base de demo)
 
-async function seedAdmin() {
+type SystemKey = (typeof SYSTEM_ROLES)[number]['key'];
+
+/**
+ * Roles del sistema (RF11). Idempotente y respetuosa: si el rol ya existe NO pisa su nombre ni sus
+ * permisos (el Superadministrador pudo haberlos cambiado desde el panel); solo asegura isSystem.
+ * Devuelve el id de cada rol por clave.
+ */
+async function seedRoles(): Promise<Record<SystemKey, string>> {
+  const ids = {} as Record<SystemKey, string>;
+  for (const r of SYSTEM_ROLES) {
+    const perms = r.key === 'SUPERADMIN' ? [] : DEFAULT_ROLE_PERMISSIONS[r.key];
+    const role = await prisma.role.upsert({
+      where: { key: r.key },
+      create: {
+        key: r.key,
+        name: r.name,
+        description: r.description,
+        isSystem: true,
+        permissions: { create: perms.map((permission) => ({ permission })) },
+      },
+      update: { isSystem: true },
+    });
+    ids[r.key] = role.id;
+  }
+  log(`roles del sistema listos (${SYSTEM_ROLES.length})`);
+  return ids;
+}
+
+/** Superadministrador inicial (RF11): en prod con cambio de clave obligatorio al primer ingreso. */
+async function seedAdmin(superadminRoleId: string) {
   const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD;
   if (!email || !password) {
     throw new Error(
-      'Faltan SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD para crear el administrador inicial.',
+      'Faltan SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD para crear el superadministrador inicial.',
     );
   }
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    log(`administrador ya existe (${email}); no se modifica su clave`);
+    log(`superadministrador ya existe (${email}); no se modifican su clave ni su rol`);
     return existing;
   }
   const admin = await prisma.user.create({
     data: {
       email,
-      name: 'Administración',
-      role: 'ADMIN',
+      name: 'Superadministración',
+      roleId: superadminRoleId,
       passwordHash: await hash(password),
       // En producción el primer ingreso obliga a cambiar la clave inicial.
       mustChangePassword: mode === 'prod',
     },
   });
-  log(`administrador creado: ${email}`);
+  log(`superadministrador creado: ${email}`);
   return admin;
 }
 
@@ -99,11 +130,11 @@ async function seedContent() {
 
 // ---------------------------------------------------------------- demo
 
-async function demoUser(email: string, name: string, role: 'ADMIN' | 'BEDELIA' | 'EDITOR') {
+async function demoUser(email: string, name: string, roleId: string) {
   return prisma.user.upsert({
     where: { email },
-    create: { email, name, role, passwordHash: await hash(DEMO_PASSWORD) },
-    update: { name, role, active: true },
+    create: { email, name, roleId, passwordHash: await hash(DEMO_PASSWORD) },
+    update: { name, roleId, active: true },
   });
 }
 
@@ -154,10 +185,13 @@ async function demoDocument(
   });
 }
 
-async function seedDemo(adminId: string) {
-  const bedelia = await demoUser('bedelia@ifts2.local', 'Bedelía Académica (demo)', 'BEDELIA');
-  const editor = await demoUser('editor@ifts2.local', 'Comunicación (demo)', 'EDITOR');
-  log('usuarios de demostración: admin / bedelia@ifts2.local / editor@ifts2.local');
+async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
+  await demoUser('direccion@ifts2.local', 'Rectoría / Dirección (demo)', roles.ADMIN);
+  const bedelia = await demoUser('bedelia@ifts2.local', 'Bedelía Académica (demo)', roles.BEDELIA);
+  const editor = await demoUser('editor@ifts2.local', 'Comunicación (demo)', roles.EDITOR);
+  log(
+    'usuarios de demostración: admin (superadministrador) / direccion@ / bedelia@ / editor@ifts2.local',
+  );
 
   // Ajustes de demostración
   await prisma.siteSetting.upsert({
@@ -500,10 +534,11 @@ async function main() {
   if (mode === 'demo' && process.env.NODE_ENV === 'production') {
     throw new Error('La semilla demo nunca se carga en producción (NODE_ENV=production).');
   }
-  const admin = await seedAdmin();
+  const roles = await seedRoles();
+  const admin = await seedAdmin(roles.SUPERADMIN);
   await seedSettingsAndLinks();
   await seedContent();
-  if (mode === 'demo') await seedDemo(admin.id);
+  if (mode === 'demo') await seedDemo(admin.id, roles);
   log('listo');
 }
 

@@ -1,14 +1,22 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import type { Action, Role } from '@ifts2/shared';
+import type { Action } from '@ifts2/shared';
 import { api, ApiError } from './api';
 
 export interface Session {
   id: string;
   email: string;
   name: string;
-  role: Role;
+  /** Clave del rol (SUPERADMIN, ADMIN, BEDELIA, EDITOR o una propia). */
+  role: string;
+  roleId: string;
+  /** Nombre visible del rol (lo define el Superadministrador). */
+  roleName: string;
   mustChangePassword: boolean;
+  /**
+   * Permisos efectivos (RF11). La interfaz los usa para OCULTAR lo que no se puede usar; la API es
+   * la que protege de verdad (responde 403 si se fuerza).
+   */
   permissions: Action[];
 }
 

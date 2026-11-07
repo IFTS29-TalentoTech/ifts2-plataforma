@@ -11,10 +11,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN    // Rectoría / Dirección: acceso total
-  BEDELIA  // Bedelía Académica: horarios, mesas, avisos y cartelera
-  EDITOR   // Comunicación: publicaciones, redes y novedades
+// Los roles son datos (RF11, ADR-18 ampliada). El catálogo de permisos vive en packages/shared
+// (permissions.ts); aquí se guarda qué permisos tiene cada rol. Roles del sistema (isSystem, los crea
+// la semilla y no se eliminan):
+//   SUPERADMIN  todo, incluido roles:manage. No se edita: sus permisos se resuelven en código, sin filas.
+//   ADMIN       arranca con todo salvo roles:manage
+//   BEDELIA     arranca con horarios, mesas, avisos y cartelera
+//   EDITOR      arranca con publicaciones, redes y novedades
+// El Superadministrador edita los permisos de ADMIN, BEDELIA, EDITOR y de los roles que cree.
+model Role {
+  id          String           @id @default(uuid())
+  key         String           @unique // SUPERADMIN, ADMIN, BEDELIA, EDITOR o un identificador propio
+  name        String           @unique
+  description String?
+  isSystem    Boolean          @default(false) // los del sistema no se eliminan
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+  users       User[]
+}
+
+model RolePermission {
+  roleId     String
+  role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission String // acción del catálogo, por ejemplo "notices:manage"
+
+  @@id([roleId, permission])
 }
 
 enum PublicationKind {
@@ -79,7 +101,8 @@ model User {
   email        String    @unique
   name         String
   passwordHash String
-  role         Role
+  roleId       String
+  role         Role      @relation(fields: [roleId], references: [id]) // no se elimina un rol con usuarios
   active       Boolean   @default(true)
   mustChangePassword Boolean @default(false) // tras restablecer la clave
   createdAt    DateTime  @default(now())
@@ -87,6 +110,8 @@ model User {
   lastLoginAt  DateTime?
   sessions     Session[]
   audit        AuditLog[]
+
+  @@index([roleId])
 }
 
 model Session {

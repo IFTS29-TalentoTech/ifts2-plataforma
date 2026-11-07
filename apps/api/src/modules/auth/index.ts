@@ -2,7 +2,6 @@ import { Router, type CookieOptions, type Request, type Response } from 'express
 import {
   changePasswordInput,
   loginInput,
-  permissionsFor,
   type ChangePasswordInput,
   type LoginInput,
 } from '@ifts2/shared';
@@ -90,7 +89,10 @@ router.post('/logout', async (req, res) => {
   res.status(204).end();
 });
 
-/** GET /auth/me: usuario y rol de la sesión (más sus permisos, para que la interfaz oculte opciones). */
+/**
+ * GET /auth/me: usuario, rol y permisos EFECTIVOS de la sesión (RF11). La interfaz los usa para
+ * ocultar lo que la persona no puede usar; la API igual rechaza con 403 si se fuerza.
+ */
 router.get('/me', requireAuth({ allowMustChangePassword: true }), (req, res) => {
   const u = req.auth!.user;
   res.json({
@@ -98,8 +100,10 @@ router.get('/me', requireAuth({ allowMustChangePassword: true }), (req, res) => 
     email: u.email,
     name: u.name,
     role: u.role,
+    roleId: u.roleId,
+    roleName: u.roleName,
     mustChangePassword: u.mustChangePassword,
-    permissions: permissionsFor(u.role),
+    permissions: u.permissions,
   });
 });
 

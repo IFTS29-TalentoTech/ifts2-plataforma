@@ -16,7 +16,7 @@ import {
   can,
   type ContentPage,
   type ContentSectionDto,
-  type Role,
+  type PermissionList,
 } from '@ifts2/shared';
 import { Eye, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
@@ -48,13 +48,13 @@ const PAGE_LABELS: Record<ContentPage, string> = {
   ingreso: 'Ingreso',
 };
 
-export function ContentEditor({ role }: { role: Role }) {
+export function ContentEditor({ perms }: { perms: PermissionList }) {
   const { toast } = useToast();
   const [page, setPage] = useState<ContentPage>('institucional');
   const list = useResource<{ page: string; items: ContentSectionDto[] }>(`/content/${page}`);
   const [editing, setEditing] = useState<ContentSectionDto | 'new' | null>(null);
   const [deleting, setDeleting] = useState<ContentSectionDto | null>(null);
-  const canDelete = can(role, 'content:delete');
+  const canDelete = can(perms, 'content:delete');
 
   return (
     <section aria-labelledby="content-title" className="flex flex-col gap-4">

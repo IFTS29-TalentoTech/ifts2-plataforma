@@ -132,9 +132,13 @@ for (const vp of VIEWPORTS) {
       const email = `${unique('cambio').replace(/\s/g, '')}@ifts2.local`;
       let temp = '';
       cy.loginAs('admin');
-      cy.api('POST', '/users', { name: 'Usuario E2E', email, role: 'EDITOR' }).then((r) => {
-        temp = r.body.temporaryPassword as string;
-        expect(temp).to.be.a('string');
+      // RF11: el rol se elige por id (los roles son datos).
+      cy.api('GET', '/roles').then((roles) => {
+        const editor = roles.body.items.find((r: { key: string }) => r.key === 'EDITOR');
+        cy.api('POST', '/users', { name: 'Usuario E2E', email, roleId: editor.id }).then((r) => {
+          temp = r.body.temporaryPassword as string;
+          expect(temp).to.be.a('string');
+        });
       });
       cy.clearCookies();
       cy.visit('/panel/login');

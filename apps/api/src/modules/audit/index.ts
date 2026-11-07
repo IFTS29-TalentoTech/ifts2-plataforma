@@ -28,7 +28,9 @@ router.get('/', requirePermission('audit:read'), validate({ query }), async (req
       where,
       orderBy: { at: 'desc' },
       ...pageArgs(q),
-      include: { user: { select: { id: true, name: true, role: true } } },
+      include: {
+        user: { select: { id: true, name: true, role: { select: { key: true, name: true } } } },
+      },
     }),
   ]);
   res.json(
@@ -40,7 +42,10 @@ router.get('/', requirePermission('audit:read'), validate({ query }), async (req
         entityId: r.entityId,
         detail: r.detail,
         at: r.at,
-        user: r.user,
+        // `role` sigue siendo la clave (como antes del RF11); `roleName` es el nombre visible.
+        user: r.user
+          ? { id: r.user.id, name: r.user.name, role: r.user.role.key, roleName: r.user.role.name }
+          : null,
       })),
       total,
       q,

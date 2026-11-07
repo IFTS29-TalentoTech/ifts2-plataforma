@@ -14,11 +14,10 @@
 'use client';
 
 import {
-  ROLE_LABELS,
   can,
   settingsUpdateInput,
   type Page,
-  type Role,
+  type PermissionList,
   type SettingKey,
   type SettingsDto,
   type TermDto,
@@ -77,17 +76,17 @@ const LABELS: Record<string, string> = {
 };
 
 export function ConfiguracionScreen({
-  role,
+  perms,
   instagramResult,
 }: {
-  role: Role;
+  perms: PermissionList;
   instagramResult?: 'connected' | 'error';
 }) {
   const { toast } = useToast();
   const settings = useResource<SettingsDto>('/settings');
   const terms = useResource<Page<TermDto>>('/terms?pageSize=100');
   const users = useResource<Page<PanelUser>>(
-    can(role, 'users:manage') ? '/users?pageSize=100' : null,
+    can(perms, 'users:manage') ? '/users?pageSize=100' : null,
   );
   const [form, setForm] = useState<Partial<Record<TextKey, string>>>({});
   const [enrollment, setEnrollment] = useState(false);
@@ -136,8 +135,8 @@ export function ConfiguracionScreen({
   }
 
   const publicTerm = terms.data?.items.find((t) => t.publicCurrent);
-  const canUsers = can(role, 'users:manage');
-  const canIntegrations = can(role, 'integrations:manage');
+  const canUsers = can(perms, 'users:manage');
+  const canIntegrations = can(perms, 'integrations:manage');
 
   return (
     <div>
@@ -178,7 +177,7 @@ export function ConfiguracionScreen({
               <p className="text-sm text-font-strong" data-testid="cfg-public-term">
                 {terms.status === 'loading' ? 'Cargando…' : (publicTerm?.label ?? 'Sin definir')}
               </p>
-              {can(role, 'terms:setPublic') && (
+              {can(perms, 'terms:setPublic') && (
                 <Link
                   href="/panel/horarios"
                   className="mt-1 inline-block text-sm font-semibold text-accent underline focus-visible:outline-none focus-visible:shadow-focus"
@@ -247,7 +246,7 @@ export function ConfiguracionScreen({
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-accent-3">{u.name}</p>
-                      <p className="truncate text-xs text-font-strong">{ROLE_LABELS[u.role]}</p>
+                      <p className="truncate text-xs text-font-strong">{u.roleName}</p>
                     </div>
                     <Badge tone={u.active ? 'success' : 'neutral'}>
                       {u.active ? 'Activo' : 'Desactivado'}
@@ -255,10 +254,19 @@ export function ConfiguracionScreen({
                   </li>
                 ))}
               </ul>
-              <div>
+              <div className="flex flex-wrap items-center gap-3">
                 <Button variant="secondary" onClick={() => setUsersOpen(true)}>
                   + Administrar usuarios y roles
                 </Button>
+                {/* RF11: definir roles y permisos es solo del Superadministrador (Q123). */}
+                {can(perms, 'roles:manage') && (
+                  <Link
+                    href="/panel/roles"
+                    className="text-sm font-semibold text-accent underline focus-visible:outline-none focus-visible:shadow-focus"
+                  >
+                    Roles y permisos
+                  </Link>
+                )}
               </div>
             </Card>
           )}
@@ -272,10 +280,10 @@ export function ConfiguracionScreen({
           {canIntegrations && <TabsTrigger value="integraciones">Integraciones</TabsTrigger>}
         </TabsList>
         <TabsContent value="contenido">
-          {can(role, 'content:manage') && <ContentEditor role={role} />}
+          {can(perms, 'content:manage') && <ContentEditor perms={perms} />}
         </TabsContent>
         <TabsContent value="enlaces">
-          {can(role, 'links:manage') && <LinksEditor role={role} />}
+          {can(perms, 'links:manage') && <LinksEditor perms={perms} />}
         </TabsContent>
         {canIntegrations && (
           <TabsContent value="integraciones">

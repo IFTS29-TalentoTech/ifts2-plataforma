@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import type { Role } from '@ifts2/shared';
+import type { Action } from '@ifts2/shared';
 import type { AppConfig } from './config';
 import type { IntegrationStore } from './infra/integration-store';
 import type { InstagramClient } from './infra/instagram';
@@ -50,7 +50,12 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  role: Role;
+  roleId: string;
+  /** Clave del rol (SUPERADMIN, ADMIN, BEDELIA, EDITOR o una propia). */
+  role: string;
+  roleName: string;
+  /** Permisos efectivos, leídos de la base en ESTE pedido (un cambio de rol rige al instante). */
+  permissions: Action[];
   mustChangePassword: boolean;
 }
 export interface AuthInfo {

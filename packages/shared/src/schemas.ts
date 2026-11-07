@@ -9,11 +9,11 @@ import {
   PUBLICATION_KINDS,
   PUBLICATION_SECTIONS,
   PUBLICATION_STATUSES,
-  ROLES,
   SETTING_KEYS,
   SOCIAL_STATUSES,
   TERM_KINDS,
 } from './enums';
+import { ACTIONS, RESERVED_ACTIONS } from './permissions';
 import { endOfDayBA, startOfDayBA } from './time';
 
 /**
@@ -217,7 +217,8 @@ export type ChangePasswordInput = z.infer<typeof changePasswordInput>;
 export const userCreateInput = z.object({
   name: text('El nombre', 120),
   email: email('El correo'),
-  role: enumOf('El rol', ROLES),
+  /** Rol asignado (RF11): un ADMIN solo asigna roles cuyos permisos tiene y nunca SUPERADMIN. */
+  roleId: uuid('El rol'),
   /** Opcional: si falta, la API genera una clave temporal y obliga a cambiarla. */
   password: password().optional(),
 });
@@ -227,19 +228,67 @@ export const userUpdateInput = z
   .object({
     name: text('El nombre', 120).optional(),
     email: email('El correo').optional(),
-    role: enumOf('El rol', ROLES).optional(),
+    roleId: uuid('El rol').optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
 export type UserUpdateInput = z.infer<typeof userUpdateInput>;
 
 export const userListQuery = paginationQuery.extend({
-  role: enumOf('El rol', ROLES).optional(),
+  roleId: uuid('El rol').optional(),
   active: z
     .enum(['true', 'false'])
     .transform((v) => v === 'true')
     .optional(),
   q: z.string().trim().max(100).optional(),
 });
+
+// ---------- roles y permisos (RF11, solo SUPERADMIN) ----------
+
+/**
+ * Lista de permisos de un rol. Rechaza (400) acciones que no existen en el catálogo y las
+ * reservadas al Superadministrador (`roles:manage`). Quita repetidos.
+ */
+export const rolePermissionList = z
+  .array(z.string({ invalid_type_error: 'Cada permiso debe ser un texto.' }), {
+    invalid_type_error: 'Los permisos deben ser una lista.',
+  })
+  .max(ACTIONS.length, 'Hay más permisos de los que existen.')
+  .superRefine((list, ctx) => {
+    for (const p of list) {
+      if ((RESERVED_ACTIONS as readonly string[]).includes(p)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `El permiso ${p} es exclusivo del Superadministrador.`,
+        });
+      } else if (!(ACTIONS as readonly string[]).includes(p)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `El permiso ${p} no existe.` });
+      }
+    }
+  })
+  .transform((list) => [...new Set(list)]);
+
+export const roleCreateInput = z.object({
+  name: text('El nombre del rol', 80),
+  description: optionalText('La descripción', 300),
+  permissions: rolePermissionList.optional().default([]),
+});
+export type RoleCreateInput = z.infer<typeof roleCreateInput>;
+
+export const roleUpdateInput = z
+  .object({
+    name: text('El nombre del rol', 80).optional(),
+    // .optional() afuera: si no se envía queda undefined (no borra la descripción guardada).
+    description: optionalText('La descripción', 300).optional(),
+  })
+  .refine((v) => v.name !== undefined || v.description !== undefined, {
+    message: 'No hay cambios para guardar.',
+  });
+export type RoleUpdateInput = z.infer<typeof roleUpdateInput>;
+
+export const rolePermissionsInput = z.object({
+  permissions: rolePermissionList,
+});
+export type RolePermissionsInput = z.infer<typeof rolePermissionsInput>;
 
 // ---------- categorías ----------
 
