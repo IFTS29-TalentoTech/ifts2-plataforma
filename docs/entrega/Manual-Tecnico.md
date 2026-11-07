@@ -98,7 +98,8 @@ Qué hace cada paso:
 
 | Rol                                  | Correo                | Clave                                  | Puede                                                    |
 | ------------------------------------ | --------------------- | -------------------------------------- | -------------------------------------------------------- |
-| **ADMIN** (Rectoría / Dirección)     | `admin@ifts2.local`   | `Cambiame-123!` (`SEED_ADMIN_PASSWORD`) | Todo: usuarios, configuración, integraciones, ciclo público |
+| **SUPERADMIN** (Superadministrador)  | `admin@ifts2.local`   | `Cambiame-123!` (`SEED_ADMIN_PASSWORD`) | Todo, incluido crear roles y definir sus permisos         |
+| **ADMIN** (Rectoría / Dirección)     | `direccion@ifts2.local` | `Demo-2026-ifts2`                    | Todo salvo roles; crea usuarios (también otros administradores) |
 | **BEDELIA** (Bedelía Académica)      | `bedelia@ifts2.local` | `Demo-2026-ifts2`                      | Avisos, horarios, llamados, archivo, mensajes            |
 | **EDITOR** (Comunicación)            | `editor@ifts2.local`  | `Demo-2026-ifts2`                      | Publicaciones y moderación de Instagram                  |
 
@@ -325,7 +326,9 @@ La referencia completa de endpoints, con permisos y códigos de estado, está en
 
 ### 4.2 Permisos por rol
 
-Una sola matriz (`PERMISSIONS` en `packages/shared/src/permissions.ts`) la usan la API (`requirePermission`) y la web (para ocultar opciones).
+Hay **cuatro roles de sistema** (SUPERADMIN, ADMIN, BEDELIA y EDITOR). Los permisos son un **catálogo fijo** (`ACTIONS` en `packages/shared/src/permissions.ts`, por ejemplo `notices:manage`) y los **roles son datos** (tablas `Role` y `RolePermission`): el Superadministrador crea, edita y elimina roles y tilda sus permisos en **Panel → Roles y permisos** (RF11, ADR-031). La API (`requirePermission`) y la web (para ocultar opciones) leen los permisos de la sesión en cada pedido, así que un cambio rige sin volver a ingresar. SUPERADMIN siempre tiene todo y no se edita ni se elimina; ADMIN, BEDELIA y EDITOR se pueden editar y eliminar (409 si tienen usuarios). El último SUPERADMIN activo no se puede desactivar ni cambiar de rol (409). Las rutas `/integrations/*` exigen el permiso `integrations:manage`, no un rol.
+
+La tabla siguiente es la **matriz inicial** que carga la semilla (después manda lo que el Superadministrador haya tildado). SUPERADMIN tiene todo y no figura.
 
 | Recurso                                              | ADMIN | BEDELIA | EDITOR |
 | ---------------------------------------------------- | :---: | :-----: | :----: |
@@ -370,6 +373,34 @@ Los diagramas se generan **desde el schema** con `node scripts/docs/prisma-to-do
 
 > Esta sección se genera con `node scripts/docs/prisma-to-docs.mjs` a partir de `prisma/schema.prisma`; no se edita a mano. Los tipos son los de Prisma (`String` = texto, `Int` = entero, `Boolean` = verdadero/falso, `DateTime` = fecha y hora en UTC, `Json` = objeto JSON); en PostgreSQL se materializan como `TEXT`, `INTEGER`, `BOOLEAN`, `TIMESTAMP(3)` y `JSONB`. Las filas «Relación con …» son los lados de navegación de Prisma y no son columnas.
 
+#### Role
+
+
+
+| Campo | Tipo | Restricciones | Significado |
+|---|---|---|---|
+| `id` | String | PK, obligatorio, por defecto uuid() | Identificador único (UUID generado por la aplicación). |
+| `key` | String | único, obligatorio | Clave interna única del rol (SUPERADMIN, ADMIN, BEDELIA, EDITOR o la de un rol creado). |
+| `name` | String | único, obligatorio | Nombre que se muestra en el panel. No se repite entre roles. |
+| `description` | String | opcional | Explicación breve de para qué sirve el rol. |
+| `isSystem` | Boolean | obligatorio, por defecto false | Verdadero para los roles que crea la semilla. SUPERADMIN no se edita ni se elimina; los demás sí se pueden eliminar si no tienen usuarios. |
+| `createdAt` | DateTime | obligatorio, por defecto now() | Fecha y hora de creación del registro. |
+| `updatedAt` | DateTime | obligatorio | Fecha y hora de la última modificación (la actualiza Prisma sola). |
+| `permissions` | RolePermission[] | (no es columna) | Permisos del rol (relación inversa con RolePermission). |
+| `users` | User[] | (no es columna) | Usuarios que tienen este rol (relación inversa). |
+
+#### RolePermission
+
+
+
+| Campo | Tipo | Restricciones | Significado |
+|---|---|---|---|
+| `roleId` | String | obligatorio, FK → Role.id (Cascade) | Rol al que pertenece el permiso. Al borrar el rol se borran sus filas. |
+| `role` | Role | (no es columna) | Relación con Role. |
+| `permission` | String | obligatorio | Permiso del catálogo fijo en el código (por ejemplo notices:manage). No se repite dentro del rol. |
+
+Restricciones e índices de la tabla: `@@id([roleId, permission])`.
+
 #### User
 
 Personas del instituto que usan el panel, con su rol.
@@ -380,7 +411,8 @@ Personas del instituto que usan el panel, con su rol.
 | `email` | String | único, obligatorio | Correo con el que inicia sesión. No se repite entre usuarios. |
 | `name` | String | obligatorio | Nombre y apellido que se muestra en el panel y en la auditoría. |
 | `passwordHash` | String | obligatorio | Clave guardada como hash argon2id. Nunca se guarda ni se devuelve la clave en claro. |
-| `role` | Role | obligatorio | Rol: ADMIN (todo), BEDELIA (avisos, horarios, archivo) o EDITOR (publicaciones y redes). |
+| `roleId` | String | obligatorio, FK → Role.id | Rol del usuario (relación con Role). Sus permisos se leen en cada pedido. |
+| `role` | Role | (no es columna) | Relación con Role. |
 | `active` | Boolean | obligatorio, por defecto true | Si es falso, la persona no puede iniciar sesión (se desactiva en lugar de borrar, para conservar la auditoría). |
 | `mustChangePassword` | Boolean | obligatorio, por defecto false | Verdadero tras crear el usuario con clave temporal o restablecerla: obliga a cambiarla en el próximo ingreso. |
 | `createdAt` | DateTime | obligatorio, por defecto now() | Fecha y hora de creación del registro. |
@@ -388,6 +420,8 @@ Personas del instituto que usan el panel, con su rol.
 | `lastLoginAt` | DateTime | opcional | Último inicio de sesión exitoso. |
 | `sessions` | Session[] | (no es columna) | Sesiones abiertas del usuario (relación inversa). |
 | `audit` | AuditLog[] | (no es columna) | Acciones auditadas realizadas por el usuario (relación inversa). |
+
+Restricciones e índices de la tabla: `@@index([roleId])`.
 
 #### Session
 
@@ -687,7 +721,6 @@ Prisma no puede expresar este índice en el schema, por eso vive en `prisma/migr
 
 | Enumeración | Valores | Uso |
 |---|---|---|
-| `Role` | `ADMIN` (Rectoría / Dirección: acceso total); `BEDELIA` (Bedelía Académica: horarios, mesas, avisos y archivo); `EDITOR` (Comunicación: publicaciones y redes) | Rol de usuario. |
 | `PublicationKind` | `NEWS` (Noticia / se muestra en Novedades); `EVENT` (Evento) | Tipo de publicación. |
 | `PublicationStatus` | `DRAFT` (Borrador); `SCHEDULED` (Programada); `PUBLISHED` (Publicada); `PAUSED` (Pausada) | Estado de una publicación. |
 | `PublicationOrigin` | `MANUAL` (Cargada a mano en el panel); `INSTAGRAM` (Aprobada desde Instagram) | Origen de la publicación. |
@@ -704,6 +737,8 @@ Prisma no puede expresar este índice en el schema, por eso vive en `prisma/migr
 
 | Relación | Cardinalidad | Regla al borrar |
 |---|---|---|
+| `Role` → `RolePermission` (por `roleId`) | 1 a N | En cascada: se borran los hijos |
+| `Role` → `User` (por `roleId`) | 1 a N | Sin acción especial: la base impide borrar si hay hijos (o la API responde 409) |
 | `User` → `Session` (por `userId`) | 1 a N | En cascada: se borran los hijos |
 | `Category` → `Publication` (por `categoryId`) | 0..1 a N | Sin acción especial: la base impide borrar si hay hijos (o la API responde 409) |
 | `SocialPost` → `Publication` (por `socialPostId`) | 1 a 0..1 | Sin acción especial: la base impide borrar si hay hijos (o la API responde 409) |
@@ -749,7 +784,7 @@ Los valores salen de `docs/specs/design-tokens.json`, `pnpm tokens` los vuelca a
 
 ### 7.1 Instagram (la configura el cliente desde el panel)
 
-Panel → **Configuración → Integraciones** (solo ADMIN). Los datos se guardan cifrados (AES-256-GCM) y **nunca** vuelven en una respuesta, un log ni la auditoría: la pantalla muestra máscaras (`••••1234`).
+Panel → **Configuración → Integraciones** (permiso `integrations:manage`; lo trae ADMIN por defecto). Los datos se guardan cifrados (AES-256-GCM) y **nunca** vuelven en una respuesta, un log ni la auditoría: la pantalla muestra máscaras (`••••1234`).
 
 **Guía para el cliente** (la misma que muestra la pantalla; texto en `packages/shared/src/instagram-guide.ts`):
 
@@ -794,7 +829,7 @@ El repositorio incluye `.github/workflows/ci.yml` (lint, tipos, pruebas con Post
 | `createApp(opts)` / `getContext(app)`             | `src/app.ts`                           | Arma Express: helmet, CORS, parseo con límite de tamaño, `originCheck`, `attachAuth`, montaje de módulos, 404 y manejador de errores     |
 | `loadConfig(env)`                                 | `src/config.ts`                        | Valida el entorno con zod; si falta algo lanza `ConfigError` y la API no arranca                                                         |
 | `AppContext` (`req.ctx`)                          | `src/context.ts`                       | `prisma`, `storage`, `getMailer()`, `getInstagramClient()`, `fetch` inyectable, limitadores, logger                                      |
-| `attachAuth`, `requireAuth`, `requirePermission(action)`, `requireRole(...)` | `src/middleware/auth.ts` | Resuelven la sesión desde la cookie (hash del token en la tabla `Session`) y exigen permiso: 401 sin sesión, 403 sin permiso            |
+| `attachAuth`, `requireAuth`, `requirePermission(action)`, `requireAnyPermission(...)` | `src/middleware/auth.ts` | Resuelven la sesión desde la cookie (hash del token en la tabla `Session`) y exigen permiso: 401 sin sesión, 403 sin permiso            |
 | `validate({ body, query, params })` / `valid<T>()` | `src/middleware/validate.ts`          | Valida con zod y deja el dato tipado; los errores salen por campo                                                                        |
 | `originCheck`                                     | `src/middleware/origin.ts`             | Defensa CSRF: en métodos que modifican datos exige que `Origin` sea `APP_ORIGIN`                                                         |
 | `createLimiters(config)`                          | `src/middleware/rate-limit.ts`         | Login (5 fallos / 15 min por IP y por correo), contacto (5 por hora), sincronización (6 por minuto)                                      |
@@ -915,7 +950,8 @@ Lo que **no se pudo probar** o quedó pendiente, dicho sin rodeos:
 - **Despliegue**: no hay aplicación desplegada ni dominio todavía (hosting a validar con el cliente).
 - **Carga**: se usó **autocannon**, no k6 (que figuraba en la planificación). En saturación (400 usuarios sin pausa) un solo proceso de Node alcanza su techo en ~300–360 pedidos por segundo y aparecen reinicios de conexión; para el uso real esperado (~133 pedidos/s) cumple. El techo se sube con CDN o más procesos.
 - **Datos pendientes del cliente**: datos de ingreso (fechas y documentación) y ubicación de las materias por año del plan de estudios; los marcadores quedan como `[a confirmar]` en el sitio.
-- **Nombres Ingreso / Inscripciones, tipografía y hashtag** quedaron a validar con el cliente.
+- **Nombres Ingreso / Inscripciones, hashtag y colores** quedaron a validar con el cliente. El hashtag `#ifts2web` es provisorio; la tipografía es Plus Jakarta Sans (confirmado; la Etapa 2 proponía Inter).
+- **Documentación de la entrega del 30/10:** el PDF y las tablas de campos se generaron antes de los roles configurables (RF11). Hay que ejecutar `pnpm docs:der` y `pnpm docs:pdf` para regenerarlos con el esquema actual.
 - `pnpm db:reset` y `pnpm e2e --reset` borran la base de desarrollo y deben ejecutarse por una persona.
 
 ## 12. Para continuar el proyecto
