@@ -1,13 +1,12 @@
 /**
  * Piezas visuales compartidas por las páginas públicas (hero, secciones, tarjetas, archivos,
- * paginación por enlaces). Son componentes de servidor: no agregan JavaScript al navegador (RNF05).
+ * paginación por enlaces). Son componentes de servidor; CoverImage aísla el manejo de errores.
  *
  * Reglas de estilo: SOLO clases del tema (tokens CSS); nada de hex ni fuentes a mano (ADR-021).
  * Contraste (RNF07): el hero usa `primary-strong` con texto `surface` (5,0:1); el color `primary`
  * original del Figma no alcanza AA con texto blanco (ver ADR-021).
  */
 import { ArrowRight, ArrowUpRight, Download, FileText } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PublicFileDto, PublicPublicationCardDto } from '@ifts2/shared';
@@ -15,6 +14,8 @@ import { Badge, Button, Card, ErrorState, Eyebrow } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { formatDateAR } from '@/lib/dates';
 import { formatBytes } from './data';
+import { CoverImage } from './cover-image';
+import { canOptimizeCover } from './cover-policy';
 
 /** Contenedor centrado estándar (ancho máximo + gutters del tema). */
 export function Container({ className, children }: { className?: string; children: ReactNode }) {
@@ -140,16 +141,6 @@ export function LinkCard({
   );
 }
 
-/** ¿La URL apunta a la propia máquina? En ese caso (solo desarrollo) no se optimiza la imagen. */
-function isLocalUrl(url: string): boolean {
-  try {
-    const h = new URL(url, 'http://x').hostname;
-    return h === 'localhost' || h === '127.0.0.1' || h === '::1';
-  } catch {
-    return false;
-  }
-}
-
 /** Portada con `next/image`: dimensiones explícitas (sin saltos de layout) y carga diferida (RNF05). */
 export function Cover({
   src,
@@ -169,7 +160,8 @@ export function Cover({
   sizes?: string;
 }) {
   return (
-    <Image
+    <CoverImage
+      key={src}
       src={src}
       alt={alt}
       width={width}
@@ -177,7 +169,7 @@ export function Cover({
       sizes={sizes ?? '(min-width: 1024px) 380px, 100vw'}
       priority={priority}
       loading={priority ? undefined : 'lazy'}
-      unoptimized={isLocalUrl(src)}
+      unoptimized={!canOptimizeCover(src, process.env.API_ORIGIN ?? 'http://localhost:4000')}
       className={cn('h-auto w-full object-cover', className)}
     />
   );

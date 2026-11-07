@@ -14,8 +14,7 @@ loadEnvConfig(
 
 const apiOrigin = process.env.API_ORIGIN ?? 'http://localhost:4000';
 
-// Las portadas de las publicaciones las sirve la API (almacenamiento propio): next/image solo
-// optimiza imágenes de orígenes declarados acá (RNF05). Ver features/public/parts.tsx (Cover).
+// Solo la API entra al optimizador. Cover carga directamente las URLs externas y firmadas.
 const apiUrl = new URL(apiOrigin);
 
 const config: NextConfig = {
@@ -28,6 +27,7 @@ const config: NextConfig = {
         protocol: apiUrl.protocol.replace(':', '') as 'http' | 'https',
         hostname: apiUrl.hostname,
         port: apiUrl.port,
+        search: '',
       },
     ],
     formats: ['image/avif', 'image/webp'],

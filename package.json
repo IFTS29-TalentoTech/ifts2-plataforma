@@ -32,7 +32,8 @@
     "verify": "node scripts/verify-flows.mjs",
     "docs:der": "node scripts/docs/prisma-to-docs.mjs",
     "docs:pdf": "node scripts/docs/build-entrega.mjs",
-    "package": "node scripts/package.mjs"
+    "package": "node scripts/package.mjs",
+    "test:covers": "node scripts/test-public-covers.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

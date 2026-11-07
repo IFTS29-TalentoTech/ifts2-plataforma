@@ -34,6 +34,46 @@ afterEach(() => {
 const get = (url: string) => request(t.app).get(`/api/v1/public${url}`);
 const titles = (items: { title: string }[]) => items.map((i) => i.title);
 
+describe('portadas públicas (A06)', () => {
+  it.each([
+    ['https://api.example.test/cover.webp', 'https://api.example.test/cover.webp'],
+    ['https://externa.example.test/cover.webp', 'https://externa.example.test/cover.webp'],
+    ['/portada.webp', '/portada.webp'],
+    ['social/copiada.webp', 'https://bucket.example.test/social/copiada.webp?X-Amz-Signature=demo'],
+    [null, null],
+  ])('resuelve %s en inicio, novedades y detalle', async (coverUrl, expected) => {
+    const p = await createPublicationAt();
+    await testPrisma.publication.update({ where: { id: p.id }, data: { coverUrl } });
+    const sign = vi.spyOn(t.storage, 'getSignedUrl').mockResolvedValue(expected ?? '');
+    const home = await get('/home');
+    const news = await get('/publications');
+    const detail = await get(`/publications/${p.id}`);
+    for (const res of [home, news, detail]) expect(res.status).toBe(200);
+    expect(home.body.publications[0].coverUrl).toBe(expected);
+    expect(news.body.items[0].coverUrl).toBe(expected);
+    expect(detail.body.coverUrl).toBe(expected);
+    if (coverUrl === 'social/copiada.webp')
+      expect(sign).toHaveBeenCalledWith(coverUrl, expect.any(Number));
+    else expect(sign).not.toHaveBeenCalled();
+  });
+
+  it('devuelve null si no puede firmar, conservando las páginas públicas', async () => {
+    const p = await createPublicationAt();
+    await testPrisma.publication.update({
+      where: { id: p.id },
+      data: { coverUrl: 'social/copiada.webp' },
+    });
+    vi.spyOn(t.storage, 'getSignedUrl').mockRejectedValue(new Error('Almacenamiento caído'));
+    const home = await get('/home');
+    const news = await get('/publications');
+    const detail = await get(`/publications/${p.id}`);
+    for (const res of [home, news, detail]) expect(res.status).toBe(200);
+    expect(home.body.publications[0].coverUrl).toBeNull();
+    expect(news.body.items[0].coverUrl).toBeNull();
+    expect(detail.body.coverUrl).toBeNull();
+  });
+});
+
 describe('sin sesión y con caché HTTP', () => {
   it('todos los endpoints responden 200 sin cookie y con Cache-Control corto + stale-while-revalidate', async () => {
     const m = await createPublicationAt();

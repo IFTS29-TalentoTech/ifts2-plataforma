@@ -50,6 +50,13 @@ jobs:
         run: psql -h localhost -p 5433 -U ifts2 -d ifts2_test -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE ifts2_test IS 'ifts2:disposable-test-database'"
       - run: pnpm test
       - run: pnpm build
+      - name: Portadas públicas con API e imágenes simuladas (sin base de datos)
+        run: pnpm test:covers
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: portadas-screenshots
+          path: apps/web/.next/covers-screenshots
 
   # Cypress (smoke + accesibilidad) contra la web compilada. Sin secretos.
   e2e:
