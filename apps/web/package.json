@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "echo \"sin pruebas unitarias en web\"",
+    "test": "vitest run",
     "test:e2e": "cypress run",
     "cypress:open": "cypress open"
   },
