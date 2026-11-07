@@ -213,9 +213,21 @@ export function SiteHeader({ site, panelItems, userName: userNameProp, userRole 
                   </Link>
                 );
               })}
-              {/* Cierre de sesión también en móvil (el menú lateral con el botón solo se ve en escritorio). */}
+              {/* Cuenta también en móvil: el menú de cuenta de la cabecera solo se ve en escritorio. */}
               {userName && (
                 <div className="mt-2 border-t border-accent-3 pt-2">
+                  <Link
+                    href="/panel/cuenta"
+                    aria-current={pathname === '/panel/cuenta' ? 'page' : undefined}
+                    className={cn(
+                      'flex items-center rounded-md px-4 py-3 text-sm font-medium focus-visible:outline-none focus-visible:shadow-focus',
+                      pathname === '/panel/cuenta'
+                        ? 'bg-base font-semibold text-accent-3'
+                        : 'text-base hover:bg-accent-3',
+                    )}
+                  >
+                    Cambiar contraseña
+                  </Link>
                   <LogoutButton />
                 </div>
               )}
