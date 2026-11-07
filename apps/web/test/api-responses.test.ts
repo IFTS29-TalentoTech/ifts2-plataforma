@@ -256,3 +256,10 @@ it('confirma las fechas con el mismo inicio/fin de día de Buenos Aires que usa 
     }),
   ).resolves.toBeUndefined();
 });
+
+it('un 500 conserva el aviso de error y explica que la mutación puede haberse guardado', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response({ detail: 'Error interno' }, 500)));
+  await expect(api.post('/public/contact', {})).rejects.toMatchObject({
+    userMessage: expect.stringMatching(/Algo salió mal.*No pudimos confirmar el resultado/),
+  });
+});

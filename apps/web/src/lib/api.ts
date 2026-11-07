@@ -42,7 +42,7 @@ export class ApiError extends Error {
     )
       return `${this.problem.detail} No pudimos confirmar el resultado. Revisá el estado antes de volver a enviar la operación.`;
     if (this.outcome === 'unknown')
-      return 'No pudimos confirmar el resultado. El servidor puede haber guardado los cambios. Revisá el estado antes de volver a enviar la operación.';
+      return `${this.status >= 500 ? 'Algo salió mal de nuestro lado. ' : ''}No pudimos confirmar el resultado. El servidor puede haber guardado los cambios. Revisá el estado antes de volver a enviar la operación.`;
     if (this.status === 0)
       return 'No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.';
     if (this.status >= 500)
