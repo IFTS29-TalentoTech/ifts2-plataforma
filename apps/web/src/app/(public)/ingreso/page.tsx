@@ -19,7 +19,7 @@ import { Button, Card } from '@/components/ui';
 import { NoticeCard } from '@/features/public/academic-parts';
 import { loadContent, loadStudents } from '@/features/public/data';
 import { MarkdownBlocks, parseMarkdown, renderInline } from '@/features/public/markdown';
-import { PageHero, Section, SectionError } from '@/features/public/parts';
+import { HeroImage, PageHero, Section, SectionError } from '@/features/public/parts';
 import { cn } from '@/lib/cn';
 import { getSiteInfo } from '@/lib/site';
 
@@ -55,6 +55,7 @@ export default async function Page() {
         eyebrow="Futuros estudiantes"
         title={`Ingresá a ${site.short}`}
         description="Inscripción, documentación requerida y pasos para aspirantes."
+        aside={<HeroImage src={site.ingresoImage} />}
       />
 
       {!content.ok ? (
