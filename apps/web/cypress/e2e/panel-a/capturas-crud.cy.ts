@@ -126,7 +126,10 @@ describe('CRUD con la interfaz real · 1440px', () => {
     cy.captura('crud-doc-1-crear');
     cy.contains('[role="dialog"] button', 'Guardar documento').click();
 
-    // R · Leer (búsqueda y detalle)
+    // R · Leer (búsqueda y detalle). Se espera a que cierre el diálogo y termine de recargar la lista:
+    // si no, el campo de búsqueda se vuelve a montar mientras Cypress escribe (error "detached").
+    cy.get('[role="dialog"]').should('not.exist');
+    cy.get('[role="status"][aria-busy="true"]').should('not.exist');
     field('Buscar').type(title);
     cy.get('[data-testid="doc-row"]').filter(':visible').should('have.length', 1);
     cy.captura('crud-doc-2-leer');
@@ -147,6 +150,8 @@ describe('CRUD con la interfaz real · 1440px', () => {
 
     // D · Eliminar definitivamente (solo archivados y sin referencias)
     cy.reload();
+    cy.contains('h1', 'Archivo y documentación histórica').should('be.visible');
+    cy.get('[role="status"][aria-busy="true"]').should('not.exist');
     field('Buscar').type(title);
     cy.get('[data-testid="doc-row"]').filter(':visible').contains('button', 'Ver detalle').click();
     cy.contains('[role="dialog"] button', 'Eliminar definitivamente').click();

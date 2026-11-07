@@ -142,7 +142,7 @@ Todas las confirmaciones del panel funcionan igual: aparece una ventana que expl
 El sistema detecta publicaciones de la cuenta del instituto con el hashtag acordado y las deja **pendientes**. Vos decidís cuáles se muestran en el sitio.
 
 1. Entrá a **Publicaciones**. En la pestaña **De redes sociales** ves tres solapas: **Pendientes**, **Aprobadas** y **Descartadas**.
-2. (Opcional) Tocá **Sincronizar con Instagram** para buscar publicaciones nuevas ahora.
+2. (Opcional) Tocá **Sincronizar con Instagram** para buscar publicaciones nuevas ahora. El sistema recuerda el último fetch exitoso y trae solo lo nuevo; ves la fecha en **Último fetch exitoso**. Si cambiaste la cuenta o el hashtag, la primera sincronización es completa sola. Si una publicación vieja no aparece, usá **Sincronización completa** (pide confirmación).
 3. En una publicación pendiente, tocá **Moderar**.
 4. Revisá la imagen y el texto. Podés ajustar el **Título en el sitio**, el **Resumen**, la **Categoría**, dónde se muestra (**Novedades** y/o carrusel de **Inicio**) y las fechas **Visible desde / hasta**.
 5. Tildá **«Confirmo que existe consentimiento para publicar imágenes de estudiantes»**. Es obligatorio.

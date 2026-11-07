@@ -295,6 +295,8 @@ ifts2-plataforma/
 └── .env.example              todas las variables, comentadas
 ```
 
+**Sincronización incremental (ADR-038).** Para no pedir a Instagram todo el listado en cada consulta, la API guarda (cifrado, en `IntegrationConfig`, clave `instagram_sync`) el registro de cada fetch exitoso: fecha, cantidad, **id de la cuenta**, hashtag y método de conexión, sin secretos. La siguiente sincronización trae solo lo posterior al último fetch (con un margen de 6 horas; la idempotencia por `externalId` evita duplicados). Un fetch fallido no avanza la marca. La carga es **completa** la primera vez, al forzarla (`POST /social/sync?full=true`, botón «Sincronización completa» del panel) y cuando cambia la cuenta, el hashtag o el método de conexión.
+
 ### 4.1 Módulos de la API (`apps/api/src/modules/`)
 
 Cada carpeta exporta `{ mountPath, router }` y se monta sola bajo `/api/v1`; agregar un módulo **no requiere editar archivos compartidos**.

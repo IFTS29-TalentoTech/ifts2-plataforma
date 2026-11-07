@@ -20,6 +20,16 @@ for (const vp of viewports) {
       cy.wait(400);
       cy.screenshot(`b-${name}-${vp.tag}`, { overwrite: true });
     };
+    /** Las fotos cargan perezosamente: se espera a que las de la pantalla estén dibujadas antes de capturar. */
+    const imagesLoaded = () => {
+      cy.get('main img').each(($img) => {
+        cy.wrap($img).scrollIntoView();
+        cy.wrap($img).should(($i) =>
+          expect(($i[0] as HTMLImageElement).naturalWidth).to.be.greaterThan(0),
+        );
+      });
+      cy.get('main').scrollTo('top', { ensureScrollable: false });
+    };
     const loaded = () => cy.get('[role="status"][aria-busy="true"]').should('not.exist');
 
     it('Horarios', () => {
@@ -105,10 +115,12 @@ for (const vp of viewports) {
       cy.visit('/panel/galerias');
       cy.contains('h1', 'Galerías').should('be.visible');
       loaded();
+      imagesLoaded();
       shot('galerias');
       cy.visit('/panel/plantel');
       cy.contains('h1', 'Plantel docente').should('be.visible');
       loaded();
+      imagesLoaded();
       shot('plantel');
     });
   });
