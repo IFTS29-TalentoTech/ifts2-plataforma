@@ -89,3 +89,85 @@ describe('B08: publicar y quitar adjunto con lecturas anteriores al primer commi
     }
   }
 });
+
+it('B08: una eliminación de documento que leyó ausencia de referencias no desadjunta un horario publicado', async () => {
+  const term = await createTerm({ publicCurrent: true });
+  const original = await createDocumentRow();
+  const replacement = await createDocumentRow();
+  const schedule = await createScheduleRow({
+    termId: term.id,
+    documentId: original.id,
+    published: true,
+  });
+  const attachValidated = gate();
+  const continueAttach = gate();
+  const deleteValidated = gate();
+  const attachCommitted = gate();
+  const db = testPrisma.$extends({
+    query: {
+      document: {
+        async findUnique({ args, query }) {
+          const row = await query(args);
+          // La comprobación de adjuntabilidad leyó ACTIVE antes del archivado concurrente.
+          if (args.where.id === replacement.id && args.select?.status) {
+            attachValidated.release();
+            await continueAttach.promise;
+          }
+          return row;
+        },
+        async delete({ args, query }) {
+          if (args.where.id === replacement.id) {
+            // El handler ya comprobó que está archivado y todavía no tiene referencias.
+            deleteValidated.release();
+            await attachCommitted.promise;
+          }
+          return query(args);
+        },
+      },
+    },
+  });
+  const { app } = await createTestApp({ prisma: db as unknown as PrismaClient });
+  const { cookie } = await loginAs(app, 'ADMIN');
+  const patch = request(app)
+    .patch(`/api/v1/schedules/${schedule.id}`)
+    .set('Cookie', cookie)
+    .send({ documentId: replacement.id })
+    .then((res) => {
+      attachCommitted.release();
+      return res;
+    });
+  await attachValidated.promise;
+  expect(
+    (
+      await request(app)
+        .post(`/api/v1/documents/${replacement.id}/archive`)
+        .set('Cookie', cookie)
+        .send({})
+    ).status,
+  ).toBe(200);
+  const deletion = request(app)
+    .delete(`/api/v1/documents/${replacement.id}`)
+    .set('Cookie', cookie)
+    .then((res) => res);
+  await deleteValidated.promise;
+  continueAttach.release();
+  const [updated, removed] = await Promise.all([patch, deletion]);
+  const final = await testPrisma.schedule.findUniqueOrThrow({ where: { id: schedule.id } });
+  expect({
+    updateStatus: updated.status,
+    deleteStatus: removed.status,
+    published: final.published,
+    documentId: final.documentId,
+  }).toEqual({
+    updateStatus: 200,
+    deleteStatus: 409,
+    published: true,
+    documentId: replacement.id,
+  });
+  expect(await testPrisma.document.count({ where: { id: replacement.id } })).toBe(1);
+  expect(
+    await testPrisma.auditLog.count({
+      where: { action: 'document.delete', entityId: replacement.id },
+    }),
+  ).toBe(0);
+});
