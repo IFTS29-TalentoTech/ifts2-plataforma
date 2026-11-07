@@ -117,3 +117,35 @@ for (const vp of viewports) {
     });
   });
 }
+
+/** RF09/US-30: la categoría se edita desde el panel, sugiere las ya usadas y se muestra en la fila. */
+describe('Galerías · categoría', () => {
+  it('el EDITOR cambia la categoría de una diapositiva y el campo sugiere las existentes', () => {
+    cy.viewport(1440, 900);
+    cy.loginAsApi('EDITOR');
+    cy.visit('/panel/galerias');
+    cy.get(`${students} [data-testid="gallery-row"]`).should('have.length.at.least', 3);
+    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos').should('exist');
+    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos')
+      .contains('button', 'Editar')
+      .click();
+    cy.get('[role="dialog"]').within(() => {
+      cy.byLabel('Categoría (opcional)').should('have.value', 'Platos');
+      cy.get('datalist#gallery-categories option').should('have.length.at.least', 3);
+      cy.byLabel('Categoría (opcional)').clear().type('Platos finales');
+      cy.contains('button', 'Guardar diapositiva').click();
+    });
+    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos finales').should(
+      'exist',
+    );
+    // Se restaura para no alterar a las otras pruebas.
+    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos finales')
+      .contains('button', 'Editar')
+      .click();
+    cy.get('[role="dialog"]').within(() => {
+      cy.byLabel('Categoría (opcional)').clear().type('Platos');
+      cy.contains('button', 'Guardar diapositiva').click();
+    });
+    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos ·').should('exist');
+  });
+});

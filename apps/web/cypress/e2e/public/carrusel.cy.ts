@@ -73,6 +73,29 @@ describe('Carrusel de Estudiantes · 1440 px', () => {
   });
 });
 
+/** US-30: filtro por categoría sobre el carrusel (la semilla trae Prácticas, Ingredientes y Platos). */
+describe('Filtro por categoría de la galería', () => {
+  for (const width of [390, 1440]) {
+    it(`filtra, anuncia el resultado y vuelve a "Todas" (${width} px)`, () => {
+      cy.viewport(width, 844);
+      cy.visit('/estudiantes');
+      const group = '[data-testid=galeria] [role=group][aria-label="Filtrar por categoría"]';
+      cy.get(`${group} button`).should('have.length', 4);
+      cy.get(`${group} button[aria-pressed=true]`).should('have.text', 'Todas');
+      cy.get(slides).should('have.length', 3);
+      // Esperar la hidratación: el botón responde recién cuando React lo montó.
+      cy.contains(`${group} button`, 'Ingredientes').click();
+      cy.get(`${group} button[aria-pressed=true]`).should('have.text', 'Ingredientes');
+      cy.get(slides).should('have.length', 1);
+      cy.get(slides).eq(0).should('have.attr', 'aria-label', '1 de 1');
+      cy.get('[data-testid=galeria] [role=status]').should('contain', 'Mostrando 1 de 3 fotos');
+      cy.a11y();
+      cy.contains(`${group} button`, 'Todas').click();
+      cy.get(slides).should('have.length', 3);
+    });
+  }
+});
+
 describe('La carrera: foto del perfil', () => {
   for (const width of [390, 1440]) {
     it(`una sola foto: carrusel sin controles (${width} px)`, () => {

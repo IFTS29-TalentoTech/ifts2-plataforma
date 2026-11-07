@@ -29,7 +29,7 @@ describe('permiso gallery:manage (RF09, ADR-036)', () => {
 describe('esquemas de galería', () => {
   it('el alta exige un área válida y completa los textos con vacío', () => {
     const ok = galleryCreateFields.parse({ area: 'CAREER' });
-    expect(ok).toEqual({ area: 'CAREER', title: '', caption: '', alt: '' });
+    expect(ok).toEqual({ area: 'CAREER', title: '', caption: '', alt: '', category: '' });
     expect(galleryCreateFields.safeParse({ area: 'OTRA' }).success).toBe(false);
     expect(galleryCreateFields.safeParse({}).success).toBe(false);
   });
@@ -41,6 +41,16 @@ describe('esquemas de galería', () => {
     const long = galleryCreateFields.safeParse({ area: 'STUDENTS', title: 'x'.repeat(81) });
     expect(long.success).toBe(false);
     if (!long.success) expect(long.error.issues[0]!.message).toMatch(/80 caracteres/);
+  });
+
+  it('la categoría es opcional, se recorta y admite hasta 40 caracteres (RF09)', () => {
+    expect(galleryCreateFields.parse({ area: 'STUDENTS', category: '  Eventos ' }).category).toBe(
+      'Eventos',
+    );
+    const long = galleryCreateFields.safeParse({ area: 'STUDENTS', category: 'x'.repeat(41) });
+    expect(long.success).toBe(false);
+    if (!long.success) expect(long.error.issues[0]!.message).toMatch(/40 caracteres/);
+    expect(galleryUpdateInput.safeParse({ category: '' }).success).toBe(true);
   });
 
   it('la edición necesita al menos un campo', () => {

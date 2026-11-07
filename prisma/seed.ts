@@ -142,6 +142,14 @@ async function seedSettingsAndLinks() {
  * (imágenes provisorias, ADR-035) si el área NO tiene ninguna; nunca pisa lo que el instituto editó.
  */
 async function seedGallery() {
+  // US-30: las bases que ya tenían las diapositivas provisorias reciben su categoría provisoria, pero
+  // solo las que siguen sin categoría (no se pisa lo que el instituto ya clasificó).
+  for (const g of GALLERY.filter((x) => x.category)) {
+    await prisma.galleryItem.updateMany({
+      where: { area: g.area, image: g.image, category: '' },
+      data: { category: g.category },
+    });
+  }
   for (const area of ['STUDENTS', 'CAREER'] as const) {
     if ((await prisma.galleryItem.count({ where: { area } })) > 0) continue;
     const items = GALLERY.filter((g) => g.area === area);

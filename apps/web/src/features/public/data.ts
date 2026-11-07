@@ -58,6 +58,8 @@ export interface Slide {
   title: string;
   caption: string;
   alt: string;
+  /** Categoría para el filtro (RF09); vacía o ausente = sin categoría. */
+  category?: string;
 }
 
 /**
@@ -74,6 +76,7 @@ export async function loadSlides(area: 'STUDENTS' | 'CAREER', fallback: Slide[])
       title: i.title,
       caption: i.caption,
       alt: i.alt,
+      category: i.category,
     }));
   }
   return fallback;

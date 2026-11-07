@@ -38,6 +38,7 @@ export async function toGalleryDto(ctx: AppContext, row: GalleryItem): Promise<G
     title: row.title,
     caption: row.caption,
     alt: row.alt,
+    category: row.category,
     image: row.image,
     src: await resolveCoverSrc(ctx.storage, row.image),
     updatedAt: row.updatedAt.toISOString(),
@@ -54,7 +55,14 @@ export async function listPublicGallery(
   for (const row of rows) {
     const src = await resolveCoverSrc(ctx.storage, row.image);
     if (!src) continue;
-    items.push({ id: row.id, src, title: row.title, caption: row.caption, alt: row.alt });
+    items.push({
+      id: row.id,
+      src,
+      title: row.title,
+      caption: row.caption,
+      alt: row.alt,
+      category: row.category,
+    });
   }
   return items;
 }

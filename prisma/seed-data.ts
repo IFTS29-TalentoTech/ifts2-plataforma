@@ -15,6 +15,8 @@ export interface GallerySeed {
   title: string;
   caption: string;
   alt: string;
+  /** Categoría provisoria para el filtro (US-30); sale del tema de cada foto, no de contenido institucional. */
+  category: string;
 }
 
 const STUDENT_GALLERY: GallerySeed[] = [
@@ -22,6 +24,7 @@ const STUDENT_GALLERY: GallerySeed[] = [
     area: 'STUDENTS',
     image: '/img/provisorio/vida-cocina-1.webp',
     title: 'Cocina compartida',
+    category: 'Prácticas',
     caption: 'Prácticas en equipo y aprendizaje colaborativo.',
     alt: '',
   },
@@ -29,6 +32,7 @@ const STUDENT_GALLERY: GallerySeed[] = [
     area: 'STUDENTS',
     image: '/img/provisorio/vida-cocina-2.webp',
     title: 'Ingredientes frescos',
+    category: 'Ingredientes',
     caption: 'Selección y preparación de materia prima local.',
     alt: '',
   },
@@ -36,6 +40,7 @@ const STUDENT_GALLERY: GallerySeed[] = [
     area: 'STUDENTS',
     image: '/img/provisorio/vida-cocina-3.webp',
     title: 'Presentación final',
+    category: 'Platos',
     caption: 'Técnica, sabor y presentación en cada plato.',
     alt: '',
   },
@@ -47,6 +52,7 @@ export const GALLERY: GallerySeed[] = [
     area: 'CAREER',
     image: '/img/provisorio/la-carrera-perfil.webp',
     title: '',
+    category: 'Perfil',
     caption: '',
     alt: '',
   },

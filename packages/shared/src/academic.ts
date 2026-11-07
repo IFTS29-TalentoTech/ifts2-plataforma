@@ -469,6 +469,8 @@ export interface GalleryItemDto {
   title: string;
   caption: string;
   alt: string;
+  /** Categoría para filtrar la galería (RF09); vacía = sin categoría. */
+  category: string;
   /** Lo guardado: ruta propia (`/img/...`) o clave del almacenamiento. */
   image: string;
   /** URL lista para mostrar (firmada si es una clave); `null` si el almacenamiento no responde. */
@@ -483,6 +485,8 @@ export interface PublicGalleryItemDto {
   title: string;
   caption: string;
   alt: string;
+  /** Categoría para el filtro del sitio; vacía = sin categoría. */
+  category: string;
 }
 
 /** GET /public/gallery?area=STUDENTS|CAREER */

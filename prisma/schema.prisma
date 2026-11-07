@@ -331,6 +331,8 @@ model GalleryItem {
   title     String      @default("")
   caption   String      @default("")
   alt       String      @default("")
+  /// Categoría libre y corta (RF09, US-30). Vacía = sin categoría. El filtro público agrupa por este texto.
+  category  String      @default("")
   image     String
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt

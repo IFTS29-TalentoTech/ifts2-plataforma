@@ -10,14 +10,15 @@
  *   "Próximo evento" (reunión del 06/10).
  * - RF07: enlaces de interés (SIU, Aula virtual, Tutoría, Mi Argentina) en pestaña nueva con
  *   `rel="noopener noreferrer"`.
- * - "Vida en la cocina": carrusel editable desde Configuración -> Galerías (RF09, ADR-036). Si no hay
- *   diapositivas cargadas (o la API de galería falla) se usa el ajuste `student_gallery` como respaldo
+ * - "Vida en la cocina": carrusel editable desde Configuración -> Galerías (RF09, ADR-036), con filtro
+ *   por categoría si alguna diapositiva la tiene (US-30). Si no hay diapositivas cargadas (o la API de galería falla) se usa el ajuste `student_gallery` como respaldo
  *   (ruta | título | descripción por línea; fotos provisorias, ADR-035/Q63).
  */
 import type { Metadata } from 'next';
-import { Card, Carousel, EmptyState } from '@/components/ui';
+import { Card, EmptyState } from '@/components/ui';
 import { ExamCallCard, NoticeCard, ScheduleCard } from '@/features/public/academic-parts';
 import { loadSlides, loadStudents } from '@/features/public/data';
+import { GalleryFilter } from '@/features/public/gallery-filter';
 import { LinkCard, PageHero, PhotoCard, Section, SectionError } from '@/features/public/parts';
 import { getSiteInfo } from '@/lib/site';
 
@@ -135,18 +136,16 @@ export default async function Page() {
               id="vida-en-la-cocina"
             >
               <div data-testid="galeria">
-                <Carousel
+                <GalleryFilter
                   label="Vida en la cocina"
                   slideClassName="w-[85%] sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)]"
-                  slides={gallery.map((g) => (
-                    <PhotoCard
-                      key={g.key}
-                      src={g.src}
-                      title={g.title}
-                      description={g.caption}
-                      alt={g.alt}
-                    />
-                  ))}
+                  slides={gallery.map((g) => ({
+                    key: g.key,
+                    category: g.category ?? '',
+                    node: (
+                      <PhotoCard src={g.src} title={g.title} description={g.caption} alt={g.alt} />
+                    ),
+                  }))}
                 />
               </div>
             </Section>

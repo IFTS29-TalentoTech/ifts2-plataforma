@@ -710,6 +710,8 @@ export const galleryTextFields = z.object({
   caption: galleryText('La descripción', 200).default(''),
   /** Texto alternativo de la foto; vacío = decorativa (el texto de la tarjeta ya la describe). */
   alt: galleryText('El texto alternativo', 200).default(''),
+  /** Categoría libre y corta (RF09, US-30) con la que el sitio filtra la galería; vacía = sin categoría. */
+  category: galleryText('La categoría', 40).default(''),
 });
 
 /** Alta de una diapositiva: el archivo va aparte (campo `file`); acá el área y los textos. */

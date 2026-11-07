@@ -66,7 +66,7 @@ router.get('/', manage, validate({ query: galleryListQuery }), async (req, res) 
   });
 });
 
-/** POST /gallery (multipart: `file` + `area`, `title`, `caption`, `alt`) — agrega al final. */
+/** POST /gallery (multipart: `file` + `area`, `title`, `caption`, `alt`, `category`) — agrega al final. */
 router.post('/', manage, uploadSingle(), async (req, res) => {
   const parsed = galleryCreateFields.safeParse(req.body ?? {});
   if (!parsed.success) {
@@ -140,7 +140,7 @@ router.put('/order', manage, validate({ body: galleryOrderInput }), async (req, 
   res.json({ items: await Promise.all(rows.map((r) => toGalleryDto(req.ctx, r))) });
 });
 
-/** PATCH /gallery/:id — título, descripción y texto alternativo. */
+/** PATCH /gallery/:id — título, descripción, texto alternativo y categoría. */
 router.patch(
   '/:id',
   manage,

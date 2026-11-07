@@ -7,6 +7,8 @@
  * - La foto se sube como archivo (JPG, PNG o WebP, 5 MB): la API la reduce a 1600 px y la guarda como WebP.
  * - Orden con botones "Subir" / "Bajar" (sin arrastrar: funciona con teclado y lectores de pantalla).
  * - Eliminar es manual y pide confirmación (ConfirmDialog único); queda en la auditoría.
+ * - Categoría (RF09, US-30): texto corto y libre; el campo sugiere las ya usadas (datalist) para no
+ *   repetirlas con otra grafía. Si alguna diapositiva de Estudiantes la tiene, el sitio muestra el filtro.
  * - Se muestra solo con el permiso `gallery:manage`; la API es la que protege (403).
  * - Ids fijos y sin `useId` en componentes nuevos (ver ADR-036): hay un solo formulario abierto a la vez.
  */
@@ -156,6 +158,7 @@ export function GalleryEditor() {
                             <p className="text-sm text-font-strong">{item.caption}</p>
                           )}
                           <p className="text-xs text-font-strong">
+                            {item.category ? `Categoría: ${item.category} · ` : ''}
                             Posición {index + 1} de {items.length}
                             {item.alt ? ' · con texto alternativo' : ' · decorativa'}
                           </p>
@@ -211,6 +214,9 @@ export function GalleryEditor() {
 
       <SlideDialog
         target={editing}
+        knownCategories={[
+          ...new Set((list.data?.items ?? []).map((i) => i.category).filter(Boolean)),
+        ].sort((a, b) => a.localeCompare(b, 'es'))}
         onClose={() => setEditing(null)}
         onSaved={() => {
           toast({ tone: 'success', title: 'Diapositiva guardada.' });
@@ -262,10 +268,13 @@ function Thumb({ item }: { item: GalleryItemDto }) {
 
 function SlideDialog({
   target,
+  knownCategories,
   onClose,
   onSaved,
 }: {
   target: { area: Area; item: GalleryItemDto | null } | null;
+  /** Categorías ya usadas, para sugerirlas en el campo. */
+  knownCategories: string[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -273,6 +282,7 @@ function SlideDialog({
   const [title, setTitle] = useState('');
   const [caption, setCaption] = useState('');
   const [alt, setAlt] = useState('');
+  const [category, setCategory] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -283,6 +293,7 @@ function SlideDialog({
     setTitle(item?.title ?? '');
     setCaption(item?.caption ?? '');
     setAlt(item?.alt ?? '');
+    setCategory(item?.category ?? '');
     setFile(null);
     setErrors({});
     setFormError(null);
@@ -304,7 +315,12 @@ function SlideDialog({
     }
     setSaving(true);
     try {
-      const texts = { title: title.trim(), caption: caption.trim(), alt: alt.trim() };
+      const texts = {
+        title: title.trim(),
+        caption: caption.trim(),
+        alt: alt.trim(),
+        category: category.trim(),
+      };
       if (item) {
         await api.patch(`/gallery/${item.id}`, texts);
         if (file) {
@@ -371,6 +387,20 @@ function SlideDialog({
           rows={2}
           hint="Hasta 200 caracteres."
         />
+        <Input
+          label="Categoría (opcional)"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          error={errors.category}
+          list="gallery-categories"
+          autoComplete="off"
+          hint="Una palabra o dos, hasta 40 caracteres (por ejemplo, Eventos). Con categorías, el sitio muestra un filtro."
+        />
+        <datalist id="gallery-categories">
+          {knownCategories.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
         <Input
           label="Texto alternativo (opcional)"
           value={alt}

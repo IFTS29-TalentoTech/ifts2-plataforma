@@ -248,6 +248,38 @@ describe('eliminación', () => {
   });
 });
 
+describe('categorías (RF09, US-30)', () => {
+  it('se guardan al crear, se editan, se quitan y salen en el panel y en la API pública', async () => {
+    const a = await create({ title: 'A', category: '  Eventos ' });
+    expect(a.status).toBe(201);
+    expect(a.body.category).toBe('Eventos');
+    expect((await request(t.app).get(`${publicUrl}?area=STUDENTS`)).body.items[0].category).toBe(
+      'Eventos',
+    );
+    const edit = await request(t.app)
+      .patch(`${url}/${a.body.id}`)
+      .set('Cookie', cookie)
+      .send({ category: 'Cocina' });
+    expect(edit.status).toBe(200);
+    expect(edit.body.category).toBe('Cocina');
+    const log = await testPrisma.auditLog.findFirst({ where: { action: 'gallery.update' } });
+    expect(log?.detail).toMatchObject({ fields: ['category'] });
+    const clear = await request(t.app)
+      .patch(`${url}/${a.body.id}`)
+      .set('Cookie', cookie)
+      .send({ category: '' });
+    expect(clear.body.category).toBe('');
+  });
+
+  it('sin categoría queda vacía y una categoría de más de 40 caracteres da 400', async () => {
+    expect((await create({ title: 'B' })).body.category).toBe('');
+    const long = await create({ category: 'x'.repeat(41) });
+    expect(long.status).toBe(400);
+    expect(long.body.errors.category).toBeDefined();
+    expect(await testPrisma.galleryItem.count()).toBe(1);
+  });
+});
+
 describe('lectura pública', () => {
   it('sin sesión: devuelve el área pedida en orden, con rutas propias tal cual y claves firmadas', async () => {
     await seedRow('STUDENTS', 1, '/img/dos.webp', 'Dos');
