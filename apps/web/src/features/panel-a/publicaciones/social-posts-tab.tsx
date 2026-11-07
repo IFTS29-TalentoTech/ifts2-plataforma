@@ -81,6 +81,12 @@ export function SocialPostsTab({
       `/social/posts?status=${status}&page=${page}&pageSize=${PAGE_SIZE}${source === 'all' ? '' : `&source=${source}`}`,
     ),
   );
+  // Estado del último fetch exitoso: lo informa el Resumen. Si no se puede leer, simplemente no se muestra.
+  const fetchInfo = useResource('social:last-fetch', () =>
+    api.get<DashboardDto>('/dashboard').catch(() => null),
+  );
+  const lastFetchAt = fetchInfo.data?.instagram.lastFetchAt ?? null;
+  const lastFetchMode = fetchInfo.data?.instagram.lastSyncMode ?? 'incremental';
   const changed = () => {
     reload();
     fetchInfo.reload();
@@ -88,12 +94,6 @@ export function SocialPostsTab({
   };
   const { sync, syncing } = useInstagramSync(changed);
   const confirm = useConfirm();
-  // Estado del último fetch exitoso: lo informa el Resumen. Si no se puede leer, simplemente no se muestra.
-  const fetchInfo = useResource('social:last-fetch', () =>
-    api.get<DashboardDto>('/dashboard').catch(() => null),
-  );
-  const lastFetchAt = fetchInfo.data?.instagram.lastFetchAt ?? null;
-  const lastFetchMode = fetchInfo.data?.instagram.lastSyncMode ?? 'incremental';
   /** La completa es más pesada para Instagram: se pide confirmación con el diálogo único. */
   const syncFull = async () => {
     const ok = await confirm({
