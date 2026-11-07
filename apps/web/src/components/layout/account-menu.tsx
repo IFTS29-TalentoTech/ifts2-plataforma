@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import { LogoutButton } from './logout-button';
 
 /**
- * Menú de cuenta de la cabecera (A16): nombre, rol, acceso al panel y "Cerrar sesión".
+ * Menú de cuenta de la cabecera (A16): nombre, rol, acceso al panel, "Cambiar contraseña" (lleva a
+ * /panel/cuenta) y "Cerrar sesión".
  * Sin dependencias nuevas: es un botón con `aria-expanded` y un panel que se cierra con Escape
  * (devolviendo el foco al botón), al hacer clic afuera o al salir del menú con el teclado.
  * Los datos vienen de la sesión que ya tiene la cabecera; acá no se consulta nada.
@@ -80,6 +81,13 @@ export function AccountMenu({
                 Ir al panel
               </Link>
             )}
+            <Link
+              href="/panel/cuenta"
+              onClick={() => setOpen(false)}
+              className="rounded-md px-3 py-2 text-sm font-medium text-accent-3 hover:bg-accent-2 focus-visible:outline-none focus-visible:shadow-focus"
+            >
+              Cambiar contraseña
+            </Link>
             <LogoutButton tone="light" />
           </div>
         </div>

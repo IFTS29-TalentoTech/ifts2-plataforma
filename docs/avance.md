@@ -312,6 +312,18 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 **Trabajo posterior (no incluido).** Los archivos huérfanos históricos del almacenamiento no se limpian. Si hiciera falta, un script que solo **liste** las imágenes sin referencia, para revisarlas a mano (sin borrado automático, por la regla del proyecto).
 
+### 2026-11-07 · Cambio de contraseña voluntario: "Mi cuenta" (rama `feat/cambiar-contrasena`)
+
+**Problema.** La API ya permitía cambiar la propia contraseña (`POST /auth/change-password`), pero la web solo mostraba el formulario cuando el cambio era obligatorio (tras un restablecimiento). Nadie, ni el Superadministrador, podía cambiar su clave por voluntad propia.
+
+**Hecho.**
+
+- Página **Mi cuenta** (`/panel/cuenta`), para cualquier persona logueada: muestra nombre, correo y rol y permite cambiar la contraseña (pide la actual). Al cambiarla, la API cierra las demás sesiones y la actual sigue abierta; la pantalla lo avisa.
+- Se llega desde el menú de cuenta de la cabecera (escritorio) y desde el menú hamburguesa del panel (móvil), con "Cambiar contraseña".
+- El formulario existente (`change-password-form.tsx`) tiene dos modos: `forced` (el obligatorio, sin cambios) y `voluntary`.
+
+**Pruebas.** Cypress `panel-a/mi-cuenta.cy.ts` (390 y 1440 px, con axe): clave actual incorrecta, cambio correcto, la sesión sigue y solo la clave nueva sirve para entrar. `login.cy.ts` (cambio obligatorio) sigue en verde.
+
 ## Estado actual (06/11/2026)
 
 - **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).

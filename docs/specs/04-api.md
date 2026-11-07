@@ -32,7 +32,7 @@ Esta matriz es el **punto de partida de la semilla**. La API no pregunta "¿sos 
 | `POST /auth/login` | `{ email, password, remember }` → 204 y cookie; 401 con mensaje genérico; 429 al exceder intentos |
 | `POST /auth/logout` | Cierra la sesión actual |
 | `GET /auth/me` | Usuario, rol y lista de permisos efectivos de la sesión (la interfaz oculta lo que no puede usar) |
-| `POST /auth/change-password` | `{ current, next }`; obligatorio tras un restablecimiento |
+| `POST /auth/change-password` | `{ current, next }`; obligatorio tras un restablecimiento y, además, voluntario desde "Mi cuenta" (`/panel/cuenta`). Cierra las demás sesiones de la persona |
 
 ## Público (sin sesión, solo lectura, con reglas de vigencia aplicadas)
 
