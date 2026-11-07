@@ -86,7 +86,7 @@ Ningún secreto se versiona. `.env.example` tiene valores de ejemplo no sensible
 
 ## Capacidad
 
-El cliente estimó, con el equipo, picos de **300 a 400 personas concurrentes** (inscripciones a la tecnicatura en octubre para el ciclo siguiente, mediados de año y mesas de examen finales; más de 100 alumnos y entre 150 y 200 aspirantes por ingreso). Consecuencia: el sitio público se sirve **desde caché** (páginas estáticas con revalidación), la API pública es de solo lectura y cacheable, y los archivos (PDF, imágenes) salen de un CDN. El panel tiene pocos usuarios simultáneos. La elección de hosting y base gratuitos (ADR-15) debe verificarse contra este objetivo con una prueba de carga antes de la demostración.
+El cliente estimó, con el equipo, picos de **300 a 400 personas concurrentes** (inscripciones a la tecnicatura en octubre para el ciclo siguiente, mediados de año y mesas de examen finales; más de 100 alumnos y entre 150 y 200 aspirantes por ingreso). Consecuencia: el sitio público se sirve **desde caché** (páginas estáticas con revalidación), la API pública es de solo lectura y cacheable, y los archivos (PDF, imágenes) salen de un CDN. El panel tiene pocos usuarios simultáneos. La elección de hosting y base gratuitos (ADR-15) debe verificarse contra este objetivo con una prueba de carga antes de la demostración (se usó autocannon, `pnpm load`, en lugar de k6; ver nota de RNF09 en `01-requerimientos.md`).
 
 ## Rendimiento
 

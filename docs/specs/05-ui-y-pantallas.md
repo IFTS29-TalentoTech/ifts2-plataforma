@@ -21,7 +21,9 @@
 
 **Móvil:** siete pantallas (inicio, institucional, carrera, estudiantes, ingreso, novedades, login) con menú desplegable y barra inferior de navegación. El panel no tiene versión móvil diseñada; debe ser **usable** en pantallas chicas pero su rediseño móvil es "Podría".
 
-## Panel de gestión (escritorio)
+## Panel de gestión (escritorio y móvil)
+
+> **Panel móvil (resuelto, Q15):** el Figma vigente incluye el panel a 390 px (`docs/design/mobile/`, 13 pantallas y sus modales). El panel es **responsive**, no solo usable: menú lateral en cajón y listados que pasan a tarjetas (por ejemplo Archivo). Se verifica con Cypress a 390 y 1440 px.
 
 Estructura común: barra superior, menú lateral "Gestión del sitio" (Resumen, Publicaciones, Avisos académicos, Horarios, Archivo, Configuración; con contadores en Publicaciones y Avisos), encabezado de página con título, descripción y acción principal, y el pie.
 

@@ -51,9 +51,10 @@ packages/
 prisma/           schema.prisma, migrations/, seed.ts (demo/prod) y seed-data.ts (datos reales del IFTS)
 scripts/          generate-tokens.mjs, check-no-hardcoded-styles.mjs, contrast.mjs
 docs/
-  specs/          ESPECIFICACIONES: la fuente de verdad (leer en orden, ver sección 12)
+  specs/          ESPECIFICACIONES: la fuente de verdad (leer en orden, ver sección 14)
   design/         Capturas del Figma (desktop y mobile)
   decisiones/     ADR: por qué se decidió cada cosa
+  BUILD-NOTES.md  Entorno, reglas de la fundación y cambios posteriores a las specs (leer primero)
   ARQUITECTURA.md Diagrama de capas y módulos
   avance.md       Bitácora de lo hecho, pendiente y problemas
   evidencias/     Salidas de pruebas con fecha (se piden en la entrega de la cátedra)
@@ -154,7 +155,7 @@ Plantilla completa con validación zod, auditoría, paginación y pruebas: **`ap
 
 ### Una pantalla
 
-Cada ruta ya existe como placeholder (`apps/web/src/app/(public)/…` y `apps/web/src/app/panel/(shell)/…`). Editá su `page.tsx`, reemplazá `<Placeholder />` y armá la pantalla con el kit (`Button`, `Card`, `Table`, `Dialog`, `ConfirmDialog`, `Input`, `useToast`…):
+Las pantallas del sitio y del panel ya están implementadas (`apps/web/src/app/(public)/…` y `apps/web/src/app/panel/(shell)/…`, con su lógica en `apps/web/src/features/`). Para una pantalla nueva creá su `page.tsx` y armala con el kit (`Button`, `Card`, `Table`, `Dialog`, `ConfirmDialog`, `Input`, `useToast`…):
 
 ```tsx
 import { PageHeader } from '@/components/layout/page-header';
@@ -186,11 +187,11 @@ En componentes **no se escriben hex ni nombres de fuente**: solo clases de Tailw
 
 La regla: **cambiar de proveedor es cambiar configuración, nunca código**. Sin configuración real, todo funciona en **modo demostración** y el panel lo avisa.
 
-| Integración                    | Quién la configura                                         | Cómo                                                                                                                                      |
-| ------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Instagram**                  | El **cliente**, desde el panel (Configuración, solo ADMIN) | App ID/Secret de su app de Meta, conexión por OAuth o token pegado, hashtag. Se guarda cifrado (AES-256-GCM)                              |
-| **Correo** (contacto)          | El **cliente**, desde el panel                             | Correo de destino y, opcionalmente, SMTP (`smtp://usuario:clave@host:587`)                                                                |
-| **Almacenamiento de archivos** | DevOps, por variables de entorno                           | `STORAGE_PROVIDER=local` (disco `uploads/`), `memory` (pruebas) o `s3` (compatible S3: Supabase Storage, Cloudflare R2, MinIO) con `S3_*` |
+| Integración                    | Quién la configura                                                                                       | Cómo                                                                                                                                      |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Instagram**                  | El **cliente**, desde el panel (Configuración, permiso `integrations:manage`; ADMIN lo trae por defecto) | App ID/Secret de su app de Meta, conexión por OAuth o token pegado, hashtag. Se guarda cifrado (AES-256-GCM)                              |
+| **Correo** (contacto)          | El **cliente**, desde el panel                                                                           | Correo de destino y, opcionalmente, SMTP (`smtp://usuario:clave@host:587`)                                                                |
+| **Almacenamiento de archivos** | DevOps, por variables de entorno                                                                         | `STORAGE_PROVIDER=local` (disco `uploads/`), `memory` (pruebas) o `s3` (compatible S3: Supabase Storage, Cloudflare R2, MinIO) con `S3_*` |
 
 Todas las variables, con comentarios, están en `.env.example`. Si el proveedor elegido exige variables que faltan, la API **no arranca** y dice cuáles.
 
@@ -250,7 +251,7 @@ Todo está en `docs/entrega/`:
 
 | Dónde                                                                   | Qué hay                                                                                                                                                                       | Cuándo leerlo                              |
 | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `CLAUDE.md`, `docs/BUILD-NOTES.md`                                      | Reglas de trabajo y entorno                                                                                                                                                   | **Primero**                                |
+| `CLAUDE.md`, `docs/BUILD-NOTES.md`                                      | Reglas de trabajo y entorno (BUILD-NOTES: puertos, base propia, reglas de la fundación y cambios posteriores a las specs que prevalecen sobre ellas)                          | **Primero**                                |
 | `docs/specs/AGENTS.md`                                                  | Reglas no negociables del proyecto                                                                                                                                            | **Primero**                                |
 | `docs/specs/00-vision-y-alcance.md` a `10-entregables-etapa-3.md`       | Visión, requerimientos con criterios de aceptación, decisiones técnicas, arquitectura, API, pantallas, pruebas, backlog, datos, preguntas abiertas, entregables de la cátedra | Leer en orden antes de programar           |
 | `docs/specs/prisma/schema.prisma`, `design-tokens.json`                 | Modelo de datos original y tokens de diseño (el vigente está en `prisma/` y se genera a CSS)                                                                                  | Al tocar datos o estilos                   |

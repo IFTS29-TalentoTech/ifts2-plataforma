@@ -1,6 +1,6 @@
 # 10 · Entregables de la Etapa 3 según la consigna de la cátedra
 
-Fuente: `consigna/Etapa 3 - Desarrollo completo.pdf` (texto en `consigna/Etapa 3 - Desarrollo completo.txt`). La aplicación debe guardar coherencia con los requerimientos, diagramas, prototipos y documentación de las etapas anteriores, ejecutarse correctamente, tener la base de datos operativa y permitir las operaciones principales de manera estable.
+Fuente: `consigna/Etapa 3 - Desarrollo completo.pdf` (carpeta del repositorio del equipo, no incluida en este repo) (texto en `consigna/Etapa 3 - Desarrollo completo.txt`). La aplicación debe guardar coherencia con los requerimientos, diagramas, prototipos y documentación de las etapas anteriores, ejecutarse correctamente, tener la base de datos operativa y permitir las operaciones principales de manera estable.
 
 ## Qué pide la consigna y cómo se cumple
 

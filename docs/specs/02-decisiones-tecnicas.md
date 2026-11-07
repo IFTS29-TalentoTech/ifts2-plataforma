@@ -26,7 +26,7 @@ Cada decisión indica **estado**: *Cerrada* (decidida por la cátedra o el clien
 
 ## ADR-01 · Desarrollo a medida
 
-La cátedra respondió que **no** a WordPress: el alcance de la materia exige recorrer diseño, backend, base de datos, seguridad, pruebas y despliegue propios. Ver `proyecto/decisiones.md` D-001. **Consecuencia:** no incorporar CMS ni constructores de sitios; sí se pueden usar librerías.
+La cátedra respondió que **no** a WordPress: el alcance de la materia exige recorrer diseño, backend, base de datos, seguridad, pruebas y despliegue propios. Ver `proyecto/decisiones.md` D-001 (documento del repositorio del equipo, fuera de este repo). **Consecuencia:** no incorporar CMS ni constructores de sitios; sí se pueden usar librerías.
 
 ## ADR-02 · Monorepo
 
@@ -65,7 +65,7 @@ Interfaz `StorageProvider { put, getSignedUrl, remove }` con una implementación
 ## ADR-09 · Integración con Instagram
 
 - API oficial de Instagram (inicio de sesión de Instagram con cuenta **profesional**). Endpoint de medios propios: `id, caption, media_type, media_url, permalink, timestamp`.
-- Se importan solo las publicaciones cuya leyenda contiene el **hashtag configurable** en `SiteSetting` (valor inicial `[definir con el cliente]`).
+- Se importan solo las publicaciones cuya leyenda contiene el **hashtag configurable** en `SiteSetting` (valor inicial provisorio `#ifts2web`, el de la semilla demo; la semilla `prod` no lo carga y el cliente lo confirma y lo cambia desde el panel, ver Q1 y Q25).
 - Sincronización manual (botón "clic para sincronizar" del Resumen) y diaria (cron). Idempotente por `externalId`.
 - El token de larga duración se guarda cifrado (AES-256-GCM con `APP_ENCRYPTION_KEY`) y se renueva automáticamente antes de vencer (a los ~50 días); si falla, el Resumen muestra el estado y el motivo.
 - Las URLs de medios de Instagram expiran: al **aprobar** se copia la imagen al almacenamiento propio.
@@ -79,7 +79,7 @@ Páginas públicas con revalidación a 60 segundos y revalidación bajo demanda 
 
 ## ADR-11 · Estilos y componentes
 
-Tailwind CSS con los tokens de `design-tokens.json` expuestos como variables CSS y como tema de Tailwind. Radix UI para primitivas accesibles (diálogos, menús, selectores, tabs) que garantizan foco y teclado. Fuente Inter con `next/font`. Los modales de confirmación del Figma (≈25) se resuelven con **un solo componente** de diálogo parametrizable.
+Tailwind CSS con los tokens de `design-tokens.json` expuestos como variables CSS y como tema de Tailwind. Radix UI para primitivas accesibles (diálogos, menús, selectores, tabs) que garantizan foco y teclado. Fuente **Plus Jakarta Sans** con `next/font` (la propuesta original de la Etapa 2 era Inter; las capturas vigentes del Figma lucen Plus Jakarta Sans y se cambió el 29/10/2026, ver ADR-21 y Q23). Los modales de confirmación del Figma (≈25) se resuelven con **un solo componente** de diálogo parametrizable.
 
 ## ADR-12 · Validación
 
@@ -107,15 +107,15 @@ Idioma único `es-AR`. Fechas almacenadas en UTC y presentadas en `America/Argen
 
 ## ADR-18 · Roles y permisos
 
-Tres roles (matriz en `04-api.md`). El Figma define "Rectoría / Dirección: acceso total" y "Bedelía Académica: gestión de horarios y cartelera"; el rol **Editor** (comunicación) sale de la etapa de relevamiento (Matías Peláez y María del Carmen Canobi cargan contenido). **A validar con el cliente** si Editor y Bedelía son roles separados o uno solo.
+**Cuatro roles de sistema** iniciales (SUPERADMIN, ADMIN, BEDELIA y EDITOR; matriz en `04-api.md`). Hasta la Etapa 2 eran tres (ADMIN, BEDELIA, EDITOR); SUPERADMIN se agregó el 06/11/2026 y es necesario porque alguien tiene que poder definir los permisos de los demás roles. El Figma define "Rectoría / Dirección: acceso total" y "Bedelía Académica: gestión de horarios y cartelera"; el rol **Editor** (comunicación) sale de la etapa de relevamiento (Matías Peláez y María del Carmen Canobi cargan contenido). **A validar con el cliente** si Editor y Bedelía son roles separados o uno solo.
 
 **Ampliación (06/11/2026): roles configurables y Superadministrador.** Se agrega el rol **SUPERADMIN**, el único que puede crear, editar y eliminar roles y asignarles permisos. Decisiones:
 - **Catálogo fijo, roles como datos.** Los permisos (`resource:action`, por ejemplo `notices:manage`) son un catálogo definido en `packages/shared`, porque cada uno corresponde a código. Los roles y sus permisos pasan a la base: tablas `Role` y `RolePermission`; `User.roleId` reemplaza al enum `Role`.
-- **Roles del sistema** (`isSystem`): SUPERADMIN, ADMIN, BEDELIA y EDITOR se crean en la semilla y no se eliminan. ADMIN, BEDELIA y EDITOR arrancan con la matriz de `04-api.md`, pero el Superadministrador **define exactamente sus permisos, casilla por casilla** (confirmado con el cliente). SUPERADMIN no se edita y siempre tiene todos los permisos (se resuelve en código, no en filas). `roles:manage` está reservado a SUPERADMIN: no figura entre las casillas y la API rechaza guardarlo en otro rol (400).
-- **Sin bloqueo del sistema:** siempre debe existir al menos un SUPERADMIN activo (409 al intentar desactivarlo o cambiarle el rol).
+- **Roles del sistema** (`isSystem`): SUPERADMIN, ADMIN, BEDELIA y EDITOR se crean en la semilla. ADMIN, BEDELIA y EDITOR arrancan con la matriz de `04-api.md`, pero el Superadministrador **define exactamente sus permisos, casilla por casilla** (confirmado con el cliente) y, desde la regla del 06/11/2026, **también puede eliminarlos** (manual, con confirmación, auditado y con 409 si tienen usuarios asignados). **SUPERADMIN no se edita ni se elimina** (409) y siempre tiene todos los permisos (se resuelve en código, no en filas). `roles:manage` está reservado a SUPERADMIN: no figura entre las casillas y la API rechaza guardarlo en otro rol (400).
+- **Sin bloqueo del sistema:** el **último SUPERADMIN activo** no se puede desactivar ni cambiar de rol (409, no 422). La verificación corre en una transacción serializable para que dos pedidos simultáneos no dejen el sistema sin ninguno (A02).
 - **Quién crea usuarios (confirmado):** SUPERADMIN y ADMIN (`users:manage`) crean usuarios, **incluidos otros administradores**. Anti-escalada: un ADMIN solo asigna roles cuyos permisos son un subconjunto de los suyos y nunca SUPERADMIN (403); el SUPERADMIN asigna cualquiera. Solo el SUPERADMIN gestiona roles.
-- **Defensa en capas contra accesos indebidos, denegando por defecto:** (1) **API**: toda ruta fuera de `/public` y `/auth` exige sesión y un permiso declarado (`requirePermission`); una prueba automática recorre las rutas y falla si alguna no lo declara. (2) **Web**: el middleware exige sesión, cada página consulta los permisos de la sesión (`GET /auth/me`) y muestra "sin acceso", y el menú y los botones ofrecen solo lo permitido. (3) **Proteger y ocultar son obligatorios los dos**: la API es la que decide, y ocultar una opción nunca es la protección; pero la interfaz también debe no mostrar lo que la persona no puede usar. Una prueba de cada lado: sin permiso, la opción no aparece y, si se fuerza, la API responde 403. (4) Los permisos se leen en cada pedido, así que quitar un permiso rige de inmediato.
-- **Eliminar un rol** sigue la regla general del proyecto: manual, con confirmación, auditado y solo si no tiene usuarios asignados (409 si los tiene).
+- **Defensa en capas contra accesos indebidos, denegando por defecto:** (1) **API**: toda ruta fuera de `/public` y `/auth` exige sesión y un permiso declarado (`requirePermission`; por ejemplo `/integrations/*` exige `integrations:manage`, no un rol); una prueba automática recorre las rutas y falla si alguna no lo declara. (2) **Web**: el middleware exige sesión, cada página consulta los permisos de la sesión (`GET /auth/me`) y muestra "sin acceso", y el menú y los botones ofrecen solo lo permitido. (3) **Proteger y ocultar son obligatorios los dos**: la API es la que decide, y ocultar una opción nunca es la protección; pero la interfaz también debe no mostrar lo que la persona no puede usar. Una prueba de cada lado: sin permiso, la opción no aparece y, si se fuerza, la API responde 403. (4) Los permisos se leen en cada pedido, así que quitar un permiso rige de inmediato.
+- **Eliminar un rol** (cualquiera salvo SUPERADMIN) sigue la regla general del proyecto: manual, con confirmación, auditado y solo si no tiene usuarios asignados (409 si los tiene).
 - **Vigencia de los permisos:** se leen de la base en cada pedido (o con caché corta invalidada al guardar), de modo que un cambio rige de inmediato.
 - **Sin más complejidad:** sin permisos por registro ni jerarquías de roles. Cada rol es una lista de permisos del catálogo, lo que un instituto con pocos usuarios puede entender y administrar.
 
@@ -125,7 +125,7 @@ Logs estructurados con `pino` (sin datos personales), endpoint `/health` (API y 
 
 ## ADR-20 · Integraciones configurables (Instagram, correo, almacenamiento)
 
-Instagram y correo (destino de contacto y SMTP) los configura el cliente desde el panel y se guardan cifrados (AES-256-GCM) en `IntegrationConfig`; las variables de entorno son solo valores por defecto; sin configuración real se opera en modo demostración. El almacenamiento se elige por entorno (`STORAGE_PROVIDER=local|memory|s3`). Detalle y endpoints en `docs/decisiones/ADR-020-integraciones-configurables.md` (complementa ADR-08, 09 y 16).
+Instagram y correo (destino de contacto y SMTP) los configura el cliente desde el panel y se guardan cifrados (AES-256-GCM) en `IntegrationConfig`; las variables de entorno son solo valores por defecto; sin configuración real se opera en modo demostración. El almacenamiento se elige por entorno (`STORAGE_PROVIDER=local|memory|s3`). Detalle y endpoints en `docs/decisiones/ADR-020-integraciones-configurables.md` (complementa ADR-08, 09 y 16). El acceso a `/integrations/*` se rige por el permiso del catálogo `integrations:manage` (que ADMIN trae por defecto y el Superadministrador puede quitar o dar a otro rol), no por un rol fijo.
 
 ## ADR-21 · Theming por variables CSS
 

@@ -69,7 +69,8 @@ Cada carpeta exporta `{ mountPath, router }`; agregar un módulo no requiere edi
 - **Catálogo.** El catálogo de acciones es fijo y vive en `packages/shared/src/permissions.ts`.
 - **Roles.** Los roles y sus permisos son datos: tablas `Role` y `RolePermission`.
 - **Lectura en cada pedido.** `attachAuth` carga los permisos efectivos del rol en cada pedido, así que un cambio rige sin volver a iniciar sesión.
-- **Superadministrador.** SUPERADMIN tiene todo por código.
+- **Superadministrador.** SUPERADMIN tiene todo por código; no se edita ni se elimina. ADMIN, BEDELIA y EDITOR (roles de sistema) se pueden editar y eliminar (409 si tienen usuarios).
+- **Integraciones por permiso.** `/integrations/*` exige `integrations:manage`, no un rol fijo.
 - **Lógica compartida.** La anti-escalada y la regla del último SUPERADMIN están en `modules/roles/roles.service.ts` y las usan `roles` y `users`.
 - **Control automático.** `test/api/route-permissions.test.ts` falla si alguna ruta del panel no declara permiso.
 
