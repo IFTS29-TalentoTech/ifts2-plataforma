@@ -2,7 +2,7 @@
 
 import { User } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LogoutButton } from './logout-button';
 
 /**
@@ -23,7 +23,8 @@ export function AccountMenu({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const panelId = useId();
+  // Id fijo (una sola cuenta por página): evita useId, cuyos ids pueden diferir entre servidor y cliente.
+  const panelId = 'account-menu-panel';
 
   useEffect(() => {
     if (!open) return;
