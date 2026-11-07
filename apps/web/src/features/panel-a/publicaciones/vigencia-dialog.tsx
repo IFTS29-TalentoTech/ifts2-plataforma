@@ -8,7 +8,7 @@
  */
 import { useState, type FormEvent } from 'react';
 import { Button, Dialog, Input, useToast } from '@/components/ui';
-import { api } from '@/lib/api';
+import { confirmPublication } from '@/lib/confirm-publication';
 import { orNull } from '../lib/dates';
 import { fieldMessages, humanError } from '../lib/errors';
 import type { PublicationDto } from '../lib/types';
@@ -68,7 +68,7 @@ function Form({
     if (Object.keys(local).length) return;
     setLoading(true);
     try {
-      await api.post(`/publications/${publication.id}/${mode}`, {
+      await confirmPublication(publication.id, mode, {
         visibleFrom: orNull(from),
         visibleUntil: orNull(until),
       });

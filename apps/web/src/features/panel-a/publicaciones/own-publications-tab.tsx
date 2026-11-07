@@ -29,6 +29,7 @@ import {
 } from '@/components/ui';
 import type { BadgeTone } from '@/components/ui';
 import { api } from '@/lib/api';
+import { confirmPublication } from '@/lib/confirm-publication';
 import { formatDateAR } from '@/lib/dates';
 import { toDisplayError } from '../lib/display-error';
 import { handleSessionExpired, humanError } from '../lib/errors';
@@ -116,7 +117,7 @@ export function OwnPublicationsTab({ onChanged }: { onChanged: () => void }) {
     });
     if (!ok) return;
     try {
-      await api.post(`/publications/${p.id}/${action}`);
+      await confirmPublication(p.id, action);
       toast({ title: cfg.done, tone: 'success' });
     } catch (e) {
       if (!handleSessionExpired(e))
