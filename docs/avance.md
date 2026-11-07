@@ -375,6 +375,10 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 - Panel: botón secundario "Sincronización completa" (con `ConfirmDialog`) y "Último fetch exitoso" en Publicaciones, Resumen y Configuración.
 - **Pruebas:** unitarias (`sync-window`, corte de paginación, doble) y de API (incremental, margen, fallo, forzada, cambio de cuenta/hashtag/método, sin duplicar, 401/403/400) + Cypress corto. **Sin verificar:** contra una cuenta real de Meta.
 
+## Semilla demo completa (07/11/2026)
+
+`prisma/seed.ts` (`seedDemoExtras`) suma datos ficticios para que la demo muestre todo: publicaciones en todos los estados y años, publicaciones de redes detectada / aprobada / descartada, avisos para cada público y en cada estado, llamados pasados, próximos y sin publicar, mensajes en cada estado, una cuenta desactivada, un enlace oculto y auditoría de varias personas. Es idempotente y solo corre en modo demo. Lo único que carga el equipo a mano es el token de Instagram. Verificado en una base descartable: dos corridas seguidas sin duplicados.
+
 ## Estado actual (06/11/2026)
 
 - **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).

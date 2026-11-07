@@ -245,6 +245,320 @@ async function seedDemoTeachers() {
   log(`plantel de demostración: ${DEMO_TEACHERS.length} docentes ficticios (1 oculto)`);
 }
 
+/**
+ * Datos de DEMOSTRACIÓN complementarios (todos ficticios, solo modo demo): cubren cada estado y cada
+ * filtro para que en la demo se pueda ver TODO en la plataforma: publicaciones borrador, programada,
+ * pausada, vencida, de años anteriores y originadas en Instagram; avisos pausados, programados y para
+ * cada público; llamados pasados, futuros y sin publicar; mensajes en cada estado; una cuenta
+ * desactivada y movimientos de auditoría de varias personas. Idempotente: cada elemento se busca por
+ * título/asunto/acción y nunca se pisa lo que el equipo haya modificado.
+ */
+async function seedDemoExtras(c: {
+  now: number;
+  editorId: string;
+  bedeliaId: string;
+  adminId: string;
+  roles: Record<SystemKey, string>;
+  cats: Record<
+    'cEvento' | 'cAviso' | 'cInst' | 'cPracticas' | 'cMesas' | 'cUrgente',
+    { id: string }
+  >;
+  termIds: { first: string; second: string };
+  docCronogramaId: string;
+}) {
+  const { now, cats } = c;
+  const day = (offset: number) => new Date(now + offset * DAY);
+
+  // --- Publicaciones en todos los estados (RF03/RF04: la vigencia se calcula al consultar)
+  const pubExtra = async (p: {
+    title: string;
+    summary: string;
+    body?: string;
+    kind?: 'NEWS' | 'EVENT';
+    categoryId: string;
+    section?: 'HOME' | 'NEWS' | 'BOTH';
+    status: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'PAUSED';
+    visibleFrom?: Date;
+    visibleUntil?: Date;
+    eventStart?: Date;
+    eventEnd?: Date;
+    location?: string;
+    coverUrl?: string;
+    origin?: 'MANUAL' | 'INSTAGRAM';
+    socialPostId?: string;
+  }) => {
+    if (await prisma.publication.findFirst({ where: { title: p.title } })) return;
+    await prisma.publication.create({
+      data: { kind: 'NEWS', section: 'BOTH', authorId: c.editorId, ...p },
+    });
+  };
+  await pubExtra({
+    title: 'Muestra de fin de cuatrimestre',
+    summary: 'Evento programado de demostración: se publica solo cuando llega su fecha de inicio.',
+    kind: 'EVENT',
+    categoryId: cats.cEvento.id,
+    status: 'SCHEDULED',
+    visibleFrom: day(7),
+    eventStart: day(21),
+    eventEnd: day(21),
+    location: 'Sede del instituto (dato de ejemplo)',
+    coverUrl: '/img/provisorio/novedad-jornada.webp',
+  });
+  await pubExtra({
+    title: 'Taller de repostería',
+    summary: 'Publicación pausada de demostración: está guardada pero no se muestra en el sitio.',
+    categoryId: cats.cPracticas.id,
+    status: 'PAUSED',
+    visibleFrom: day(-15),
+    coverUrl: '/img/provisorio/novedad-practicas.webp',
+  });
+  await pubExtra({
+    title: 'Charla de egresados',
+    summary: 'Publicación vencida de demostración: sigue en el panel y en el archivo de Novedades.',
+    kind: 'EVENT',
+    categoryId: cats.cEvento.id,
+    status: 'PUBLISHED',
+    visibleFrom: startOfDayBA('2026-03-02'),
+    visibleUntil: endOfDayBA('2026-04-30'),
+    eventStart: startOfDayBA('2026-04-15'),
+    coverUrl: '/img/provisorio/novedad-comunidad.webp',
+  });
+  await pubExtra({
+    title: 'Apertura del ciclo lectivo 2025',
+    summary: 'Ejemplo histórico del año anterior, para probar el filtro por año.',
+    body: 'Texto de demostración. Contenido ficticio.',
+    categoryId: cats.cInst.id,
+    section: 'NEWS',
+    status: 'PUBLISHED',
+    visibleFrom: startOfDayBA('2025-03-10'),
+    visibleUntil: endOfDayBA('2025-04-10'),
+    coverUrl: '/img/provisorio/novedad-historia.webp',
+  });
+  await pubExtra({
+    title: 'Visita a un mercado gastronómico',
+    summary:
+      'Salida didáctica de ejemplo con vigencia abierta, para llenar el listado de Novedades.',
+    categoryId: cats.cPracticas.id,
+    status: 'PUBLISHED',
+    visibleFrom: day(-3),
+    coverUrl: '/img/provisorio/novedad-practicas.webp',
+  });
+
+  // --- Publicaciones de Instagram en cada estado (RF04). Solo la primera vez: el equipo puede
+  // moderar después sin que la semilla le deshaga el trabajo.
+  const firstDemo = (await prisma.auditLog.count({ where: { action: 'seed.demo' } })) === 0;
+  if (firstDemo) {
+    const linked = await prisma.socialPost.findUnique({ where: { externalId: 'fake-ig-003' } });
+    if (linked && linked.status === 'DETECTED') {
+      await prisma.socialPost.update({
+        where: { id: linked.id },
+        data: { status: 'LINKED', moderatedBy: c.editorId, moderatedAt: day(-1) },
+      });
+      await pubExtra({
+        title: 'Feliz Día del Trabajador Gastronómico',
+        summary: 'Publicación aprobada desde Instagram (demostración).',
+        categoryId: cats.cInst.id,
+        status: 'PUBLISHED',
+        visibleFrom: day(-1),
+        origin: 'INSTAGRAM',
+        socialPostId: linked.id,
+        coverUrl: '/img/provisorio/novedad-comunidad.webp',
+      });
+    }
+    await prisma.socialPost.updateMany({
+      where: { externalId: 'fake-ig-002', status: 'DETECTED' },
+      data: { status: 'DISCARDED', moderatedBy: c.editorId, moderatedAt: day(-2) },
+    });
+    // fake-ig-001 queda DETECTED: es la que se modera en vivo durante la demo.
+  }
+
+  // --- Avisos: pausado, programado y uno para cada público
+  const noticeExtra = async (n: {
+    title: string;
+    body: string;
+    categoryId: string;
+    audience: 'ALL' | 'STUDENTS' | 'ASPIRANTS' | 'GRADUATES';
+    status?: 'ACTIVE' | 'PAUSED';
+    visibleFrom: Date;
+    visibleUntil?: Date;
+    attachmentId?: string;
+  }) => {
+    if (await prisma.notice.findFirst({ where: { title: n.title } })) return;
+    await prisma.notice.create({ data: { authorId: c.bedeliaId, ...n } });
+  };
+  await noticeExtra({
+    title: 'Aviso general para toda la comunidad',
+    body: 'Aviso de demostración dirigido a todos los públicos.',
+    categoryId: cats.cAviso.id,
+    audience: 'ALL',
+    visibleFrom: day(-2),
+    visibleUntil: day(30),
+  });
+  await noticeExtra({
+    title: 'Charla informativa para aspirantes',
+    body: 'Aviso de demostración para quienes quieren ingresar a la tecnicatura. Se ve en Ingreso.',
+    categoryId: cats.cAviso.id,
+    audience: 'ASPIRANTS',
+    visibleFrom: day(-1),
+    visibleUntil: day(45),
+  });
+  await noticeExtra({
+    title: 'Encuentro de egresados',
+    body: 'Aviso de demostración para graduados.',
+    categoryId: cats.cAviso.id,
+    audience: 'GRADUATES',
+    visibleFrom: day(-1),
+    visibleUntil: day(60),
+  });
+  await noticeExtra({
+    title: 'Cambio de aula (aviso pausado)',
+    body: 'Aviso pausado de demostración: existe en el panel pero no se muestra en el sitio.',
+    categoryId: cats.cMesas.id,
+    audience: 'STUDENTS',
+    status: 'PAUSED',
+    visibleFrom: day(-4),
+    visibleUntil: day(10),
+  });
+  await noticeExtra({
+    title: 'Apertura de inscripción a cursada (programado)',
+    body: 'Aviso programado de demostración: empieza a verse en el futuro.',
+    categoryId: cats.cMesas.id,
+    audience: 'STUDENTS',
+    visibleFrom: day(12),
+    visibleUntil: day(40),
+    attachmentId: c.docCronogramaId,
+  });
+
+  // --- Llamados a examen: del ciclo anterior, próximo sin destacar y sin publicar
+  const callExtra = async (e: {
+    termId: string;
+    name: string;
+    startsOn: Date;
+    endsOn: Date;
+    published: boolean;
+    enrollmentOpen?: boolean;
+    notes?: string;
+  }) => {
+    if (await prisma.examCall.findFirst({ where: { termId: e.termId, name: e.name } })) return;
+    await prisma.examCall.create({ data: { updatedBy: c.bedeliaId, ...e } });
+  };
+  await callExtra({
+    termId: c.termIds.first,
+    name: 'Turno de Julio 2026',
+    startsOn: startOfDayBA('2026-07-06'),
+    endsOn: endOfDayBA('2026-07-17'),
+    published: true,
+    notes: 'Llamado del ciclo anterior (no se ve en el sitio; sí en el archivo del panel).',
+  });
+  await callExtra({
+    termId: c.termIds.second,
+    name: 'Turno de Febrero 2027',
+    startsOn: startOfDayBA('2027-02-08'),
+    endsOn: endOfDayBA('2027-02-19'),
+    published: true,
+  });
+  await callExtra({
+    termId: c.termIds.second,
+    name: 'Turno de Marzo 2027 (borrador)',
+    startsOn: startOfDayBA('2027-03-01'),
+    endsOn: endOfDayBA('2027-03-12'),
+    published: false,
+    notes: 'Llamado sin publicar, para mostrar el estado borrador.',
+  });
+
+  // --- Mensajes de contacto en cada estado (la bandeja tiene filtros por estado)
+  const msgExtra = async (m: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    status: 'NEW' | 'READ' | 'ANSWERED';
+    mailSent?: boolean;
+  }) => {
+    if (await prisma.contactMessage.findFirst({ where: { subject: m.subject } })) return;
+    await prisma.contactMessage.create({ data: { consent: true, ...m } });
+  };
+  await msgExtra({
+    name: 'Persona Ficticia Uno',
+    email: 'ficticia.uno@example.com',
+    subject: '¿Hasta cuándo puedo inscribirme?',
+    message: 'Mensaje de demostración sin leer.',
+    status: 'NEW',
+  });
+  await msgExtra({
+    name: 'Persona Ficticia Dos',
+    email: 'ficticia.dos@example.com',
+    subject: 'Consulta por equivalencias',
+    message: 'Mensaje de demostración ya leído.',
+    status: 'READ',
+    mailSent: true,
+  });
+  await msgExtra({
+    name: 'Persona Ficticia Tres',
+    email: 'ficticia.tres@example.com',
+    subject: 'Horarios de la comisión única',
+    message: 'Mensaje de demostración respondido.',
+    status: 'ANSWERED',
+    mailSent: true,
+  });
+
+  // --- Una cuenta desactivada (la lista de usuarios muestra el estado)
+  const inactiveEmail = 'exeditor@ifts2.local';
+  if (!(await prisma.user.findUnique({ where: { email: inactiveEmail } }))) {
+    await prisma.user.create({
+      data: {
+        email: inactiveEmail,
+        name: 'Ex editora de prueba (desactivada)',
+        roleId: c.roles.EDITOR,
+        active: false,
+        passwordHash: await hash(DEMO_PASSWORD),
+      },
+    });
+  }
+
+  // --- Enlace oculto (lo ve el panel, no el sitio)
+  if (!(await prisma.externalLink.findFirst({ where: { title: 'Enlace oculto de ejemplo' } }))) {
+    await prisma.externalLink.create({
+      data: {
+        title: 'Enlace oculto de ejemplo',
+        url: 'https://example.com/oculto',
+        description: 'Enlace de demostración con visibilidad desactivada.',
+        group: 'academico',
+        order: 99,
+        visible: false,
+      },
+    });
+  }
+
+  // --- Auditoría con movimientos de varias personas (solo una vez)
+  if ((await prisma.auditLog.count({ where: { action: 'seed.demo.muestra' } })) === 0) {
+    const entries: [string, string, string][] = [
+      [c.editorId, 'publication.publish', 'Publication'],
+      [c.editorId, 'social.link', 'SocialPost'],
+      [c.editorId, 'social.discard', 'SocialPost'],
+      [c.bedeliaId, 'notice.create', 'Notice'],
+      [c.bedeliaId, 'notice.pause', 'Notice'],
+      [c.bedeliaId, 'schedule.update', 'Schedule'],
+      [c.bedeliaId, 'examCall.create', 'ExamCall'],
+      [c.adminId, 'term.setPublic', 'AcademicTerm'],
+      [c.adminId, 'user.deactivate', 'User'],
+    ];
+    await prisma.auditLog.createMany({
+      data: entries.map(([userId, action, entity], i) => ({
+        userId,
+        action,
+        entity,
+        detail: { demo: true },
+        at: new Date(now - (i + 1) * 3 * 3_600_000),
+      })),
+    });
+    await prisma.auditLog.create({
+      data: { userId: c.adminId, action: 'seed.demo.muestra', entity: 'System' },
+    });
+  }
+  log('datos de demostración complementarios listos');
+}
+
 async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
   // Nombres de PERSONA (no de rol): en la lista de usuarios el rol se muestra aparte y, si la persona
   // se llamara igual que su rol, no se distinguiría una cosa de la otra.
@@ -583,6 +897,17 @@ async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
       },
     });
   }
+
+  await seedDemoExtras({
+    now,
+    editorId: editor.id,
+    bedeliaId: bedelia.id,
+    adminId,
+    roles,
+    cats: { cEvento, cAviso, cInst, cPracticas, cMesas, cUrgente },
+    termIds: { first: first.id, second: second.id },
+    docCronogramaId: docCronograma.id,
+  });
 
   // Integraciones: Instagram en modo demostración y sin credenciales (el cliente las carga desde el panel)
   const key = Buffer.from(process.env.APP_ENCRYPTION_KEY ?? '', 'base64');
