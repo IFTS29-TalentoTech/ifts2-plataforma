@@ -4,6 +4,17 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-07 · Tarjeta "Ingreso" del Resumen con datos verificables (A14)
+
+**Hecho.** Rama `fix/indicador-ingreso` desde `develop` (`f0c236f`). `GET /dashboard` agrega
+`ingresoContent` (secciones visibles de Ingreso y si les quedan datos `[a confirmar ...]`). La
+tarjeta muestra "Sin publicar", "A confirmar" o "Publicada" y presenta el año como estimado. Ya no
+afirma una "ficha de preinscripción activa". Nuevo `hasPendingConfirmation` en `@ifts2/shared`.
+
+**Pruebas.** 1 caso de integración nuevo y 1 ajustado, unitarias de shared y 4 E2E (390 y 1440 px,
+axe). Resultados en `docs/evidencias/2026-11-07-indicador-ingreso-a14.md`; decisión en ADR-034.
+
+**Pendiente.** Q133: definir si el año de ingreso seguirá siendo una estimación.
 ### 2026-11-07 · Inscripciones: enlace de alumnos y estado efectivo (A07, A08)
 
 **Hecho.** Rama `fix/inscripciones-siu-y-estado` desde `develop` (`f0c236f`). **A07:** los enlaces

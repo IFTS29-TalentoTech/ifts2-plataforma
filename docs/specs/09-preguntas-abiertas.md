@@ -123,6 +123,11 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q129 | Las rutas de `/integrations/*` pasaron de "solo ADMIN" al permiso `integrations:manage` (marcado como sensible en la pantalla de roles). ¿Se quiere dar este permiso a otros roles además de ADMIN? | No: lo trae ADMIN por defecto y SUPERADMIN siempre; el Superadministrador lo puede quitar o dar desde "Roles y permisos" | RF11, ADR-020 |
 | Q130 | La historia de "destacar" (llamado o aviso) estaba numerada US-36, igual que la de roles configurables | **Resuelta (06/11/2026):** US-36 queda para roles configurables; "destacar" pasó a US-37 (`07-backlog-y-plan.md`) | Backlog |
 
+## Agregadas por el equipo (07/11/2026): Resumen del panel (auditoría A14)
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q133 | ¿El año de ingreso del Resumen debe seguir siendo una estimación (año del período vigente + 1) o el instituto va a definir una convocatoria con fechas propias (preinscripción abierta o cerrada)? | Se mantiene la estimación y se muestra como **estimada**. La tarjeta informa solo lo verificable: si la página de Ingreso tiene contenido visible y si le quedan datos `[a confirmar ...]`. Ver ADR-034 | US-12, A14 |
 ## Agregadas por el equipo (07/11/2026): Inscripciones (auditoría A07 y A08)
 
 | N.° | Pregunta | Supuesto provisorio | Impacta |

@@ -109,6 +109,8 @@ Si te equivocás de clave verás «Correo o contraseña incorrectos.». Tras **5
 
 Al ingresar ves el **Resumen**: el estado de Instagram, cuántas publicaciones esperan moderación, avisos activos o por vencer, el ciclo público y el próximo llamado a examen. Los bloques cambian según tu rol.
 
+La tarjeta **Ingreso** muestra el ciclo de ingreso **estimado** (año del período vigente + 1) y el estado de la página de Ingreso: **Sin publicar** (no tiene contenido visible), **A confirmar** (algún texto tiene la marca `[a confirmar ...]`) o **Publicada**. Para completarla, editá los textos en Configuración -> Contenido de páginas -> Ingreso y quitá la marca cuando el dato esté confirmado.
+
 ![Resumen del panel (Comunicación)](../capturas/panel/10-resumen-1440.png)
 
 ![Resumen del panel (Bedelía)](../capturas/panel/20-resumen-bedelia-1440.png)

@@ -51,7 +51,7 @@ Cabecera de caché de todo `/public/*`: ver la última sección. Los ids y filtr
 ## Panel
 
 **Resumen**
-- `GET /dashboard` → `{ instagram: { mode, status, ok, lastSyncAt, error?, tokenExpiresAt?, hashtag }, pendingPosts, activeNotices, noticesExpiringIn7Days, currentTerm, examCallNext, ingresoCycle }` (**implementado**; forma exacta y reglas en `apps/api/src/modules/dashboard/README.md`: `currentTerm` y `examCallNext` pueden ser `null`; `ingresoCycle` es `{ year, derived: true }`)
+- `GET /dashboard` → `{ instagram: { mode, status, ok, lastSyncAt, error?, tokenExpiresAt?, hashtag }, pendingPosts, activeNotices, noticesExpiringIn7Days, currentTerm, examCallNext, ingresoCycle }` (**implementado**; forma exacta y reglas en `apps/api/src/modules/dashboard/README.md`: `currentTerm` y `examCallNext` pueden ser `null`; `ingresoCycle` es `{ year, derived: true }`; `ingresoContent` es `{ visibleSections, pendingConfirmation }`, el estado real de la página de Ingreso, A14)
 
 **Publicaciones y redes**
 - `POST /social/sync` → renueva el token si hace falta y sincroniza; `{ created, matched, alreadyKnown, demo, lastSyncAt, token }`. 422 sin hashtag configurado; 502 con mensaje claro si Instagram falla (**implementado**).
