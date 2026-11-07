@@ -50,7 +50,9 @@ for (const vp of viewports) {
           .invoke('attr', 'for')
           .then((id) => cy.get(`[id="${id}"]`).click());
       });
-      cy.contains('[role="option"]', 'Bedelía Académica').click();
+      // force: con muchos roles en la base (los specs de roles crean uno por corrida) la opción
+      // puede quedar recortada por el desplegable y Cypress no la considera visible.
+      cy.contains('[role="option"]', 'Bedelía Académica').click({ force: true });
       cy.contains('[role="dialog"]', 'Rol actual').contains('button', 'Guardar').click();
       cy.get('[role="alertdialog"]').within(() => {
         cy.contains('¿Cambiar el rol?');

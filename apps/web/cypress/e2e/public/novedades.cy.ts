@@ -7,6 +7,11 @@ for (const width of [390, 1440]) {
       cy.visit('/novedades');
       cy.get('[data-testid=novedades] li').should('have.length.at.least', 2);
       cy.get('#f-cat option').should('have.length.at.least', 2);
+      // Los filtros se aplican al cambiar (A17): hay que esperar a que React hidrate el desplegable
+      // (adjunta `__reactProps$…` al nodo) o el cambio se pierde antes de tener manejador.
+      cy.get('#f-cat').should(($el) => {
+        expect(Object.keys($el[0]).some((k) => k.startsWith('__reactProps'))).to.eq(true);
+      });
       cy.get('#f-cat').select('Evento');
       cy.location('search').should('contain', 'category=');
       cy.get('[data-testid=novedades] li').should('have.length.at.least', 1);
