@@ -5,6 +5,8 @@
  * Crear: POST /publications (queda en BORRADOR; después se publica o programa desde la lista).
  * Editar: PATCH /publications/:id. Portada opcional: POST /publications/:id/cover (multipart, JPG/PNG/WebP,
  * hasta 5 MB; el servidor la comprime). Errores por campo de la API (400/422) se muestran debajo de cada campo.
+ * El PATCH NO reenvía `coverUrl` (la portada solo cambia subiendo un archivo), y la subida manda la portada
+ * que vio el formulario: si otra persona la cambió en el medio, la API responde 409 y no pisa nada (A10).
  */
 import { useState, type FormEvent } from 'react';
 import { Button, Dialog, Input, Select, Textarea, useToast } from '@/components/ui';
@@ -86,6 +88,9 @@ function Form({
         : await api.post<PublicationDto>('/publications', payload);
       if (cover) {
         const fd = new FormData();
+        // Precondición (A10): la portada que este formulario vio al abrirse ("" = no tenía). Si alguien
+        // la cambió mientras tanto, la API responde 409 en lugar de pisarla. Va antes del archivo.
+        fd.append('expectedCoverUrl', (publication ? publication.coverUrl : saved.coverUrl) ?? '');
         fd.append('file', cover);
         try {
           await api.post(`/publications/${saved.id}/cover`, fd);

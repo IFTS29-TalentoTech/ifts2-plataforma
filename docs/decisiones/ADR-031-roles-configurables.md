@@ -42,3 +42,10 @@ La ADR-18 ampliada define el modelo: el catálogo de permisos es fijo y los role
 
 - Al volver a una rama sin esta migración, la base de desarrollo queda adelantada. Se recrea con `pnpm db:reset`, que debe correr una persona.
 - Agregar un permiso nuevo requiere tocar tres cosas: `ACTIONS`, una casilla en `PERMISSION_GROUPS` y, si corresponde, `DEFAULT_ROLE_PERMISSIONS`. Para que un rol ya existente lo tenga, el Superadministrador lo tilda desde el panel o se agrega una migración de datos.
+
+## Enmienda del 06/11/2026 (decisiones del equipo)
+
+1. **Cuatro roles de sistema.** SUPERADMIN, ADMIN, BEDELIA y EDITOR. SUPERADMIN es un rol nuevo y necesario: sin él nadie podría definir los permisos de los demás.
+2. **Los roles de sistema ADMIN, BEDELIA y EDITOR sí se pueden eliminar.** Cambia la regla original ("los roles del sistema no se eliminan"): la eliminación es manual, con confirmación, auditada (`role.delete`) y devuelve 409 si el rol tiene usuarios asignados. **SUPERADMIN no se edita ni se elimina** (409). _Consecuencia en la semilla:_ para que volver a ejecutarla en producción no resucite un rol eliminado a propósito, en modo `prod` ADMIN, BEDELIA y EDITOR se crean solo en el primer arranque (tabla `Role` vacía); SUPERADMIN se asegura siempre. En modo `demo` se recrean siempre porque los usuarios de demostración los necesitan (`seedRoles` en `prisma/seed.ts`). Ver Q128.
+3. **Último SUPERADMIN activo: 409.** No se puede desactivar ni cambiarle el rol (antes la sección Usuarios de `04-api.md` decía 422 y "último administrador"). La verificación corre en una transacción serializable (A02).
+4. **`/integrations/*` se protege con el permiso `integrations:manage`** y no con el rol ADMIN (ADR-020).

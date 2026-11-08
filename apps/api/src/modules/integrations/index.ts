@@ -23,7 +23,7 @@ export const mountPath = '/integrations';
 export const router = Router();
 
 /**
- * Integraciones que el CLIENTE configura desde el panel (ADR-20). Solo ADMIN. Los secretos se guardan
+ * Integraciones que el CLIENTE configura desde el panel (ADR-20). Exige el permiso integrations:manage. Los secretos se guardan
  * cifrados (AES-256-GCM) y NUNCA salen en una respuesta: solo máscaras y estados.
  */
 router.use(requirePermission('integrations:manage'));
@@ -41,17 +41,33 @@ router.put('/instagram', validate({ body: instagramConfigInput }), async (req, r
   const next: InstagramStoredConfig = { ...current };
 
   if (body.mode) next.mode = body.mode;
+
+  // Método de conexión: OAuth (App ID + Secret) o token pegado. Si cambia, lo conectado con el otro
+  // método ya no corresponde (el token de una app no es el de la otra) y se descarta.
+  const method = body.connectionMethod ?? current.connectionMethod ?? 'oauth';
+  if (method !== (current.connectionMethod ?? 'oauth')) {
+    delete next.accessToken;
+    delete next.tokenExpiresAt;
+    delete next.username;
+    delete next.connectedAt;
+    next.lastError = null;
+    if (!body.mode) next.mode = 'demo'; // hasta completar el método nuevo se queda en demostración
+  }
+  next.connectionMethod = method;
+
   if (body.appId && body.appId !== current.appId) {
     next.appId = body.appId;
-    delete next.accessToken; // otra app: el token anterior ya no sirve
+    if (method === 'oauth') delete next.accessToken; // otra app: el token anterior ya no sirve
     delete next.tokenExpiresAt;
     delete next.username;
     next.lastError = null;
   }
   if (body.appSecret && body.appSecret !== current.appSecret) {
     next.appSecret = body.appSecret;
-    delete next.accessToken;
-    delete next.tokenExpiresAt;
+    if (method === 'oauth') {
+      delete next.accessToken;
+      delete next.tokenExpiresAt;
+    }
     next.lastError = null;
   }
   if (body.accessToken) {
@@ -59,8 +75,15 @@ router.put('/instagram', validate({ body: instagramConfigInput }), async (req, r
     next.connectedAt = new Date().toISOString();
     next.lastError = null;
     delete next.tokenExpiresAt; // se desconoce el vencimiento de un token pegado a mano
+    // Con el método "token" pegarlo alcanza para pasar a modo real (sin App ID ni Secret).
+    if (method === 'token') next.mode = 'real';
   }
-  if (next.mode === 'real' && (!next.appId || !next.appSecret)) {
+  if (next.mode === 'real' && method === 'token' && !next.accessToken) {
+    throw errors.unprocessable('Para conectar con un token, pegá el token de acceso.', {
+      accessToken: ['El token de acceso es obligatorio.'],
+    });
+  }
+  if (next.mode === 'real' && method === 'oauth' && (!next.appId || !next.appSecret)) {
     throw errors.unprocessable('Para usar Instagram real cargá el App ID y el App Secret.', {
       ...(next.appId ? {} : { appId: ['El App ID es obligatorio.'] }),
       ...(next.appSecret ? {} : { appSecret: ['El App Secret es obligatorio.'] }),

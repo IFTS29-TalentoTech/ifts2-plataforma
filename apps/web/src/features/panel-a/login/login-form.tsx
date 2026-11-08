@@ -9,7 +9,7 @@
  *  - "¿Olvidaste tu clave?" no manda correos: la restablece un administrador (ADR-06); se explica en pantalla.
  *  - "Recordar sesión" solo alarga la cookie (14 días en vez de 8 h).
  */
-import { HelpCircle, Lock } from 'lucide-react';
+import { Eye, EyeOff, HelpCircle, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Button, Checkbox, Input } from '@/components/ui';
@@ -27,6 +27,7 @@ export function LoginForm({
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -109,16 +110,32 @@ export function LoginForm({
         error={fieldErrors.email}
       />
       <div className="flex flex-col gap-1.5">
-        <Input
-          label="Contraseña"
-          type="password"
-          name="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          error={fieldErrors.password}
-        />
+        <div className="relative">
+          <Input
+            label="Contraseña"
+            type={showPassword ? 'text' : 'password'}
+            name="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={fieldErrors.password}
+            className="[&_input]:pr-10"
+          />
+          <button
+            type="button"
+            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            aria-pressed={showPassword}
+            onClick={() => setShowPassword((visible) => !visible)}
+            className="absolute right-1.5 top-8 flex h-8 w-8 items-center justify-center rounded-sm text-font-strong hover:text-accent-3 focus-visible:outline-none focus-visible:shadow-focus"
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
+        </div>
         <button
           type="button"
           aria-expanded={help}

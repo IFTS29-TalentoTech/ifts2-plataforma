@@ -3,6 +3,8 @@ import {
   CATEGORY_KINDS,
   CONTENT_PAGES,
   DOCUMENT_KINDS,
+  GALLERY_AREAS,
+  GALLERY_MAX_PER_AREA,
   NOTICE_AUDIENCES,
   NOTICE_VIEW_STATUSES,
   PUBLICATION_ORIGINS,
@@ -154,6 +156,53 @@ export const url = (label: string, gender?: Gender) => {
       }
     }, `${label} debe ser una dirección web completa que empiece con http:// o https://.`);
 };
+
+/**
+ * Imagen del sitio público: ruta propia (`/img/...`) o dirección http(s) completa. Vacía = quitarla.
+ * Se aceptan rutas porque las imágenes provisorias viajan con la web; las definitivas pueden ser
+ * direcciones de un CDN o del almacenamiento del instituto.
+ */
+export const IMAGE_REF_RE = /^(\/(?!\/)[^\s?#]+|https?:\/\/\S+)$/i;
+const LINE_BREAK = /\r?\n/;
+export const imageRef = (label: string, gender?: Gender) => {
+  const w = agree(label, gender);
+  return z
+    .string({ invalid_type_error: `${label} no ${w.es} ${w.valido}.` })
+    .trim()
+    .max(500, `${label} ${w.es} ${w.demasiadoLargo}.`)
+    .refine(
+      (v) => v === '' || IMAGE_REF_RE.test(v),
+      `${label} debe ser una ruta del sitio (que empiece con /) o una dirección web completa.`,
+    );
+};
+
+/** Máximo de tarjetas de la galería "Vida en la cocina". */
+export const GALLERY_MAX_ITEMS = 6;
+
+/** Una tarjeta de la galería: imagen, título y descripción (los dos últimos opcionales). */
+export interface GalleryItem {
+  src: string;
+  title: string;
+  description: string;
+}
+
+/**
+ * Galería de Estudiantes (`student_gallery`): una tarjeta por línea con el formato
+ * `ruta | título | descripción`. Las líneas vacías o con una ruta inválida se ignoran.
+ */
+export function parseGallery(raw: string | null | undefined): GalleryItem[] {
+  if (!raw) return [];
+  return raw
+    .split(LINE_BREAK)
+    .map((line) => line.split('|').map((part) => part.trim()))
+    .filter(([src]) => !!src && IMAGE_REF_RE.test(src))
+    .slice(0, GALLERY_MAX_ITEMS)
+    .map(([src, title, description]) => ({
+      src: src!,
+      title: title ?? '',
+      description: description ?? '',
+    }));
+}
 
 const password = (label = 'La contraseña') =>
   z
@@ -334,14 +383,42 @@ export const publicationCreateInput = publicationBase.superRefine((v, ctx) => {
 });
 export type PublicationCreateInput = z.infer<typeof publicationCreateInput>;
 
+/**
+ * Precondición de concurrencia (A10): la portada que el cliente vio al abrir el formulario. Si se
+ * envía, el cambio se aplica SOLO si la portada guardada sigue siendo esa; si alguien la cambió en el
+ * medio, la API responde 409 y no pisa nada. `null` = "no tenía portada". Si no se envía, la API usa la
+ * portada que lee al recibir el pedido.
+ */
+const expectedCoverUrl = z
+  .string({ invalid_type_error: 'La portada esperada no es válida.' })
+  .max(2000, 'La portada esperada no puede superar los 2000 caracteres.')
+  .nullable()
+  .optional();
+
 export const publicationUpdateInput = publicationBase
   .partial()
+  .extend({ expectedCoverUrl })
   .superRefine((v, ctx) => {
     windowRefine(v, ctx);
     eventRefine(v, ctx);
   })
-  .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+  // La precondición sola no es un cambio.
+  .refine((v) => Object.keys(v).some((k) => k !== 'expectedCoverUrl'), {
+    message: 'No hay cambios para guardar.',
+  });
 export type PublicationUpdateInput = z.infer<typeof publicationUpdateInput>;
+
+/**
+ * Campos de texto que acompañan a `POST /publications/:id/cover` (multipart). `expectedCoverUrl`
+ * vacío = "no tenía portada"; ausente = sin precondición del cliente.
+ */
+export const publicationCoverUploadFields = z.object({
+  expectedCoverUrl: z
+    .string({ invalid_type_error: 'La portada esperada no es válida.' })
+    .max(2000, 'La portada esperada no puede superar los 2000 caracteres.')
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === '' ? null : v)),
+});
 
 /** Programar / reactivar con nueva vigencia. */
 export const publicationScheduleInput = z
@@ -371,6 +448,17 @@ export const socialListQuery = paginationQuery.extend({
   /** Origen de la publicación de redes: traída de Instagram o cargada a mano (contingencia). */
   source: enumOf('El origen', ['instagram', 'manual'] as const).optional(),
 });
+
+/**
+ * Query de POST /social/sync. `full=true` fuerza la carga completa (ignora la marca del último fetch
+ * exitoso); sin él, la sincronización es incremental cuando corresponde (ADR-038).
+ */
+export const socialSyncQuery = z.object({
+  full: enumOf('El parámetro full', ['true', 'false'] as const)
+    .optional()
+    .transform((v) => v === 'true'),
+});
+export type SocialSyncQuery = z.infer<typeof socialSyncQuery>;
 
 export const socialApproveInput = z
   .object({
@@ -543,6 +631,15 @@ export const documentListQuery = paginationQuery.extend({
 
 // ---------- ajustes, enlaces, contenido ----------
 
+/** Texto de ajuste que se puede vaciar (vacío = usar el valor por defecto de la pantalla). */
+const optionalSetting = (label: string, max: number) => {
+  const w = agree(label);
+  return z
+    .string({ invalid_type_error: `${label} no ${w.es} ${w.valido}.` })
+    .trim()
+    .max(max, `${label} no ${w.puede} superar los ${max} caracteres.`);
+};
+
 export const settingsUpdateInput = z
   .object({
     phone: text('El teléfono', 60),
@@ -567,6 +664,26 @@ export const settingsUpdateInput = z
     institution_subtitle: text('El subtítulo institucional', 200),
     footer_text: text('El texto del pie', 300),
     career_name: text('El nombre de la carrera', 200),
+    hero_title: optionalSetting('El titular de Inicio', 120),
+    hero_eyebrow: optionalSetting('El rótulo del encabezado de Inicio', 120),
+    logo_url: imageRef('El logo'),
+    hero_image_1: imageRef('La primera imagen de Inicio', 'f'),
+    hero_image_2: imageRef('La segunda imagen de Inicio', 'f'),
+    career_image: imageRef('La imagen de La carrera', 'f'),
+    ingreso_image: imageRef('La imagen de Ingreso', 'f'),
+    student_gallery: z
+      .string({ invalid_type_error: 'La galería no es válida.' })
+      .trim()
+      .max(2000, 'La galería es demasiado larga.')
+      .refine(
+        (v) =>
+          v === '' ||
+          v
+            .split(LINE_BREAK)
+            .filter((l) => l.trim())
+            .every((l) => IMAGE_REF_RE.test((l.split('|')[0] ?? '').trim())),
+        'Cada línea de la galería debe empezar con una ruta del sitio (/...) o una dirección web, y luego título y descripción separados por |.',
+      ),
   })
   .partial()
   .strict('Hay ajustes que no existen.')
@@ -581,12 +698,118 @@ export const linkInput = z.object({
   group: text('El grupo', 60).default('academico'),
   order: z.number().int().min(0).max(1000).default(0),
   visible: z.boolean().default(true),
+  /** A07: es el enlace donde los alumnos se inscriben (se muestra en /inscripciones). */
+  enrollment: z.boolean().default(false),
 });
 export type LinkInput = z.infer<typeof linkInput>;
 
 export const linkUpdateInput = linkInput
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+
+// ---------- galerías (RF09, ADR-036) ----------
+
+const galleryText = (label: string, max: number) =>
+  z
+    .string({ invalid_type_error: `${label} no es válido.` })
+    .trim()
+    .max(max, `${label} no puede superar los ${max} caracteres.`);
+
+/** Campos de texto de una diapositiva (también llegan como campos del multipart al subir la imagen). */
+export const galleryTextFields = z.object({
+  title: galleryText('El título', 80).default(''),
+  caption: galleryText('La descripción', 200).default(''),
+  /** Texto alternativo de la foto; vacío = decorativa (el texto de la tarjeta ya la describe). */
+  alt: galleryText('El texto alternativo', 200).default(''),
+  /** Categoría libre y corta (RF09, US-30) con la que el sitio filtra la galería; vacía = sin categoría. */
+  category: galleryText('La categoría', 40).default(''),
+});
+
+/** Alta de una diapositiva: el archivo va aparte (campo `file`); acá el área y los textos. */
+export const galleryCreateFields = galleryTextFields.extend({
+  area: enumOf('El área', GALLERY_AREAS),
+});
+export type GalleryCreateFields = z.infer<typeof galleryCreateFields>;
+
+export const galleryUpdateInput = galleryTextFields
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+export type GalleryUpdateInput = z.infer<typeof galleryUpdateInput>;
+
+/** GET /public/gallery: el área es obligatoria. */
+export const publicGalleryQuery = z.object({ area: enumOf('El área', GALLERY_AREAS) });
+
+export const galleryListQuery = z.object({ area: enumOf('El área', GALLERY_AREAS).optional() });
+
+/** Nuevo orden de una galería: los ids de TODAS sus diapositivas, en el orden deseado. */
+export const galleryOrderInput = z.object({
+  area: enumOf('El área', GALLERY_AREAS),
+  ids: z
+    .array(uuid('El identificador'))
+    .min(1, 'Indicá el orden de las diapositivas.')
+    .max(GALLERY_MAX_PER_AREA, `Una galería admite hasta ${GALLERY_MAX_PER_AREA} diapositivas.`),
+});
+export type GalleryOrderInput = z.infer<typeof galleryOrderInput>;
+
+// ---------- plantel docente (RF10, US-29) ----------
+
+export const TEACHER_MAX_SUBJECTS = 12;
+
+const teacherText = (label: string, max: number) =>
+  z
+    .string({ invalid_type_error: `${label} no es válido.` })
+    .trim()
+    .max(max, `${label} no puede superar los ${max} caracteres.`);
+
+/**
+ * Materias a cargo: lista de textos cortos. Se recortan, se descartan los vacíos y se quitan los
+ * repetidos (sin distinguir mayúsculas), así quien escribe "una por línea" no tiene que cuidarlo.
+ */
+const teacherSubjects = z
+  .array(teacherText('Cada materia', 120), { invalid_type_error: 'Las materias no son válidas.' })
+  .transform((list) => {
+    const seen = new Set<string>();
+    return list.filter((s) => {
+      const k = s.toLocaleLowerCase('es');
+      if (!s || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  })
+  .pipe(
+    z
+      .array(z.string())
+      .max(TEACHER_MAX_SUBJECTS, `Se admiten hasta ${TEACHER_MAX_SUBJECTS} materias.`),
+  );
+
+export const teacherInput = z.object({
+  name: teacherText('El nombre', 100).min(1, 'El nombre es obligatorio.'),
+  role: teacherText('El cargo', 80).default(''),
+  subjects: teacherSubjects.default([]),
+  /** Al crear: visible por defecto. Ocultar es la baja lógica (no borra nada). */
+  visible: z.boolean({ invalid_type_error: 'La visibilidad no es válida.' }).default(true),
+});
+export type TeacherInput = z.infer<typeof teacherInput>;
+
+export const teacherUpdateInput = z
+  .object({
+    name: teacherText('El nombre', 100).min(1, 'El nombre es obligatorio.'),
+    role: teacherText('El cargo', 80),
+    subjects: teacherSubjects,
+    visible: z.boolean({ invalid_type_error: 'La visibilidad no es válida.' }),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
+export type TeacherUpdateInput = z.infer<typeof teacherUpdateInput>;
+
+/** Nuevo orden del plantel: los ids de TODAS las personas (visibles y ocultas), en el orden deseado. */
+export const teacherOrderInput = z.object({
+  ids: z
+    .array(uuid('El identificador'))
+    .min(1, 'Indicá el orden del plantel.')
+    .max(200, 'El plantel no puede superar las 200 personas.'),
+});
+export type TeacherOrderInput = z.infer<typeof teacherOrderInput>;
 
 export const contentPageParam = enumOf('La página', CONTENT_PAGES);
 
@@ -620,6 +843,8 @@ export type ContactInput = z.infer<typeof contactInput>;
 export const instagramConfigInput = z
   .object({
     mode: enumOf('El modo', ['demo', 'real'] as const),
+    /** Método de conexión: OAuth (App ID y Secret) o token pegado (sin App ID ni Secret). */
+    connectionMethod: enumOf('El método de conexión', ['oauth', 'token'] as const),
     appId: z.string().trim().min(1, 'El App ID es obligatorio.').max(100),
     /** Si no viene, se conserva el secreto guardado. */
     appSecret: z.string().trim().min(1, 'El App Secret no puede estar vacío.').max(200).optional(),

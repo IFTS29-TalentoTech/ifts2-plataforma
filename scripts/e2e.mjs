@@ -1,8 +1,12 @@
 // Corre toda la suite Cypress de punta a punta con un solo comando: `pnpm e2e`.
 //
 // Qué hace (y por qué):
-//  1. (opcional) `--reset`: recrea la base de desarrollo con la semilla demo, para partir de un estado conocido.
-//  2. (opcional) `--build`: compila API y web (la suite corre contra el build de producción).
+//  1. Prepara una base PROPIA de la suite, `ifts2_e2e` (scripts/lib/e2e-db.mjs): la vacía, aplica las
+//     migraciones y carga la semilla demo. Cada corrida arranca de cero, como en CI, y la base de
+//     desarrollo (`ifts2`) no se toca: antes se llenaba de usuarios y roles de prueba.
+//     `--keep-db` reutiliza la base E2E tal como quedó (para repetir un spec rápido).
+//  2. (opcional) `--build`: recompila API y web (la suite corre contra el build de producción; la web
+//     va a `.next-e2e` para no chocar con `pnpm dev`; si esa carpeta no existe se compila sola).
 //  3. Levanta la API y la web en puertos propios (por defecto 4000 y 3100; el 3000 suele estar ocupado)
 //     y una segunda web con la API caída (puerto +1) para el spec de degradación (RNF03).
 //  4. Corre Cypress (sin ELECTRON_RUN_AS_NODE, que impide arrancar Electron).
@@ -13,10 +17,16 @@
 // límite por IP de ADR-06. El bloqueo real (5 intentos) está cubierto por las pruebas de API y por una
 // respuesta simulada en el spec de login.
 //
-// Uso: node scripts/e2e.mjs [--reset] [--build] [--spec "cypress/e2e/public/**"] [--browser chrome]
+// Capturas del Manual de Usuario: `--capturas` corre SOLO los specs capturas*.cy.ts (regeneran
+// docs/capturas/ y cypress/screenshots). La suite normal no los incluye: tardan y modifican archivos
+// versionados; correlos antes de mergear a main (`pnpm e2e:capturas`).
+//
+// Uso: node scripts/e2e.mjs [--build] [--keep-db] [--capturas] [--spec "cypress/e2e/public/**"] [--browser chrome]
+// (`--reset` ya no hace falta y se ignora: la base E2E se recrea siempre.)
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { e2eDatabaseUrl, emptyE2eDatabase } from './lib/e2e-db.mjs';
 import { killAll, root, startStack } from './lib/stack.mjs';
 
 const args = process.argv.slice(2);
@@ -36,8 +46,34 @@ function run(cmd, cmdArgs, env) {
 
 let code = 1;
 try {
-  if (flag('--reset')) run('pnpm', ['db:reset'], { SEED_MODE: 'demo' });
-  if (flag('--build')) run('pnpm', ['build'], { ENABLE_UI_KIT: 'true' });
+  // Base propia de la suite (nunca la de desarrollo). La API, la semilla y las tareas de Cypress que
+  // escriben en la base reciben esta URL.
+  const databaseUrl = e2eDatabaseUrl(root);
+  if (flag('--reset'))
+    console.log('[e2e] --reset ya no hace falta: la base E2E se recrea siempre.');
+  if (flag('--keep-db')) {
+    console.log(
+      `[e2e] Reutilizando la base E2E tal como quedó (${databaseUrl.replace(/:[^:@/]+@/, ':***@')}).`,
+    );
+  } else {
+    console.log('[e2e] Recreando la base ifts2_e2e (migraciones + semilla demo)...');
+    await emptyE2eDatabase(root, databaseUrl);
+    run('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], { DATABASE_URL: databaseUrl });
+    run('pnpm', ['exec', 'tsx', 'prisma/seed.ts'], {
+      DATABASE_URL: databaseUrl,
+      SEED_MODE: 'demo',
+    });
+  }
+  // La web de la suite se compila en `.next-e2e` (no en `.next`): así `pnpm dev` y `pnpm e2e` pueden
+  // convivir. Antes compartían carpeta y el servidor de desarrollo rompía el build de producción
+  // a mitad de la corrida (500 en el login, "Code generation from strings disallowed").
+  if (flag('--build') || !existsSync(path.join(root, 'apps/web/.next-e2e'))) {
+    run('pnpm', ['--filter', '@ifts2/shared', '--filter', '@ifts2/api', 'build'], {});
+    run('pnpm', ['--filter', '@ifts2/web', 'build'], {
+      ENABLE_UI_KIT: 'true',
+      NEXT_DIST_DIR: '.next-e2e',
+    });
+  }
 
   // La web degradada se COMPILA con la API caída (si no, serviría las páginas prerenderizadas del build normal,
   // con datos). Se arma una vez y se reutiliza; --build la rehace.
@@ -60,13 +96,21 @@ try {
     apiPort: Number(process.env.E2E_API_PORT ?? 4000),
     webPort: Number(process.env.E2E_WEB_PORT ?? 3100),
     degraded: true,
-    extraApiEnv: { LOGIN_MAX_ATTEMPTS: '1000' },
+    extraApiEnv: { LOGIN_MAX_ATTEMPTS: '1000', DATABASE_URL: databaseUrl },
+    webDistDir: '.next-e2e',
   });
 
   const cyArgs = ['cypress', 'run'];
   if (opt('--spec')) cyArgs.push('--spec', opt('--spec'));
   if (opt('--browser')) cyArgs.push('--browser', opt('--browser'), '--headless');
-  const env = { ...process.env, CYPRESS_BASE_URL: urls.web, DEGRADED_URL: urls.degraded };
+  const env = {
+    ...process.env,
+    CYPRESS_BASE_URL: urls.web,
+    DEGRADED_URL: urls.degraded,
+    // Las tareas de Cypress que preparan datos (support/panel-a-tasks.ts) usan la misma base E2E.
+    DATABASE_URL: databaseUrl,
+  };
+  if (flag('--capturas')) env.CAPTURAS = '1';
   delete env.ELECTRON_RUN_AS_NODE;
   const r = spawnSync('npx', cyArgs, {
     cwd: path.join(root, 'apps/web'),

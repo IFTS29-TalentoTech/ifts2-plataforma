@@ -38,6 +38,10 @@ export const PANEL_NAV: PanelNavItem[] = [
   { href: '/panel/mensajes', label: 'Mensajes', permission: 'contact:read' },
   { href: '/panel/horarios', label: 'Horarios', permission: 'schedules:manage' },
   { href: '/panel/archivo', label: 'Archivo', permission: 'documents:manage' },
+  // Galerías de fotos del sitio (RF09, ADR-036): ADMIN y EDITOR por defecto.
+  { href: '/panel/galerias', label: 'Galerías', permission: 'gallery:manage' },
+  // Plantel docente (RF10, ADR-037): ADMIN y EDITOR por defecto.
+  { href: '/panel/plantel', label: 'Plantel docente', permission: 'teachers:manage' },
   { href: '/panel/configuracion', label: 'Configuración', permission: 'settings:manage' },
   // RF11: solo el Superadministrador (roles:manage) ve este ítem.
   { href: '/panel/roles', label: 'Roles y permisos', permission: 'roles:manage' },

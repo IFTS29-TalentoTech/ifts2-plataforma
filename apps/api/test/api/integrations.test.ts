@@ -187,6 +187,62 @@ describe('Instagram: persistencia y resolución del cliente', () => {
   });
 });
 
+describe('Instagram: conexión con token pegado (sin App ID ni Secret)', () => {
+  it('con el método token, pegar el token alcanza: modo real, conectada y cliente Graph', async () => {
+    const res = await put({ connectionMethod: 'token', accessToken: TOKEN });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      connectionMethod: 'token',
+      mode: 'real',
+      status: 'connected',
+      demoMode: false,
+      hasAccessToken: true,
+      appIdMasked: null,
+      appSecretMasked: null,
+    });
+    expect(JSON.stringify(res.body)).not.toContain(TOKEN); // el token nunca sale en claro
+    expect((await t.ctx.getInstagramClient()).kind).toBe('graph');
+    expect((await get()).body).toMatchObject({ connectionMethod: 'token', status: 'connected' });
+  });
+
+  it('422 si pide modo real con el método token pero sin token; no pide App ID ni Secret', async () => {
+    const res = await put({ connectionMethod: 'token', mode: 'real' });
+    expect(res.status).toBe(422);
+    expect(res.body.errors.accessToken[0]).toMatch(/token/i);
+    expect(res.body.errors.appId).toBeUndefined();
+  });
+
+  it('cambiar de método descarta lo conectado con el otro y vuelve a demostración', async () => {
+    await put({ connectionMethod: 'token', accessToken: TOKEN }).expect(200);
+    const res = await put({ connectionMethod: 'oauth' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      connectionMethod: 'oauth',
+      status: 'demo',
+      hasAccessToken: false,
+    });
+    expect((await t.ctx.getInstagramClient()).kind).toBe('fake');
+  });
+
+  it('con el método token, cambiar el App ID no descarta el token', async () => {
+    await put({ connectionMethod: 'token', accessToken: TOKEN }).expect(200);
+    const res = await put({ appId: '2222222222' });
+    expect(res.body).toMatchObject({ hasAccessToken: true, status: 'connected' });
+  });
+
+  it('las configuraciones guardadas antes (sin método) se tratan como OAuth', async () => {
+    await t.ctx.integrations.set('instagram', {
+      mode: 'real',
+      appId: 'panel-app',
+      appSecret: 'panel-secret',
+    });
+    expect((await get()).body).toMatchObject({
+      connectionMethod: 'oauth',
+      status: 'credentials_saved',
+    });
+  });
+});
+
 describe('Instagram: validaciones y flujo de conexión', () => {
   it('400 con mensajes claros; 422 si pide modo real sin credenciales', async () => {
     const bad = await put({ mode: 'otro', hashtag: '#a b', accessToken: 'corto' });

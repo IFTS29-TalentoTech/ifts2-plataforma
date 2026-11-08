@@ -34,9 +34,13 @@ for (const vp of viewports) {
       });
     }
 
-    it('el contenido viene de la API (frase ancla y pie, sin textos fijos)', () => {
-      cy.visit('/');
-      cy.get('main h1').invoke('text').should('contain', 'no formamos chefs');
+    it('el contenido viene de la API (titular corto, frase ancla y pie, sin textos fijos)', () => {
+      // Q64: el titular es `hero_title` y la frase ancla (`tagline`) va como subtítulo.
+      cy.request('/api/v1/public/settings').then(({ body }) => {
+        cy.visit('/');
+        cy.get('main h1').invoke('text').should('eq', body.hero_title);
+        cy.get('main').contains(body.tagline).should('be.visible');
+      });
       cy.get('footer').should('contain', 'Villa Lugano');
     });
 

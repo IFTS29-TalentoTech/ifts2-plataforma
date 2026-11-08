@@ -30,6 +30,8 @@ import {
 } from './types';
 
 export interface GraphOptions {
+  /** `token`: alcanza con el token de acceso (sin App ID ni Secret). Por defecto `oauth`. */
+  method?: 'oauth' | 'token';
   appId?: string;
   appSecret?: string;
   accessToken?: string;
@@ -134,7 +136,7 @@ export class GraphInstagramClient implements InstagramClient {
   }
 
   private requireToken(): string {
-    if (!this.opts.appId || !this.opts.appSecret) {
+    if (this.opts.method !== 'token' && (!this.opts.appId || !this.opts.appSecret)) {
       throw new InstagramNotConfiguredError(
         'Instagram no está configurado: cargá el App ID y el App Secret en Configuración.',
       );
@@ -148,19 +150,30 @@ export class GraphInstagramClient implements InstagramClient {
   }
 
   /**
-   * Recorre `/me/media` (más nuevas primero) hasta juntar `limit` publicaciones que cumplan el filtro
-   * o agotar las páginas / el tope `maxPages`.
+   * Recorre `/me/media` (más nuevas primero) hasta juntar `limit` publicaciones que cumplan el filtro,
+   * agotar las páginas / el tope `maxPages` o, en modo incremental (`since`), llegar a una publicación
+   * más vieja que `since`.
+   *
+   * Por qué se corta del lado nuestro y no con el parámetro `since` de la Graph API: ese parámetro
+   * (paginación por tiempo) está documentado para el borde de medios de Instagram, pero no pudimos
+   * verificar que `graph.instagram.com` (inicio de sesión de Instagram) lo respete y no hay cuenta de
+   * Meta para probarlo. Cortar al ver una publicación vieja funciona igual en ambos casos y se prueba
+   * con el servidor simulado.
    */
   async fetchRecentMedia(opts?: FetchMediaOptions): Promise<InstagramMedia[]> {
     const token = this.requireToken();
     const limit = opts?.limit ?? 50;
     const maxPages = this.opts.maxPages ?? DEFAULT_MAX_PAGES;
+    const sinceMs = opts?.since ? new Date(opts.since).getTime() : null;
     const out: InstagramMedia[] = [];
+    let oldestMs: number | null = null;
+    let reachedCutoff = false;
+    let stoppedByLimit = false;
 
     let url: string | null =
       `${GRAPH_BASE}/me/media?fields=${MEDIA_FIELDS}&limit=${PAGE_SIZE}` +
       `&access_token=${encodeURIComponent(token)}`;
-    for (let page = 0; url && page < maxPages && out.length < limit; page++) {
+    for (let page = 0; url && page < maxPages && !stoppedByLimit && !reachedCutoff; page++) {
       const json: { data?: RawMedia[]; paging?: { next?: string } } = await callGraph(
         this.fetchFn,
         url,
@@ -168,13 +181,38 @@ export class GraphInstagramClient implements InstagramClient {
       for (const raw of json.data ?? []) {
         const media = toMedia(raw);
         if (!media) continue;
+        const ms = Date.parse(media.timestamp);
+        if (oldestMs === null || ms < oldestMs) oldestMs = ms;
+        if (sinceMs !== null && ms < sinceMs) {
+          // Ya es de lo que se trajo antes: no entra y no hace falta pedir más páginas.
+          reachedCutoff = true;
+          continue;
+        }
         if (opts?.hashtag && !captionHasHashtag(media.caption, opts.hashtag)) continue;
         out.push(media);
-        if (out.length >= limit) break;
+        if (out.length >= limit) {
+          stoppedByLimit = true;
+          break;
+        }
       }
       url = safeNext(json.paging?.next);
     }
+    opts?.onCoverage?.({
+      // Completo = se llegó al final del listado o al corte; no si frenó el límite o el tope de páginas.
+      complete: !stoppedByLimit && (reachedCutoff || url === null),
+      oldestScanned: oldestMs === null ? null : new Date(oldestMs).toISOString(),
+    });
     return out;
+  }
+
+  async getAccountId(): Promise<string> {
+    const token = this.requireToken();
+    const json = await callGraph<{ id?: string }>(
+      this.fetchFn,
+      `${GRAPH_BASE}/me?fields=id&access_token=${encodeURIComponent(token)}`,
+    );
+    if (!json.id) throw new InstagramApiError('Instagram no informó la cuenta conectada.');
+    return String(json.id);
   }
 
   async testConnection(): Promise<ConnectionTest> {

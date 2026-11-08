@@ -26,14 +26,15 @@ describe('Smoke: sitio público y panel (placeholders)', () => {
         }
       });
 
-      it('el menú público separa Ingreso e Inscripciones y tiene Administración', () => {
+      it('el menú público separa Ingreso e Inscripciones y no muestra Administración sin sesión', () => {
         cy.visit('/');
         if (vp.width < 1024) cy.get('button[aria-controls="mobile-menu"]').click();
         const nav = vp.width < 1024 ? '#mobile-menu' : 'nav[aria-label="Principal"]';
         cy.get(nav).within(() => {
           cy.contains('a', 'Ingreso').should('be.visible');
           cy.contains('a', 'Inscripciones').should('be.visible');
-          cy.contains('a', 'Administración').should('be.visible');
+          cy.contains('a', 'Iniciar sesión').should('be.visible');
+          cy.contains('a', 'Administración').should('not.exist');
         });
       });
 

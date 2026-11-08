@@ -42,6 +42,7 @@ export interface InstagramView {
   statusLabel: string;
   demoMode: boolean;
   mode: 'demo' | 'real';
+  connectionMethod: 'oauth' | 'token';
   source: 'panel' | 'env' | 'none';
   appIdMasked: string | null;
   appSecretMasked: string | null;
@@ -52,6 +53,9 @@ export interface InstagramView {
   tokenExpiresAt: string | null;
   lastSyncAt: string | null;
   lastSyncOk: boolean | null;
+  /** Último fetch EXITOSO y su tipo (ADR-038). */
+  lastFetchAt?: string | null;
+  lastSyncMode?: 'incremental' | 'full' | null;
   lastError: string | null;
   hashtag: string | null;
   redirectUri: string;
@@ -73,6 +77,8 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
   const [appSecret, setAppSecret] = useState('');
   const [hashtag, setHashtag] = useState<string | null>(null);
   const [token, setToken] = useState('');
+  // Método elegido en pantalla (null = el guardado). Cambiarlo no toca nada hasta guardar.
+  const [methodChoice, setMethodChoice] = useState<'oauth' | 'token' | null>(null);
   const [replaceSecret, setReplaceSecret] = useState(false);
   const [replaceId, setReplaceId] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -83,6 +89,8 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
   const [disconnectOpen, setDisconnectOpen] = useState(false);
 
   const v = view.data;
+  const savedMethod = v?.connectionMethod ?? 'oauth';
+  const method = methodChoice ?? savedMethod;
   const hasId = !!v?.appIdMasked;
   const hasSecret = !!v?.appSecretMasked;
 
@@ -158,16 +166,50 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
     }
   }
 
-  async function saveToken() {
-    setBusy('token');
+  /** Guarda el método "token": pegar el token alcanza (sin App ID ni Secret) y pasa a modo real. */
+  async function saveToken(e: FormEvent) {
+    e.preventDefault();
     setErrors({});
+    setFormError(null);
+    const body: Record<string, unknown> = { connectionMethod: 'token' };
+    if (token.trim()) body.accessToken = token.trim();
+    const tag = hashtag ?? v?.hashtag ?? '';
+    if (hashtag !== null && tag.trim() !== (v?.hashtag ?? '')) body.hashtag = tag.trim();
+    // Cambiar de OAuth a token (o no tener token todavía) exige pegar uno.
+    if (!token.trim() && (savedMethod !== 'token' || !v?.hasAccessToken)) {
+      setErrors({ accessToken: ['Pegá el token de acceso.'] });
+      return;
+    }
+    if (!token.trim() && Object.keys(body).length === 1) {
+      setFormError('No hay cambios para guardar.');
+      return;
+    }
+    setBusy('token');
     try {
-      await api.put('/integrations/instagram', { accessToken: token.trim() });
+      await api.put('/integrations/instagram', body);
       setToken('');
-      toast({ tone: 'success', title: 'Token guardado.' });
+      setHashtag(null);
+      setMethodChoice(null);
+      toast({ tone: 'success', title: 'Instagram configurado con el token.' });
       view.reload();
     } catch (err) {
       setErrors(fieldErrors(err));
+      setFormError(errorText(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Cambia el método guardado (descarta lo conectado con el otro método). */
+  async function switchToOauth() {
+    setBusy('token');
+    setFormError(null);
+    try {
+      await api.put('/integrations/instagram', { connectionMethod: 'oauth' });
+      setMethodChoice(null);
+      toast({ tone: 'success', title: 'Ahora se conecta con inicio de sesión de Meta.' });
+      view.reload();
+    } catch (err) {
       setFormError(errorText(err));
     } finally {
       setBusy(null);
@@ -226,8 +268,9 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
               role="status"
               className="rounded-md border border-warning-strong bg-warning-back px-3 py-2 text-sm text-warning-strong"
             >
-              Modo demostración: el sitio funciona con publicaciones de ejemplo. Cargá las
-              credenciales de tu app de Meta para conectar la cuenta real del instituto.
+              Modo demostración: el sitio funciona con publicaciones de ejemplo. Elegí cómo conectar
+              la cuenta real del instituto: con el inicio de sesión de Meta o pegando un token de
+              acceso.
             </p>
           )}
           {v.lastError && (
@@ -239,7 +282,7 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
             </p>
           )}
 
-          <dl className="grid gap-3 text-sm sm:grid-cols-3">
+          <dl className="grid gap-3 text-sm sm:grid-cols-4">
             <Info label="Cuenta conectada" value={v.username ? `@${v.username}` : '—'} />
             <Info
               label="El token vence"
@@ -253,139 +296,222 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
                   : '—'
               }
             />
+            <Info
+              label="Último fetch exitoso"
+              value={
+                v.lastFetchAt
+                  ? `${formatDateTimeAR(v.lastFetchAt)} (${v.lastSyncMode === 'full' ? 'completo' : 'incremental'})`
+                  : '—'
+              }
+            />
           </dl>
 
-          <div className="flex flex-col gap-2 rounded-lg border border-accent-2 bg-base p-4">
-            <p className="text-sm font-semibold text-accent-3">
-              Dirección de redirección (registrala en tu app de Meta)
-            </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <code
-                data-testid="redirect-uri"
-                className="flex-1 break-all rounded-md border border-accent-2 bg-surface px-3 py-2 font-mono text-sm text-accent-3"
-              >
-                {v.redirectUri}
-              </code>
-              <Button variant="secondary" onClick={() => copy(v.redirectUri)}>
-                <Copy className="h-4 w-4" aria-hidden="true" />
-                Copiar
-              </Button>
-            </div>
-            <p className="text-xs text-font-strong">
-              Permisos requeridos: <strong>{v.scopes.join(', ')}</strong>
-            </p>
-          </div>
-
-          <form
-            onSubmit={save}
-            className="flex flex-col gap-4"
-            noValidate
-            aria-label="Credenciales de Instagram"
-          >
-            <div className="grid gap-4 md:grid-cols-2">
-              <SecretField
-                label="App ID"
-                masked={hasId ? v.appIdMasked : null}
-                replacing={replaceId}
-                onReplace={() => setReplaceId(true)}
-                value={appId}
-                onChange={setAppId}
-                error={errors.appId}
-                type="text"
+          <fieldset className="flex flex-col gap-2" data-testid="ig-method">
+            <legend className="mb-1 text-sm font-semibold text-accent-3">
+              ¿Cómo querés conectar la cuenta?
+            </legend>
+            <div className="grid gap-3 md:grid-cols-2">
+              <MethodOption
+                value="oauth"
+                checked={method === 'oauth'}
+                onSelect={() => setMethodChoice('oauth')}
+                title="Inicio de sesión de Meta (OAuth)"
+                description="Usás el App ID y el App Secret de tu app de Meta; Meta pide permiso y vuelve al sitio. Requiere una dirección pública con HTTPS."
               />
-              <SecretField
-                label="App Secret"
-                masked={hasSecret ? v.appSecretMasked : null}
-                replacing={replaceSecret}
-                onReplace={() => setReplaceSecret(true)}
-                value={appSecret}
-                onChange={setAppSecret}
-                error={errors.appSecret}
-                type="password"
-                hint="Se guarda cifrado y no se vuelve a mostrar."
+              <MethodOption
+                value="token"
+                checked={method === 'token'}
+                onSelect={() => setMethodChoice('token')}
+                title="Token de acceso"
+                description="Pegás un token generado en el panel de Meta. No hacen falta App ID ni App Secret y sirve también en un equipo local."
               />
             </div>
-            <Input
-              label="Hashtag de selección"
-              hint="Solo se detectan publicaciones que lo incluyan. Ejemplo: #ifts2"
-              value={hashtag ?? v.hashtag ?? ''}
-              onChange={(e) => setHashtag(e.target.value)}
-              error={errors.hashtag}
-              autoComplete="off"
-            />
-            {formError && (
-              <p
-                role="alert"
-                className="rounded-md bg-danger-back px-3 py-2 text-sm text-danger-text"
-              >
-                {formError}
+            {method !== savedMethod && (
+              <p role="status" className="text-xs text-font-strong">
+                Hoy está configurado con {savedMethod === 'token' ? 'token' : 'OAuth'}. Al guardar
+                con el otro método se descarta la conexión actual.
               </p>
             )}
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" loading={saving}>
-                Guardar credenciales
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={connect}
-                loading={busy === 'connect'}
-                disabled={v.status === 'demo'}
-              >
-                <Link2 className="h-4 w-4" aria-hidden="true" />
-                Conectar con Instagram
-              </Button>
-              <Button variant="secondary" onClick={test} loading={busy === 'test'}>
-                <PlugZap className="h-4 w-4" aria-hidden="true" />
-                Probar conexión
-              </Button>
-              {v.status !== 'demo' && (
-                <Button variant="ghost" onClick={() => setDisconnectOpen(true)}>
-                  <Unplug className="h-4 w-4" aria-hidden="true" />
-                  Desconectar
+          </fieldset>
+
+          {method === 'oauth' && savedMethod === 'token' ? (
+            <div className="flex flex-col gap-3 rounded-lg border border-accent-2 bg-base p-4">
+              <p className="text-sm text-font-strong">
+                La cuenta está conectada con un token. Para usar el inicio de sesión de Meta hay que
+                cambiar el método: se descarta el token actual y se vuelve a modo demostración hasta
+                conectar.
+              </p>
+              <div>
+                <Button variant="secondary" onClick={switchToOauth} loading={busy === 'token'}>
+                  Cambiar a OAuth
                 </Button>
-              )}
+              </div>
             </div>
-            {v.status === 'demo' && (
-              <p className="text-xs text-font-strong">
-                Guardá primero el App ID y el App Secret para poder conectar la cuenta.
-              </p>
-            )}
-            {probe && (
-              <p role="status" data-testid="ig-probe" className="text-sm text-accent-3">
-                {probe}
-              </p>
-            )}
-          </form>
+          ) : method === 'oauth' ? (
+            <>
+              <div className="flex flex-col gap-2 rounded-lg border border-accent-2 bg-base p-4">
+                <p className="text-sm font-semibold text-accent-3">
+                  Dirección de redirección (registrala en tu app de Meta)
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <code
+                    data-testid="redirect-uri"
+                    className="flex-1 break-all rounded-md border border-accent-2 bg-surface px-3 py-2 font-mono text-sm text-accent-3"
+                  >
+                    {v.redirectUri}
+                  </code>
+                  <Button variant="secondary" onClick={() => copy(v.redirectUri)}>
+                    <Copy className="h-4 w-4" aria-hidden="true" />
+                    Copiar
+                  </Button>
+                </div>
+                <p className="text-xs text-font-strong">
+                  Permisos requeridos: <strong>{v.scopes.join(', ')}</strong>
+                </p>
+              </div>
 
-          <details className="rounded-lg border border-accent-2 p-4">
-            <summary className="cursor-pointer text-sm font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus">
-              Alternativa: pegar un token de acceso
-            </summary>
-            <div className="mt-3 flex flex-col gap-3">
+              <form
+                onSubmit={save}
+                className="flex flex-col gap-4"
+                noValidate
+                aria-label="Credenciales de Instagram"
+              >
+                <div className="grid gap-4 md:grid-cols-2">
+                  <SecretField
+                    label="App ID"
+                    masked={hasId ? v.appIdMasked : null}
+                    replacing={replaceId}
+                    onReplace={() => setReplaceId(true)}
+                    value={appId}
+                    onChange={setAppId}
+                    error={errors.appId}
+                    type="text"
+                  />
+                  <SecretField
+                    label="App Secret"
+                    masked={hasSecret ? v.appSecretMasked : null}
+                    replacing={replaceSecret}
+                    onReplace={() => setReplaceSecret(true)}
+                    value={appSecret}
+                    onChange={setAppSecret}
+                    error={errors.appSecret}
+                    type="password"
+                    hint="Se guarda cifrado y no se vuelve a mostrar."
+                  />
+                </div>
+                <Input
+                  label="Hashtag de selección"
+                  hint="Solo se detectan publicaciones que lo incluyan. Ejemplo: #ifts2"
+                  value={hashtag ?? v.hashtag ?? ''}
+                  onChange={(e) => setHashtag(e.target.value)}
+                  error={errors.hashtag}
+                  autoComplete="off"
+                />
+                {formError && (
+                  <p
+                    role="alert"
+                    className="rounded-md bg-danger-back px-3 py-2 text-sm text-danger-text"
+                  >
+                    {formError}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Button type="submit" loading={saving}>
+                    Guardar credenciales
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={connect}
+                    loading={busy === 'connect'}
+                    disabled={v.status === 'demo'}
+                  >
+                    <Link2 className="h-4 w-4" aria-hidden="true" />
+                    Conectar con Instagram
+                  </Button>
+                  <Button variant="secondary" onClick={test} loading={busy === 'test'}>
+                    <PlugZap className="h-4 w-4" aria-hidden="true" />
+                    Probar conexión
+                  </Button>
+                  {v.status !== 'demo' && (
+                    <Button variant="ghost" onClick={() => setDisconnectOpen(true)}>
+                      <Unplug className="h-4 w-4" aria-hidden="true" />
+                      Desconectar
+                    </Button>
+                  )}
+                </div>
+                {v.status === 'demo' && (
+                  <p className="text-xs text-font-strong">
+                    Guardá primero el App ID y el App Secret para poder conectar la cuenta.
+                  </p>
+                )}
+                {probe && (
+                  <p role="status" data-testid="ig-probe" className="text-sm text-accent-3">
+                    {probe}
+                  </p>
+                )}
+              </form>
+            </>
+          ) : null}
+          {method === 'token' && (
+            <form
+              onSubmit={saveToken}
+              className="flex flex-col gap-4"
+              noValidate
+              aria-label="Token de acceso de Instagram"
+            >
               <p className="text-sm text-font-strong">{INSTAGRAM_SETUP_GUIDE.manualTokenNote}</p>
-              {v.hasAccessToken && (
-                <p className="text-xs text-font-strong">Token guardado: {v.accessTokenMasked}</p>
+              {savedMethod === 'token' && v.hasAccessToken && (
+                <p className="text-xs text-font-strong">
+                  Token guardado: {v.accessTokenMasked}. Pegá uno nuevo solo si querés reemplazarlo.
+                </p>
               )}
               <Input
                 label="Token de acceso"
                 type="password"
                 autoComplete="off"
+                hint="Se guarda cifrado y no se vuelve a mostrar."
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 error={errors.accessToken}
               />
-              <div>
-                <Button
-                  variant="secondary"
-                  onClick={saveToken}
-                  loading={busy === 'token'}
-                  disabled={token.trim().length < 10}
+              <Input
+                label="Hashtag de selección"
+                hint="Solo se detectan publicaciones que lo incluyan. Ejemplo: #ifts2"
+                value={hashtag ?? v.hashtag ?? ''}
+                onChange={(e) => setHashtag(e.target.value)}
+                error={errors.hashtag}
+                autoComplete="off"
+              />
+              {formError && (
+                <p
+                  role="alert"
+                  className="rounded-md bg-danger-back px-3 py-2 text-sm text-danger-text"
                 >
-                  Guardar token
+                  {formError}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" loading={busy === 'token'}>
+                  Guardar y conectar
                 </Button>
+                <Button variant="secondary" onClick={test} loading={busy === 'test'}>
+                  <PlugZap className="h-4 w-4" aria-hidden="true" />
+                  Probar conexión
+                </Button>
+                {v.status !== 'demo' && (
+                  <Button variant="ghost" onClick={() => setDisconnectOpen(true)}>
+                    <Unplug className="h-4 w-4" aria-hidden="true" />
+                    Desconectar
+                  </Button>
+                )}
               </div>
-            </div>
-          </details>
+              {probe && (
+                <p role="status" data-testid="ig-probe" className="text-sm text-accent-3">
+                  {probe}
+                </p>
+              )}
+            </form>
+          )}
 
           <details className="rounded-lg border border-accent-2 p-4" data-testid="ig-guide">
             <summary className="cursor-pointer text-sm font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus">
@@ -506,5 +632,54 @@ function SecretField({
       error={error}
       hint={hint}
     />
+  );
+}
+
+/**
+ * Opción de método de conexión: radio nativo (teclado y lectores de pantalla) con aspecto de tarjeta.
+ * La etiqueta del radio es solo el título; la descripción va aparte y se asocia con aria-describedby
+ * (así una etiqueta no repite textos como "App ID" que pertenecen a los campos del formulario).
+ */
+function MethodOption({
+  value,
+  checked,
+  onSelect,
+  title,
+  description,
+}: {
+  /** Identifica la opción y arma los ids (fijos: dos opciones por pantalla). */
+  value: string;
+  checked: boolean;
+  onSelect: () => void;
+  title: string;
+  description: string;
+}) {
+  const id = `ig-method-${value}`;
+  return (
+    <div
+      onClick={onSelect}
+      className={
+        'flex cursor-pointer gap-3 rounded-lg border p-4 focus-within:shadow-focus ' +
+        (checked ? 'border-accent bg-base' : 'border-accent-2 bg-surface hover:bg-base')
+      }
+    >
+      <input
+        id={id}
+        type="radio"
+        name="ig-method"
+        checked={checked}
+        onChange={onSelect}
+        aria-describedby={`${id}-desc`}
+        className="mt-1 h-4 w-4 shrink-0 accent-primary-strong"
+      />
+      <span className="flex flex-col gap-1">
+        <label htmlFor={id} className="cursor-pointer text-sm font-semibold text-accent-3">
+          {title}
+        </label>
+        <span id={`${id}-desc`} className="text-xs text-font-strong">
+          {description}
+        </span>
+      </span>
+    </div>
   );
 }

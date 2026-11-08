@@ -6,6 +6,8 @@
  *   GET /public/publications/:id     detalle
  *   GET /public/students             ciclo público, horarios, llamados, avisos y enlaces
  *   GET /public/content/:page        secciones de institucional | carrera | ingreso
+ *   GET /public/gallery?area=        diapositivas del carrusel de Estudiantes o La carrera (RF09)
+ *   GET /public/teachers             plantel docente visible (RF10)
  *   GET /public/settings             datos institucionales (cabecera y pie, ADR-022)
  *
  * Garantías:
@@ -23,10 +25,13 @@ import type { Prisma } from '@prisma/client';
 import {
   CONTENT_PAGES,
   idParam,
+  publicGalleryQuery,
   publicPublicationsQuery,
   publicStudentsQuery,
   type ContentPage,
   type PublicContentDto,
+  type PublicGalleryDto,
+  type PublicTeachersDto,
   type PublicHomeDto,
   type PublicPublicationDetailDto,
   type PublicPublicationsDto,
@@ -37,6 +42,8 @@ import { errors } from '../../infra/errors';
 import { sanitizeMarkdown } from '../../lib/markdown';
 import { readRawSettings, asBool, toPublicSettingsDto } from '../../lib/settings';
 import { valid, validate } from '../../middleware/validate';
+import { listPublicGallery } from '../gallery/gallery.service';
+import { listPublicTeachers } from '../teachers/teachers.service';
 import {
   currentYearBA,
   examCallInclude,
@@ -121,7 +128,9 @@ router.get('/home', async (req, res) => {
     ),
     highlightedExamCalls: term
       ? await Promise.all(
-          onlyVisibleExamCalls(calls, term).map((c) => toPublicExamCall(storage, c, now)),
+          onlyVisibleExamCalls(calls, term).map((c) =>
+            toPublicExamCall(storage, c, now, asBool(settings.exam_enrollment_open)),
+          ),
         )
       : [],
   };
@@ -286,7 +295,9 @@ router.get('/students', validate({ query: publicStudentsQuery }), async (req, re
       : [],
     examCalls: term
       ? await Promise.all(
-          onlyVisibleExamCalls(calls, term).map((c) => toPublicExamCall(storage, c, now)),
+          onlyVisibleExamCalls(calls, term).map((c) =>
+            toPublicExamCall(storage, c, now, asBool(settings.exam_enrollment_open)),
+          ),
         )
       : [],
     notices: await Promise.all(
@@ -318,6 +329,23 @@ router.get('/content/:page', async (req, res) => {
       order: s.order,
     })),
   };
+  cache(res, CACHE_STATIC).json(body);
+});
+
+// ---------------------------------------------------------------------------
+// GET /public/gallery?area=STUDENTS|CAREER — diapositivas del carrusel (RF09, ADR-036)
+// ---------------------------------------------------------------------------
+router.get('/gallery', validate({ query: publicGalleryQuery }), async (req, res) => {
+  const { area } = valid<z.infer<typeof publicGalleryQuery>>(req, 'query');
+  const body: PublicGalleryDto = { area, items: await listPublicGallery(req.ctx, area) };
+  cache(res, CACHE_STATIC).json(body);
+});
+
+// ---------------------------------------------------------------------------
+// GET /public/teachers — plantel docente visible (RF10, US-29). La baja lógica (visible=false) las saca.
+// ---------------------------------------------------------------------------
+router.get('/teachers', async (req, res) => {
+  const body: PublicTeachersDto = { items: await listPublicTeachers(req.ctx) };
   cache(res, CACHE_STATIC).json(body);
 });
 

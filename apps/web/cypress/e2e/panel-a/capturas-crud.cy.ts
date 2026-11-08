@@ -126,7 +126,10 @@ describe('CRUD con la interfaz real · 1440px', () => {
     cy.captura('crud-doc-1-crear');
     cy.contains('[role="dialog"] button', 'Guardar documento').click();
 
-    // R · Leer (búsqueda y detalle)
+    // R · Leer (búsqueda y detalle). Se espera a que cierre el diálogo y termine de recargar la lista:
+    // si no, el campo de búsqueda se vuelve a montar mientras Cypress escribe (error "detached").
+    cy.get('[role="dialog"]').should('not.exist');
+    cy.get('[role="status"][aria-busy="true"]').should('not.exist');
     field('Buscar').type(title);
     cy.get('[data-testid="doc-row"]').filter(':visible').should('have.length', 1);
     cy.captura('crud-doc-2-leer');
@@ -147,6 +150,8 @@ describe('CRUD con la interfaz real · 1440px', () => {
 
     // D · Eliminar definitivamente (solo archivados y sin referencias)
     cy.reload();
+    cy.contains('h1', 'Archivo y documentación histórica').should('be.visible');
+    cy.get('[role="status"][aria-busy="true"]').should('not.exist');
     field('Buscar').type(title);
     cy.get('[data-testid="doc-row"]').filter(':visible').contains('button', 'Ver detalle').click();
     cy.contains('[role="dialog"] button', 'Eliminar definitivamente').click();
@@ -160,7 +165,7 @@ describe('CRUD con la interfaz real · 1440px', () => {
     const email = `crud.${Date.now().toString(36)}@ifts2.local`;
     cy.loginAs('admin');
     cy.visit('/panel/configuracion');
-    cy.contains('button', 'Administrar usuarios y roles').click();
+    cy.contains('button', 'Gestionar usuarios').click();
 
     // C · Crear: campos obligatorios y correo duplicado
     cy.get('[role="dialog"]').within(() => {
@@ -179,15 +184,20 @@ describe('CRUD con la interfaz real · 1440px', () => {
     });
     cy.captura('crud-usr-2-leer-y-duplicado');
 
-    // U · Actualizar el rol
-    cy.get('[role="dialog"]')
-      .contains('[data-testid="user-row"]', email)
-      .within(() => {
-        cy.contains('label', 'Rol de')
-          .invoke('attr', 'for')
-          .then((id) => cy.get(`[id="${id}"]`).click());
-      });
-    cy.get('[role="option"]').contains('Comunicación').click();
+    // U · Actualizar el rol: formulario "Cambiar rol" y confirmación (no se guarda al elegir).
+    cy.contains('[data-testid="user-row"]', email).contains('button', 'Cambiar rol').click();
+    cy.contains('[role="dialog"]', 'Rol actual').within(() => {
+      cy.contains('label', 'Nuevo rol')
+        .invoke('attr', 'for')
+        .then((id) => cy.get(`[id="${id}"]`).click());
+    });
+    // Lista de roles con scroll: se elige con el teclado (comienzo del nombre y Enter).
+    cy.get('[role="listbox"]').should('be.visible');
+    cy.focused().type('Comunic');
+    cy.focused().should('contain', 'Comunicación').type('{enter}');
+    cy.contains('[role="dialog"]', 'Rol actual').contains('button', 'Guardar').click();
+    cy.get('[role="alertdialog"]').should('contain', '¿Cambiar el rol?');
+    cy.get('[role="alertdialog"]').contains('button', 'Cambiar rol').click();
     cy.contains('[data-testid="user-row"]', email).contains('Comunicación');
     cy.captura('crud-usr-3-actualizar-rol');
 

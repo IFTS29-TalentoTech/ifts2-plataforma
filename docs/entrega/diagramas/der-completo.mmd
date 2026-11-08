@@ -3,6 +3,7 @@
 erDiagram
   User {
     String id PK
+    String roleId FK
   }
   Session {
     String id PK
@@ -43,6 +44,12 @@ erDiagram
     String id PK
     String termId FK
     String documentId FK
+  }
+  GalleryItem {
+    String id PK
+  }
+  Teacher {
+    String id PK
   }
   User ||--o{ Session : "userId"
   Category |o--o{ Publication : "categoryId"

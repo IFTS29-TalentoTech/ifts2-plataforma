@@ -14,9 +14,9 @@ Prioridad: **M** = Debe · **S** = Debería · **C** = Podría. Origen: **Negoci
 | RF06 | Mostrar solo horarios y mesas del ciclo público vigente; calendario académico y mesas cargados por archivo, con casilla para destacar eventos próximos | M | Negocio | 04, 10, 12 |
 | RF07 | Accesos directos a SIU Guaraní, Aula virtual, Mi Argentina y Tutoría | M | Negocio | 04 |
 | RF08 | Formulario de contacto a correo institucional | S | Negocio | sin diseño |
-| RF09 | Galería con descripción y categoría | C | Negocio | sin diseño |
-| RF10 | Plantel docente y materias a cargo | S | Negocio | 02 (parcial) |
-| RF11 | Rol **Superadministrador** que crea, edita y elimina roles y define qué permisos tiene cada uno; los usuarios reciben un rol | M | Negocio | 12 (sin Figma: se arma con componentes existentes) |
+| RF09 | Galería con descripción y categoría. **Implementado (ADR-036):** carrusel editable con foto, título, descripción, texto alternativo y categoría en Estudiantes y La carrera; Estudiantes filtra por categoría | C | Negocio | 03, 04 (carrusel) |
+| RF10 | Plantel docente y materias a cargo. **Implementado (ADR-037):** alta, edición, orden, baja lógica (ocultar) y eliminación manual solo de personas ocultas; sección en Institucional | S | Negocio | 02 (parcial; sin diseño del plantel) |
+| RF11 | Rol **Superadministrador** que crea, edita y elimina roles y define qué permisos tiene cada uno; los usuarios reciben un rol. Son cuatro roles de sistema iniciales: SUPERADMIN, ADMIN, BEDELIA y EDITOR | M | Negocio | 12 (sin Figma: se arma con componentes existentes) |
 
 ## No funcionales
 
@@ -29,8 +29,8 @@ Prioridad: **M** = Debe · **S** = Debería · **C** = Podría. Origen: **Negoci
 | RNF05 | Rendimiento con alto volumen de imágenes | M | Sistema | Lighthouse móvil Rendimiento ≥ 80; imágenes comprimidas y con CDN |
 | RNF06 | Panel protegido por autenticación y permisos por rol | M | Sistema | Pruebas de API 401/403 |
 | RNF07 | Accesibilidad WCAG 2.2 AA en el sitio público y en el panel | M | Sistema | axe automático + Lighthouse Accesibilidad ≥ 90 |
-| RNF09 | Capacidad: soportar 300 a 400 usuarios concurrentes en picos (inscripciones y mesas) sin caída del sitio público | M | Sistema | Prueba de carga con k6 sobre el sitio público (400 usuarios virtuales) y caché de páginas |
 | RNF08 | Protección de datos personales (Ley 25.326) en contacto e imágenes de estudiantes | M | Sistema | Aviso de uso de datos; consentimiento; datos mínimos |
+| RNF09 | Capacidad: soportar 300 a 400 usuarios concurrentes en picos (inscripciones y mesas) sin caída del sitio público | M | Sistema | Prueba de carga con autocannon (`pnpm load`) sobre el sitio público (400 usuarios virtuales) y caché de páginas (ver nota) |
 
 ## Criterios de aceptación (Gherkin) de los requerimientos Must
 
@@ -126,7 +126,7 @@ Dado un cambio de permisos de un rol
 Cuando un usuario de ese rol hace su siguiente pedido
 Entonces se aplican los permisos nuevos, sin que tenga que volver a iniciar sesión
 ```
-Reglas (**confirmadas con el cliente el 06/11/2026**): el catálogo de permisos (acciones como `notices:manage`) está fijo en el código y los **roles** son datos que se configuran. **Todos los roles, incluidos ADMIN, BEDELIA y EDITOR, tienen exactamente los permisos que el Superadministrador tilda en la pantalla de roles**; la matriz de `04-api.md` es solo el punto de partida de la semilla. SUPERADMIN es del sistema, no se edita ni se elimina y siempre tiene todos los permisos. El permiso `roles:manage` está reservado a SUPERADMIN: no aparece entre las casillas ni se puede guardar en otro rol. Crean usuarios SUPERADMIN y ADMIN; un ADMIN asigna solo roles cuyos permisos incluye (los de otros ADMIN entre ellos) y nunca SUPERADMIN.
+Reglas (**confirmadas con el cliente el 06/11/2026**): el catálogo de permisos (acciones como `notices:manage`) está fijo en el código y los **roles** son datos que se configuran. **Todos los roles, incluidos ADMIN, BEDELIA y EDITOR, tienen exactamente los permisos que el Superadministrador tilda en la pantalla de roles**; la matriz de `04-api.md` es solo el punto de partida de la semilla. SUPERADMIN es del sistema, no se edita ni se elimina (409) y siempre tiene todos los permisos. **Los roles de sistema ADMIN, BEDELIA y EDITOR sí se pueden eliminar** (decisión del equipo del 06/11/2026), con la regla general de eliminación: manual, con confirmación, auditada y con 409 si tienen usuarios asignados. El permiso `roles:manage` está reservado a SUPERADMIN: no aparece entre las casillas ni se puede guardar en otro rol. Crean usuarios SUPERADMIN y ADMIN; un ADMIN asigna solo roles cuyos permisos incluye (los de otros ADMIN entre ellos) y nunca SUPERADMIN.
 
 **RF07 · Enlaces**
 ```
@@ -162,6 +162,8 @@ Dado un llamado a examen o un aviso con la casilla "destacar" marcada
 Cuando un visitante entra a Inicio o a Estudiantes
 Entonces el elemento aparece resaltado como próximo evento hasta su fecha
 ```
+
+**Nota sobre RNF09 (herramienta de carga).** La planificación mencionaba k6. Se usó **autocannon** (`pnpm load`) porque es un paquete de Node que se instala con `pnpm install`, corre igual en Windows, macOS y Linux sin binarios aparte y se integra con los scripts del repo (levanta la pila y vuelca la evidencia en `docs/evidencias/`). El objetivo no cambia: 400 usuarios virtuales, sin 5xx y p95 < 1,5 s con el uso real esperado.
 
 ## Reglas de negocio
 

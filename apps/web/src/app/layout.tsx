@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { NavigationProgress } from '@/components/layout/navigation-progress';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import { ToastProvider } from '@/components/ui/toast';
 import { getSiteInfo } from '@/lib/site';
@@ -21,7 +22,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="es-AR" className={`${fontSans.variable} ${fontDisplay.variable}`}>
       <body>
         <ToastProvider>
-          <ConfirmProvider>{children}</ConfirmProvider>
+          <ConfirmProvider>
+            <NavigationProgress />
+            {children}
+          </ConfirmProvider>
         </ToastProvider>
       </body>
     </html>

@@ -175,6 +175,15 @@ async function copyImageToStorage(ctx: AppContext, post: SocialPost): Promise<st
 /**
  * Aprueba una publicación detectada: crea la `Publication` PUBLISHED con origen INSTAGRAM, copia la
  * imagen, marca el `SocialPost` como LINKED y audita. 409 si ya estaba vinculada (o descartada).
+ *
+ * Orden y compensación (auditoría A10):
+ * 1. Se copia la imagen ANTES de la transacción: si falla, no queda nada a medias.
+ * 2. Si la transacción falla, se borra la imagen copiada, pero SOLO si la publicación no quedó
+ *    guardada. Una confirmación ambigua (se corta la conexión al confirmar) puede haber guardado
+ *    igual: se consulta la base antes de borrar y, si no se puede verificar, se deja el archivo.
+ *    Mejor un archivo huérfano que una publicación con la portada rota.
+ * 3. Una vez confirmada, la imagen ya pertenece a la publicación: un error al armar la respuesta
+ *    (relecturas, URL firmada) nunca la borra.
  */
 export async function approvePost(
   ctx: AppContext,
@@ -208,8 +217,9 @@ export async function approvePost(
   // Primero la imagen: si falla, no queda nada a medias (ni publicación ni cambio de estado).
   const coverKey = await copyImageToStorage(ctx, post);
 
+  let created: PublicationRow;
   try {
-    const created = await ctx.prisma.$transaction(async (tx) => {
+    created = await ctx.prisma.$transaction(async (tx) => {
       const claimed = await tx.socialPost.updateMany({
         where: { id, status: 'DETECTED' },
         data: { status: 'LINKED', moderatedBy: userId, moderatedAt: new Date() },
@@ -252,17 +262,23 @@ export async function approvePost(
       });
       return publication;
     });
-    const fresh = await loadPost(ctx, id);
-    const names = await moderatorNames(ctx, [fresh]);
-    return {
-      publication: await toPublicationView(ctx.storage, created),
-      post: await toPostView(ctx, fresh, names),
-    };
   } catch (e) {
-    // La transacción falló (p. ej. 409 por carrera): no dejar una imagen huérfana en el almacenamiento.
-    await ctx.storage.remove(coverKey).catch(() => undefined);
+    // La transacción falló (p. ej. 409 por carrera): no dejar una imagen huérfana... salvo que la
+    // publicación haya quedado guardada igual (confirmación ambigua). Ante la duda, no se borra.
+    const saved = await ctx.prisma.publication
+      .count({ where: { coverUrl: coverKey } })
+      .catch(() => 1);
+    if (saved === 0) await ctx.storage.remove(coverKey).catch(() => undefined);
     throw e;
   }
+
+  // Confirmada: de acá en adelante la imagen es de la publicación y no se toca.
+  const fresh = await loadPost(ctx, id);
+  const names = await moderatorNames(ctx, [fresh]);
+  return {
+    publication: await toPublicationView(ctx.storage, created),
+    post: await toPostView(ctx, fresh, names),
+  };
 }
 
 /** Cambia de estado solo si está en el esperado (evita pisarse entre moderadores). */

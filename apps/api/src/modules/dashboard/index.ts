@@ -10,6 +10,7 @@
 import { Router } from 'express';
 import {
   EXPIRING_SOON_DAYS,
+  hasPendingConfirmation,
   isNoticeExpiringSoon,
   isNoticeVisible,
   TERM_KIND_LABELS,
@@ -43,6 +44,8 @@ async function instagramCard(ctx: AppContext) {
     status: v.status,
     ok,
     lastSyncAt: v.lastSyncAt,
+    lastFetchAt: v.lastFetchAt,
+    lastSyncMode: v.lastSyncMode,
     ...(error ? { error } : {}),
     ...(real && v.tokenExpiresAt ? { tokenExpiresAt: v.tokenExpiresAt } : {}),
     hashtag: v.hashtag,
@@ -53,30 +56,37 @@ router.get('/', requirePermission('dashboard:read'), async (req, res) => {
   const { prisma } = req.ctx;
   const now = new Date();
 
-  const [instagram, pendingPosts, activeCandidates, currentTerm, nextExam] = await Promise.all([
-    instagramCard(req.ctx),
-    prisma.socialPost.count({ where: { status: 'DETECTED' } }),
-    // Candidatos en la base (activos, ya iniciados, sin vencer); la regla final la aplican los helpers compartidos.
-    prisma.notice.findMany({
-      where: {
-        status: 'ACTIVE',
-        visibleFrom: { lte: now },
-        OR: [{ visibleUntil: null }, { visibleUntil: { gt: now } }],
-      },
-      select: { status: true, visibleFrom: true, visibleUntil: true },
-    }),
-    prisma.academicTerm.findFirst({ where: { publicCurrent: true } }),
-    prisma.examCall.findFirst({
-      where: { endsOn: { gte: now } },
-      orderBy: [{ startsOn: 'asc' }, { id: 'asc' }],
-    }),
-  ]);
+  const [instagram, pendingPosts, activeCandidates, currentTerm, nextExam, ingresoSections] =
+    await Promise.all([
+      instagramCard(req.ctx),
+      prisma.socialPost.count({ where: { status: 'DETECTED' } }),
+      // Candidatos en la base (activos, ya iniciados, sin vencer); la regla final la aplican los helpers compartidos.
+      prisma.notice.findMany({
+        where: {
+          status: 'ACTIVE',
+          visibleFrom: { lte: now },
+          OR: [{ visibleUntil: null }, { visibleUntil: { gt: now } }],
+        },
+        select: { status: true, visibleFrom: true, visibleUntil: true },
+      }),
+      prisma.academicTerm.findFirst({ where: { publicCurrent: true } }),
+      prisma.examCall.findFirst({
+        where: { endsOn: { gte: now } },
+        orderBy: [{ startsOn: 'asc' }, { id: 'asc' }],
+      }),
+      // A14: lo que realmente publica la página de Ingreso (mismas secciones que ve el público).
+      prisma.contentSection.findMany({
+        where: { page: 'ingreso', visible: true },
+        select: { title: true, body: true },
+      }),
+    ]);
 
   const visible = activeCandidates.filter((n) => isNoticeVisible(n, now));
   const expiring = visible.filter((n) => isNoticeExpiringSoon(n, now, EXPIRING_SOON_DAYS));
 
   // Ingreso: la inscripción del ciclo lectivo SIGUIENTE (en octubre se inscribe para el año que viene).
-  // No existe aún un dato propio de ingreso; se deriva del año del ciclo vigente. Ver Q de avance.md.
+  // No existe aún un dato propio de ingreso; se deriva del año del ciclo vigente (`derived: true`):
+  // la tarjeta lo presenta como ESTIMADO, no como dato institucional (A14).
   const baseYear = currentTerm?.year ?? Number(toDateStrBA(now).slice(0, 4));
 
   res.json({
@@ -105,5 +115,13 @@ router.get('/', requirePermission('dashboard:read'), async (req, res) => {
         }
       : null,
     ingresoCycle: { year: baseYear + 1, derived: true },
+    // A14: estado verificable de la página de Ingreso, en lugar de afirmar una preinscripción activa.
+    // `pendingConfirmation` = algún texto visible tiene la marca "[a confirmar ...]" (regla 10).
+    ingresoContent: {
+      visibleSections: ingresoSections.length,
+      pendingConfirmation: ingresoSections.some(
+        (s) => hasPendingConfirmation(s.title) || hasPendingConfirmation(s.body),
+      ),
+    },
   });
 });

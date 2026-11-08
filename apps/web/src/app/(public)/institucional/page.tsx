@@ -7,15 +7,18 @@
  *   está escrito acá: si el cliente agrega o cambia una sección, se refleja sin tocar código.
  * - Contacto (sin diseño en el Figma, Q60): se resuelve en esta página, ancla `#contacto`, con los
  *   componentes del kit. Ver `features/public/contact-form.tsx`.
+ * - Plantel docente (RF10, sin diseño en el Figma): sección entre las tarjetas y Contacto. Se omite
+ *   si no hay personas visibles o si la API falla (RNF03).
  */
 import { ArrowRight, Building2, Mail, MapPin, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Card } from '@/components/ui';
 import { ContactForm } from '@/features/public/contact-form';
-import { loadContent } from '@/features/public/data';
+import { loadContent, loadTeachers } from '@/features/public/data';
 import { Markdown } from '@/features/public/markdown';
 import { Container, PageHero, Section, SectionError } from '@/features/public/parts';
+import { TeachersSection } from '@/features/public/teachers-section';
 import { getSiteInfo } from '@/lib/site';
 
 export const metadata: Metadata = { title: 'Institucional' };
@@ -23,7 +26,11 @@ export const metadata: Metadata = { title: 'Institucional' };
 export const revalidate = 60;
 
 export default async function Page() {
-  const [site, content] = await Promise.all([getSiteInfo(), loadContent('institucional')]);
+  const [site, content, teachers] = await Promise.all([
+    getSiteInfo(),
+    loadContent('institucional'),
+    loadTeachers(),
+  ]);
   const sections = content.ok ? [...content.data.sections].sort((a, b) => a.order - b.order) : [];
   const [intro, ...rest] = sections;
 
@@ -89,6 +96,8 @@ export default async function Page() {
           </ul>
         ) : null}
       </Section>
+
+      <TeachersSection teachers={teachers.ok ? teachers.data.items : []} />
 
       <Section eyebrow="Escribinos" title="Contacto" id="contacto">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">

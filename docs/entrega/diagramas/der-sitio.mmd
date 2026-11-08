@@ -1,5 +1,5 @@
 %% Generado por scripts/docs/prisma-to-docs.mjs desde prisma/schema.prisma. No editar a mano.
-%% Contenido del sitio y contacto
+%% Contenido del sitio, galerías, plantel y contacto
 erDiagram
   SiteSetting {
     String key PK
@@ -23,6 +23,7 @@ erDiagram
     String group
     Int order
     Boolean visible
+    Boolean enrollment
   }
   ContactMessage {
     String id PK
@@ -34,4 +35,27 @@ erDiagram
     Boolean consent
     DateTime receivedAt
     Boolean mailSent
+  }
+  GalleryItem {
+    String id PK
+    GalleryArea area
+    Int order
+    String title
+    String caption
+    String alt
+    String category
+    String image
+    DateTime createdAt
+    DateTime updatedAt
+  }
+  Teacher {
+    String id PK
+    String name
+    String role
+    String subjects
+    String photo
+    Int order
+    Boolean visible
+    DateTime createdAt
+    DateTime updatedAt
   }

@@ -17,8 +17,9 @@ import { PrismaClient } from '@prisma/client';
 import { hash } from '@node-rs/argon2';
 import { encryptJson } from '../apps/api/src/infra/crypto';
 import { FAKE_MEDIA } from '../apps/api/src/infra/instagram/fake';
+import { userTransaction } from '../apps/api/src/modules/users/transaction';
 import { DEFAULT_ROLE_PERMISSIONS } from '../packages/shared/src/permissions';
-import { CONTENT, LINKS, SETTINGS, SYSTEM_ROLES } from './seed-data';
+import { CONTENT, DEMO_TEACHERS, GALLERY, LINKS, SETTINGS, SYSTEM_ROLES } from './seed-data';
 
 export const DEMO_PASSWORD = 'Demo-2026-ifts2';
 
@@ -39,11 +40,20 @@ type SystemKey = (typeof SYSTEM_ROLES)[number]['key'];
 /**
  * Roles del sistema (RF11). Idempotente y respetuosa: si el rol ya existe NO pisa su nombre ni sus
  * permisos (el Superadministrador pudo haberlos cambiado desde el panel); solo asegura isSystem.
- * Devuelve el id de cada rol por clave.
+ *
+ * Decisión sobre roles eliminados: ADMIN, BEDELIA y EDITOR se pueden eliminar a mano desde el panel.
+ * Para que una re-ejecución de la semilla en producción NO los resucite, en modo `prod` esos tres se
+ * crean solo en el primer arranque (cuando la tabla Role está vacía). SUPERADMIN se asegura siempre
+ * (es imprescindible). En modo `demo` se recrean siempre, porque los usuarios de demostración los
+ * necesitan. Para revertir la decisión basta con quitar la condición `firstBoot`.
+ * Devuelve el id de cada rol que existe, por clave.
  */
-async function seedRoles(): Promise<Record<SystemKey, string>> {
-  const ids = {} as Record<SystemKey, string>;
+async function seedRoles(): Promise<Partial<Record<SystemKey, string>>> {
+  const ids: Partial<Record<SystemKey, string>> = {};
+  const firstBoot = (await prisma.role.count()) === 0;
   for (const r of SYSTEM_ROLES) {
+    const exists = await prisma.role.findUnique({ where: { key: r.key } });
+    if (!exists && r.key !== 'SUPERADMIN' && mode !== 'demo' && !firstBoot) continue;
     const perms = r.key === 'SUPERADMIN' ? [] : DEFAULT_ROLE_PERMISSIONS[r.key];
     const role = await prisma.role.upsert({
       where: { key: r.key },
@@ -58,7 +68,7 @@ async function seedRoles(): Promise<Record<SystemKey, string>> {
     });
     ids[r.key] = role.id;
   }
-  log(`roles del sistema listos (${SYSTEM_ROLES.length})`);
+  log(`roles del sistema listos (${Object.keys(ids).length} de ${SYSTEM_ROLES.length})`);
   return ids;
 }
 
@@ -71,23 +81,41 @@ async function seedAdmin(superadminRoleId: string) {
       'Faltan SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD para crear el superadministrador inicial.',
     );
   }
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    log(`superadministrador ya existe (${email}); no se modifican su clave ni su rol`);
-    return existing;
-  }
-  const admin = await prisma.user.create({
-    data: {
-      email,
-      name: 'Superadministración',
-      roleId: superadminRoleId,
-      passwordHash: await hash(password),
-      // En producción el primer ingreso obliga a cambiar la clave inicial.
-      mustChangePassword: mode === 'prod',
-    },
+  // El conteo y la creación comparten el aislamiento de A02: dos semillas no pueden decidir
+  // simultáneamente que la instalación está vacía y crear dos cuentas privilegiadas.
+  const passwordHash = await hash(password);
+  return userTransaction(prisma, async (tx) => {
+    const existing = await tx.user.findUnique({ where: { email } });
+    if (existing) {
+      if (!existing.active || existing.roleId !== superadminRoleId) {
+        throw new Error(
+          'SEED_ADMIN_EMAIL debe corresponder a un SUPERADMIN activo. La semilla no reactiva ' +
+            'cuentas ni cambia roles. Consultá docs/operaciones/recuperacion-superadmin.md.',
+        );
+      }
+      log(`SUPERADMIN activo ya existe (${email}); no se modifica la cuenta`);
+      return existing;
+    }
+    if ((await tx.user.count()) !== 0) {
+      throw new Error(
+        'Ya existen usuarios: la semilla no crea otro SUPERADMIN. Configurá el correo de un ' +
+          'SUPERADMIN activo o seguí el procedimiento de recuperación en ' +
+          'docs/operaciones/recuperacion-superadmin.md.',
+      );
+    }
+    const admin = await tx.user.create({
+      data: {
+        email,
+        name: 'Superadministración',
+        roleId: superadminRoleId,
+        passwordHash,
+        // En producción el primer ingreso obliga a cambiar la clave inicial.
+        mustChangePassword: mode === 'prod',
+      },
+    });
+    log(`superadministrador creado: ${email}`);
+    return admin;
   });
-  log(`superadministrador creado: ${email}`);
-  return admin;
 }
 
 async function seedSettingsAndLinks() {
@@ -109,6 +137,27 @@ async function seedSettingsAndLinks() {
  * todavía tienen el texto provisorio de versiones anteriores de la semilla ([completar] /
  * [provisorio]), que se reemplazan por el contenido real.
  */
+/**
+ * Galerías editables (RF09, ADR-036). Idempotente y respetuosa: solo carga las diapositivas iniciales
+ * (imágenes provisorias, ADR-035) si el área NO tiene ninguna; nunca pisa lo que el instituto editó.
+ */
+async function seedGallery() {
+  // US-30: las bases que ya tenían las diapositivas provisorias reciben su categoría provisoria, pero
+  // solo las que siguen sin categoría (no se pisa lo que el instituto ya clasificó).
+  for (const g of GALLERY.filter((x) => x.category)) {
+    await prisma.galleryItem.updateMany({
+      where: { area: g.area, image: g.image, category: '' },
+      data: { category: g.category },
+    });
+  }
+  for (const area of ['STUDENTS', 'CAREER'] as const) {
+    if ((await prisma.galleryItem.count({ where: { area } })) > 0) continue;
+    const items = GALLERY.filter((g) => g.area === area);
+    await prisma.galleryItem.createMany({ data: items.map((g, order) => ({ ...g, order })) });
+    log(`galería ${area}: ${items.length} diapositivas provisorias`);
+  }
+}
+
 async function seedContent() {
   for (const s of CONTENT) {
     await prisma.contentSection.upsert({
@@ -134,7 +183,8 @@ async function demoUser(email: string, name: string, roleId: string) {
   return prisma.user.upsert({
     where: { email },
     create: { email, name, roleId, passwordHash: await hash(DEMO_PASSWORD) },
-    update: { name, roleId, active: true },
+    // Una repetición tampoco debe reactivar, elevar ni degradar cuentas de demostración.
+    update: {},
   });
 }
 
@@ -185,13 +235,352 @@ async function demoDocument(
   });
 }
 
+/**
+ * Plantel de DEMOSTRACIÓN (RF10): solo en modo demo y solo si la tabla está vacía (nunca pisa lo que
+ * cargó el instituto). Personas ficticias, ver `DEMO_TEACHERS`.
+ */
+async function seedDemoTeachers() {
+  if ((await prisma.teacher.count()) > 0) {
+    // Bases sembradas antes de tener nombres y fotos de ejemplo: se actualizan solo las filas de
+    // demostración que siguen con su nombre provisorio (nunca lo que cargó el instituto).
+    for (const [i, t] of DEMO_TEACHERS.entries()) {
+      const old = i === 5 ? 'Docente de ejemplo 6 (oculto)' : `Docente de ejemplo ${i + 1}`;
+      await prisma.teacher.updateMany({
+        where: { name: old, photo: '' },
+        data: { name: t.name, photo: t.photo },
+      });
+    }
+    return;
+  }
+  await prisma.teacher.createMany({ data: DEMO_TEACHERS.map((t, order) => ({ ...t, order })) });
+  log(`plantel de demostración: ${DEMO_TEACHERS.length} docentes ficticios (1 oculto)`);
+}
+
+/**
+ * Datos de DEMOSTRACIÓN complementarios (todos ficticios, solo modo demo): cubren cada estado y cada
+ * filtro para que en la demo se pueda ver TODO en la plataforma: publicaciones borrador, programada,
+ * pausada, vencida, de años anteriores y originadas en Instagram; avisos pausados, programados y para
+ * cada público; llamados pasados, futuros y sin publicar; mensajes en cada estado; una cuenta
+ * desactivada y movimientos de auditoría de varias personas. Idempotente: cada elemento se busca por
+ * título/asunto/acción y nunca se pisa lo que el equipo haya modificado.
+ */
+async function seedDemoExtras(c: {
+  now: number;
+  editorId: string;
+  bedeliaId: string;
+  adminId: string;
+  roles: Record<SystemKey, string>;
+  cats: Record<
+    'cEvento' | 'cAviso' | 'cInst' | 'cPracticas' | 'cMesas' | 'cUrgente',
+    { id: string }
+  >;
+  termIds: { first: string; second: string };
+  docCronogramaId: string;
+}) {
+  const { now, cats } = c;
+  const day = (offset: number) => new Date(now + offset * DAY);
+
+  // --- Publicaciones en todos los estados (RF03/RF04: la vigencia se calcula al consultar)
+  const pubExtra = async (p: {
+    title: string;
+    summary: string;
+    body?: string;
+    kind?: 'NEWS' | 'EVENT';
+    categoryId: string;
+    section?: 'HOME' | 'NEWS' | 'BOTH';
+    status: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'PAUSED';
+    visibleFrom?: Date;
+    visibleUntil?: Date;
+    eventStart?: Date;
+    eventEnd?: Date;
+    location?: string;
+    coverUrl?: string;
+    origin?: 'MANUAL' | 'INSTAGRAM';
+    socialPostId?: string;
+  }) => {
+    if (await prisma.publication.findFirst({ where: { title: p.title } })) return;
+    await prisma.publication.create({
+      data: { kind: 'NEWS', section: 'BOTH', authorId: c.editorId, ...p },
+    });
+  };
+  await pubExtra({
+    title: 'Muestra de fin de cuatrimestre',
+    summary: 'Evento programado de demostración: se publica solo cuando llega su fecha de inicio.',
+    kind: 'EVENT',
+    categoryId: cats.cEvento.id,
+    status: 'SCHEDULED',
+    visibleFrom: day(7),
+    eventStart: day(21),
+    eventEnd: day(21),
+    location: 'Sede del instituto (dato de ejemplo)',
+    coverUrl: '/img/provisorio/novedad-jornada.webp',
+  });
+  await pubExtra({
+    title: 'Taller de repostería',
+    summary: 'Publicación pausada de demostración: está guardada pero no se muestra en el sitio.',
+    categoryId: cats.cPracticas.id,
+    status: 'PAUSED',
+    visibleFrom: day(-15),
+    coverUrl: '/img/provisorio/novedad-practicas.webp',
+  });
+  await pubExtra({
+    title: 'Charla de egresados',
+    summary: 'Publicación vencida de demostración: sigue en el panel y en el archivo de Novedades.',
+    kind: 'EVENT',
+    categoryId: cats.cEvento.id,
+    status: 'PUBLISHED',
+    visibleFrom: startOfDayBA('2026-03-02'),
+    visibleUntil: endOfDayBA('2026-04-30'),
+    eventStart: startOfDayBA('2026-04-15'),
+    coverUrl: '/img/provisorio/novedad-comunidad.webp',
+  });
+  await pubExtra({
+    title: 'Apertura del ciclo lectivo 2025',
+    summary: 'Ejemplo histórico del año anterior, para probar el filtro por año.',
+    body: 'Texto de demostración. Contenido ficticio.',
+    categoryId: cats.cInst.id,
+    section: 'NEWS',
+    status: 'PUBLISHED',
+    visibleFrom: startOfDayBA('2025-03-10'),
+    visibleUntil: endOfDayBA('2025-04-10'),
+    coverUrl: '/img/provisorio/novedad-historia.webp',
+  });
+  await pubExtra({
+    title: 'Visita a un mercado gastronómico',
+    summary:
+      'Salida didáctica de ejemplo con vigencia abierta, para llenar el listado de Novedades.',
+    categoryId: cats.cPracticas.id,
+    status: 'PUBLISHED',
+    visibleFrom: day(-3),
+    coverUrl: '/img/provisorio/novedad-practicas.webp',
+  });
+
+  // --- Publicaciones de Instagram en cada estado (RF04). Solo la primera vez: el equipo puede
+  // moderar después sin que la semilla le deshaga el trabajo.
+  const firstDemo = (await prisma.auditLog.count({ where: { action: 'seed.demo' } })) === 0;
+  if (firstDemo) {
+    const linked = await prisma.socialPost.findUnique({ where: { externalId: 'fake-ig-003' } });
+    if (linked && linked.status === 'DETECTED') {
+      await prisma.socialPost.update({
+        where: { id: linked.id },
+        data: { status: 'LINKED', moderatedBy: c.editorId, moderatedAt: day(-1) },
+      });
+      await pubExtra({
+        title: 'Feliz Día del Trabajador Gastronómico',
+        summary: 'Publicación aprobada desde Instagram (demostración).',
+        categoryId: cats.cInst.id,
+        status: 'PUBLISHED',
+        visibleFrom: day(-1),
+        origin: 'INSTAGRAM',
+        socialPostId: linked.id,
+        coverUrl: '/img/provisorio/novedad-comunidad.webp',
+      });
+    }
+    await prisma.socialPost.updateMany({
+      where: { externalId: 'fake-ig-002', status: 'DETECTED' },
+      data: { status: 'DISCARDED', moderatedBy: c.editorId, moderatedAt: day(-2) },
+    });
+    // fake-ig-001 queda DETECTED: es la que se modera en vivo durante la demo.
+  }
+
+  // --- Avisos: pausado, programado y uno para cada público
+  const noticeExtra = async (n: {
+    title: string;
+    body: string;
+    categoryId: string;
+    audience: 'ALL' | 'STUDENTS' | 'ASPIRANTS' | 'GRADUATES';
+    status?: 'ACTIVE' | 'PAUSED';
+    visibleFrom: Date;
+    visibleUntil?: Date;
+    attachmentId?: string;
+  }) => {
+    if (await prisma.notice.findFirst({ where: { title: n.title } })) return;
+    await prisma.notice.create({ data: { authorId: c.bedeliaId, ...n } });
+  };
+  await noticeExtra({
+    title: 'Aviso general para toda la comunidad',
+    body: 'Aviso de demostración dirigido a todos los públicos.',
+    categoryId: cats.cAviso.id,
+    audience: 'ALL',
+    visibleFrom: day(-2),
+    visibleUntil: day(30),
+  });
+  await noticeExtra({
+    title: 'Charla informativa para aspirantes',
+    body: 'Aviso de demostración para quienes quieren ingresar a la tecnicatura. Se ve en Ingreso.',
+    categoryId: cats.cAviso.id,
+    audience: 'ASPIRANTS',
+    visibleFrom: day(-1),
+    visibleUntil: day(45),
+  });
+  await noticeExtra({
+    title: 'Encuentro de egresados',
+    body: 'Aviso de demostración para graduados.',
+    categoryId: cats.cAviso.id,
+    audience: 'GRADUATES',
+    visibleFrom: day(-1),
+    visibleUntil: day(60),
+  });
+  await noticeExtra({
+    title: 'Cambio de aula (aviso pausado)',
+    body: 'Aviso pausado de demostración: existe en el panel pero no se muestra en el sitio.',
+    categoryId: cats.cMesas.id,
+    audience: 'STUDENTS',
+    status: 'PAUSED',
+    visibleFrom: day(-4),
+    visibleUntil: day(10),
+  });
+  await noticeExtra({
+    title: 'Apertura de inscripción a cursada (programado)',
+    body: 'Aviso programado de demostración: empieza a verse en el futuro.',
+    categoryId: cats.cMesas.id,
+    audience: 'STUDENTS',
+    visibleFrom: day(12),
+    visibleUntil: day(40),
+    attachmentId: c.docCronogramaId,
+  });
+
+  // --- Llamados a examen: del ciclo anterior, próximo sin destacar y sin publicar
+  const callExtra = async (e: {
+    termId: string;
+    name: string;
+    startsOn: Date;
+    endsOn: Date;
+    published: boolean;
+    enrollmentOpen?: boolean;
+    notes?: string;
+  }) => {
+    if (await prisma.examCall.findFirst({ where: { termId: e.termId, name: e.name } })) return;
+    await prisma.examCall.create({ data: { updatedBy: c.bedeliaId, ...e } });
+  };
+  await callExtra({
+    termId: c.termIds.first,
+    name: 'Turno de Julio 2026',
+    startsOn: startOfDayBA('2026-07-06'),
+    endsOn: endOfDayBA('2026-07-17'),
+    published: true,
+    notes: 'Llamado del ciclo anterior (no se ve en el sitio; sí en el archivo del panel).',
+  });
+  await callExtra({
+    termId: c.termIds.second,
+    name: 'Turno de Febrero 2027',
+    startsOn: startOfDayBA('2027-02-08'),
+    endsOn: endOfDayBA('2027-02-19'),
+    published: true,
+  });
+  await callExtra({
+    termId: c.termIds.second,
+    name: 'Turno de Marzo 2027 (borrador)',
+    startsOn: startOfDayBA('2027-03-01'),
+    endsOn: endOfDayBA('2027-03-12'),
+    published: false,
+    notes: 'Llamado sin publicar, para mostrar el estado borrador.',
+  });
+
+  // --- Mensajes de contacto en cada estado (la bandeja tiene filtros por estado)
+  const msgExtra = async (m: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    status: 'NEW' | 'READ' | 'ANSWERED';
+    mailSent?: boolean;
+  }) => {
+    if (await prisma.contactMessage.findFirst({ where: { subject: m.subject } })) return;
+    await prisma.contactMessage.create({ data: { consent: true, ...m } });
+  };
+  await msgExtra({
+    name: 'Persona Ficticia Uno',
+    email: 'ficticia.uno@example.com',
+    subject: '¿Hasta cuándo puedo inscribirme?',
+    message: 'Mensaje de demostración sin leer.',
+    status: 'NEW',
+  });
+  await msgExtra({
+    name: 'Persona Ficticia Dos',
+    email: 'ficticia.dos@example.com',
+    subject: 'Consulta por equivalencias',
+    message: 'Mensaje de demostración ya leído.',
+    status: 'READ',
+    mailSent: true,
+  });
+  await msgExtra({
+    name: 'Persona Ficticia Tres',
+    email: 'ficticia.tres@example.com',
+    subject: 'Horarios de la comisión única',
+    message: 'Mensaje de demostración respondido.',
+    status: 'ANSWERED',
+    mailSent: true,
+  });
+
+  // --- Una cuenta desactivada (la lista de usuarios muestra el estado)
+  const inactiveEmail = 'exeditor@ifts2.local';
+  if (!(await prisma.user.findUnique({ where: { email: inactiveEmail } }))) {
+    await prisma.user.create({
+      data: {
+        email: inactiveEmail,
+        name: 'Ex editora de prueba (desactivada)',
+        roleId: c.roles.EDITOR,
+        active: false,
+        passwordHash: await hash(DEMO_PASSWORD),
+      },
+    });
+  }
+
+  // --- Enlace oculto (lo ve el panel, no el sitio)
+  if (!(await prisma.externalLink.findFirst({ where: { title: 'Enlace oculto de ejemplo' } }))) {
+    await prisma.externalLink.create({
+      data: {
+        title: 'Enlace oculto de ejemplo',
+        url: 'https://example.com/oculto',
+        description: 'Enlace de demostración con visibilidad desactivada.',
+        group: 'academico',
+        order: 99,
+        visible: false,
+      },
+    });
+  }
+
+  // --- Auditoría con movimientos de varias personas (solo una vez)
+  if ((await prisma.auditLog.count({ where: { action: 'seed.demo.muestra' } })) === 0) {
+    const entries: [string, string, string][] = [
+      [c.editorId, 'publication.publish', 'Publication'],
+      [c.editorId, 'social.link', 'SocialPost'],
+      [c.editorId, 'social.discard', 'SocialPost'],
+      [c.bedeliaId, 'notice.create', 'Notice'],
+      [c.bedeliaId, 'notice.pause', 'Notice'],
+      [c.bedeliaId, 'schedule.update', 'Schedule'],
+      [c.bedeliaId, 'examCall.create', 'ExamCall'],
+      [c.adminId, 'term.setPublic', 'AcademicTerm'],
+      [c.adminId, 'user.deactivate', 'User'],
+    ];
+    await prisma.auditLog.createMany({
+      data: entries.map(([userId, action, entity], i) => ({
+        userId,
+        action,
+        entity,
+        detail: { demo: true },
+        at: new Date(now - (i + 1) * 3 * 3_600_000),
+      })),
+    });
+    await prisma.auditLog.create({
+      data: { userId: c.adminId, action: 'seed.demo.muestra', entity: 'System' },
+    });
+  }
+  log('datos de demostración complementarios listos');
+}
+
 async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
-  await demoUser('direccion@ifts2.local', 'Rectoría / Dirección (demo)', roles.ADMIN);
-  const bedelia = await demoUser('bedelia@ifts2.local', 'Bedelía Académica (demo)', roles.BEDELIA);
-  const editor = await demoUser('editor@ifts2.local', 'Comunicación (demo)', roles.EDITOR);
+  // Nombres de PERSONA (no de rol): en la lista de usuarios el rol se muestra aparte y, si la persona
+  // se llamara igual que su rol, no se distinguiría una cosa de la otra.
+  await demoUser('direccion@ifts2.local', 'Directora de prueba', roles.ADMIN);
+  const bedelia = await demoUser('bedelia@ifts2.local', 'Bedel de prueba', roles.BEDELIA);
+  const editor = await demoUser('editor@ifts2.local', 'Editora de prueba', roles.EDITOR);
   log(
     'usuarios de demostración: admin (superadministrador) / direccion@ / bedelia@ / editor@ifts2.local',
   );
+
+  await seedDemoTeachers();
 
   // Ajustes de demostración
   await prisma.siteSetting.upsert({
@@ -448,9 +837,19 @@ async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
     categoryId: string;
     section?: 'HOME' | 'NEWS' | 'BOTH';
     status?: 'DRAFT' | 'PUBLISHED' | 'PAUSED';
+    /** Ruta de una imagen provisoria de la web (ver ADR-035); no pisa una portada ya cargada. */
+    coverUrl?: string;
   }) => {
     const found = await prisma.publication.findFirst({ where: { title: p.title } });
-    if (found) return;
+    if (found) {
+      if (!found.coverUrl && p.coverUrl) {
+        await prisma.publication.update({
+          where: { id: found.id },
+          data: { coverUrl: p.coverUrl },
+        });
+      }
+      return;
+    }
     await prisma.publication.create({
       data: {
         kind: 'NEWS',
@@ -467,29 +866,34 @@ async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
     summary: 'Actividades de las prácticas profesionalizantes. Imagen pendiente de autorización.',
     kind: 'EVENT',
     categoryId: cEvento.id,
+    coverUrl: '/img/provisorio/novedad-comunidad.webp',
   });
   await pub({
     title: 'Avisos académicos',
     summary: 'Consultá las fechas y los comunicados del cuatrimestre.',
     categoryId: cAviso.id,
     section: 'HOME',
+    coverUrl: '/img/provisorio/novedad-avisos.webp',
   });
   await pub({
     title: 'Comunidad IFTS',
     summary: 'Conocé las experiencias de nuestros estudiantes.',
     categoryId: cInst.id,
+    coverUrl: '/img/provisorio/novedad-practicas.webp',
   });
   await pub({
     title: 'Mateada Patria 2025',
     summary: 'Ejemplo histórico: la celebración del 25 de mayo con toda la comunidad.',
     categoryId: cInst.id,
     section: 'NEWS',
+    coverUrl: '/img/provisorio/novedad-historia.webp',
   });
   await pub({
     title: 'Práctica Profesional II: nueva edición',
     summary: 'Borrador de demostración sin publicar.',
     categoryId: cPracticas.id,
     status: 'DRAFT',
+    coverUrl: '/img/provisorio/novedad-jornada.webp',
   });
 
   // Un mensaje de contacto de ejemplo
@@ -504,6 +908,17 @@ async function seedDemo(adminId: string, roles: Record<SystemKey, string>) {
       },
     });
   }
+
+  await seedDemoExtras({
+    now,
+    editorId: editor.id,
+    bedeliaId: bedelia.id,
+    adminId,
+    roles,
+    cats: { cEvento, cAviso, cInst, cPracticas, cMesas, cUrgente },
+    termIds: { first: first.id, second: second.id },
+    docCronogramaId: docCronograma.id,
+  });
 
   // Integraciones: Instagram en modo demostración y sin credenciales (el cliente las carga desde el panel)
   const key = Buffer.from(process.env.APP_ENCRYPTION_KEY ?? '', 'base64');
@@ -535,10 +950,11 @@ async function main() {
     throw new Error('La semilla demo nunca se carga en producción (NODE_ENV=production).');
   }
   const roles = await seedRoles();
-  const admin = await seedAdmin(roles.SUPERADMIN);
+  const admin = await seedAdmin(roles.SUPERADMIN!);
   await seedSettingsAndLinks();
   await seedContent();
-  if (mode === 'demo') await seedDemo(admin.id, roles);
+  await seedGallery();
+  if (mode === 'demo') await seedDemo(admin.id, roles as Record<SystemKey, string>);
   log('listo');
 }
 

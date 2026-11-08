@@ -45,6 +45,14 @@ const config: Config = {
         xl: v('radius-xl'),
         pill: v('radius-pill'),
       },
+      // Barra de progreso de navegación (components/layout/navigation-progress.tsx).
+      keyframes: {
+        'nav-progress': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(150%)' },
+        },
+      },
+      animation: { 'nav-progress': 'nav-progress 1.1s ease-in-out infinite' },
       boxShadow: { card: v('shadow-card'), popover: v('shadow-popover'), focus: v('shadow-focus') },
       maxWidth: { container: v('space-container') },
       width: { sidebar: v('space-panel-sidebar') },

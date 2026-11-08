@@ -1,13 +1,12 @@
 /**
  * Piezas visuales compartidas por las páginas públicas (hero, secciones, tarjetas, archivos,
- * paginación por enlaces). Son componentes de servidor: no agregan JavaScript al navegador (RNF05).
+ * paginación por enlaces). Son componentes de servidor; CoverImage aísla el manejo de errores.
  *
  * Reglas de estilo: SOLO clases del tema (tokens CSS); nada de hex ni fuentes a mano (ADR-021).
  * Contraste (RNF07): el hero usa `primary-strong` con texto `surface` (5,0:1); el color `primary`
  * original del Figma no alcanza AA con texto blanco (ver ADR-021).
  */
-import { ArrowRight, ArrowUpRight, Download, FileText } from 'lucide-react';
-import Image from 'next/image';
+import { ArrowRight, ArrowUpRight, Download, FileText, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PublicFileDto, PublicPublicationCardDto } from '@ifts2/shared';
@@ -15,6 +14,8 @@ import { Badge, Button, Card, ErrorState, Eyebrow } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { formatDateAR } from '@/lib/dates';
 import { formatBytes } from './data';
+import { CoverImage } from './cover-image';
+import { canOptimizeCover } from './cover-policy';
 
 /** Contenedor centrado estándar (ancho máximo + gutters del tema). */
 export function Container({ className, children }: { className?: string; children: ReactNode }) {
@@ -140,16 +141,6 @@ export function LinkCard({
   );
 }
 
-/** ¿La URL apunta a la propia máquina? En ese caso (solo desarrollo) no se optimiza la imagen. */
-function isLocalUrl(url: string): boolean {
-  try {
-    const h = new URL(url, 'http://x').hostname;
-    return h === 'localhost' || h === '127.0.0.1' || h === '::1';
-  } catch {
-    return false;
-  }
-}
-
 /** Portada con `next/image`: dimensiones explícitas (sin saltos de layout) y carga diferida (RNF05). */
 export function Cover({
   src,
@@ -169,7 +160,8 @@ export function Cover({
   sizes?: string;
 }) {
   return (
-    <Image
+    <CoverImage
+      key={src}
       src={src}
       alt={alt}
       width={width}
@@ -177,7 +169,7 @@ export function Cover({
       sizes={sizes ?? '(min-width: 1024px) 380px, 100vw'}
       priority={priority}
       loading={priority ? undefined : 'lazy'}
-      unoptimized={isLocalUrl(src)}
+      unoptimized={!canOptimizeCover(src, process.env.API_ORIGIN ?? 'http://localhost:4000')}
       className={cn('h-auto w-full object-cover', className)}
     />
   );
@@ -203,7 +195,15 @@ export function PublicationCard({
           className="aspect-video"
           sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw"
         />
-      ) : null}
+      ) : (
+        // Sin portada: bloque neutro del mismo tamaño, así la grilla no queda despareja.
+        <div
+          aria-hidden="true"
+          className="flex aspect-video w-full items-center justify-center bg-accent-2 text-accent"
+        >
+          <ImageIcon className="h-8 w-8" />
+        </div>
+      )}
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center gap-2">
           {p.category && <Badge>{p.category.name}</Badge>}
@@ -310,5 +310,96 @@ export function LinkPagination({
         ) : null}
       </div>
     </nav>
+  );
+}
+
+/**
+ * Fotos del encabezado de Inicio (Figma 01): dos fotos superpuestas a la derecha en escritorio y
+ * apiladas debajo del texto en móvil. Son decorativas (alt vacío: el titular ya dice de qué trata).
+ * Sin ninguna imagen configurada no se dibuja nada y el encabezado queda solo con texto.
+ */
+export function HeroPhotos({ first, second }: { first?: string; second?: string }) {
+  if (!first && !second) return null;
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row lg:relative lg:block lg:h-72 lg:w-[26rem]">
+      {first && (
+        <div className="overflow-hidden rounded-xl shadow-popover sm:w-1/2 lg:absolute lg:left-0 lg:top-0 lg:w-64">
+          <Cover
+            src={first}
+            alt=""
+            width={640}
+            height={427}
+            priority
+            sizes="(min-width: 1024px) 256px, 50vw"
+          />
+        </div>
+      )}
+      {second && (
+        <div className="overflow-hidden rounded-xl shadow-popover sm:w-1/2 lg:absolute lg:bottom-0 lg:right-0 lg:w-60 lg:ring-4 lg:ring-primary-strong">
+          <Cover
+            src={second}
+            alt=""
+            width={640}
+            height={427}
+            priority
+            sizes="(min-width: 1024px) 240px, 50vw"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Foto única del encabezado de una página (Ingreso): decorativa, con bordes redondeados. */
+export function HeroImage({ src, className }: { src?: string; className?: string }) {
+  if (!src) return null;
+  return (
+    <div className={cn('overflow-hidden rounded-xl shadow-popover lg:w-96', className)}>
+      <Cover
+        src={src}
+        alt=""
+        width={640}
+        height={427}
+        priority
+        sizes="(min-width: 1024px) 384px, 100vw"
+      />
+    </div>
+  );
+}
+
+/**
+ * Tarjeta de la galería "Vida en la cocina" (Figma 04): foto con el título y la descripción sobre
+ * un degradé oscuro (contraste AA del texto sobre la foto). El texto es la descripción accesible; la
+ * foto es decorativa. No es un carrusel: es una grilla estática (sin JavaScript, sin trampas de foco).
+ */
+export function PhotoCard({
+  src,
+  title,
+  description,
+  alt = '',
+}: {
+  src: string;
+  title: string;
+  description?: string;
+  /** Texto alternativo; vacío = decorativa (el pie de la tarjeta ya la describe). */
+  alt?: string;
+}) {
+  return (
+    <figure className="relative overflow-hidden rounded-xl shadow-card">
+      <Cover
+        src={src}
+        alt={alt}
+        width={800}
+        height={534}
+        className="aspect-[3/2]"
+        sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw"
+      />
+      {(title || description) && (
+        <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-accent-3 via-accent-3 to-transparent px-4 pb-4 pt-14 text-surface">
+          {title && <p className="font-display text-lg font-bold">{title}</p>}
+          {description && <p className="text-sm">{description}</p>}
+        </figcaption>
+      )}
+    </figure>
   );
 }

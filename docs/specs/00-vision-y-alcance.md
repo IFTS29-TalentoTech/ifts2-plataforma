@@ -25,7 +25,7 @@ Reemplazar el sitio actual por una plataforma propia que el personal del institu
 **Debe (Must)**
 - Sitio público responsive: Inicio, Institucional, La carrera, Estudiantes, Ingreso y Novedades.
 - Panel de gestión protegido por login: Resumen, Publicaciones, Avisos académicos, Horarios, Archivo y Configuración.
-- Moderación de publicaciones de Instagram (detectar → aprobar con sección y vigencia → publicar, o descartar) con alternativa de carga manual.
+- Moderación de publicaciones de Instagram (detectar → aprobar con sección y vigencia → publicar, o descartar) con alternativa de carga manual. El hashtag que identifica las publicaciones es configurable; el valor **provisorio** es `#ifts2web` (Q1, Q25) hasta que el cliente lo confirme.
 - Avisos académicos con destinatario, vigencia, adjunto, pausa y estado.
 - Horarios por comisión y llamados a examen del ciclo público, con archivos adjuntos.
 - Archivo documental con búsqueda, filtros, detalle y restauración.

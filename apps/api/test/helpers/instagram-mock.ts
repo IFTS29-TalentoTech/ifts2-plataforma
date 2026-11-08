@@ -43,6 +43,8 @@ export class InstagramMock {
   shortTokenShape: 'flat' | 'data' = 'flat';
   /** Rutas de imagen que responden 404 (simulan URL vencida). */
   goneImages = new Set<string>();
+  /** Id de usuario que devuelve /me (cambiarlo simula conectar otra cuenta). */
+  accountId = '1';
   calls: MockCall[] = [];
   private jpeg!: Buffer;
 
@@ -69,6 +71,7 @@ export class InstagramMock {
     this.expiresIn = 5_184_000;
     this.shortTokenShape = 'flat';
     this.goneImages.clear();
+    this.accountId = '1';
     this.calls = [];
   }
 
@@ -132,7 +135,7 @@ export class InstagramMock {
     }
     if (url.pathname === '/me') {
       if (this.mediaError) return this.json(res, this.mediaError.status, this.mediaError.body);
-      return this.json(res, 200, { username: 'cuenta_simulada', id: '1' });
+      return this.json(res, 200, { username: 'cuenta_simulada', id: this.accountId });
     }
     if (url.pathname === '/refresh_access_token') {
       if (this.refreshError)

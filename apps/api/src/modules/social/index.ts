@@ -9,6 +9,7 @@ import {
   socialApproveInput,
   socialListQuery,
   socialManualInput,
+  socialSyncQuery,
   type SocialApproveInput,
   type SocialManualInput,
   type SocialStatus,
@@ -57,14 +58,20 @@ router.post(
 
 /**
  * POST /social/sync — botón "sincronizar" del Resumen. Devuelve cuántas publicaciones nuevas quedaron
- * pendientes. 422 sin hashtag configurado; 502 (mensaje claro) si Instagram falla, sin afectar al resto.
+ * pendientes. Es incremental (solo lo posterior al último fetch exitoso) salvo la primera vez, si cambió
+ * la cuenta/hashtag/método de conexión o si se pide `?full=true` (carga completa, mismo permiso y rate limit).
+ * La respuesta informa `mode` y `lastFetchAt`. 422 sin hashtag configurado; 502 (mensaje claro) si Instagram falla, sin afectar al resto.
  */
 router.post(
   '/sync',
   requirePermission('social:moderate'),
   (req, res, next) => req.ctx.limiters.sync(req, res, next),
+  validate({ query: socialSyncQuery }),
   async (req, res) => {
-    res.json(await syncInstagram(req.ctx, { userId: req.auth!.user.id, trigger: 'manual' }));
+    const { full } = valid<{ full: boolean }>(req, 'query');
+    res.json(
+      await syncInstagram(req.ctx, { userId: req.auth!.user.id, trigger: 'manual', force: full }),
+    );
   },
 );
 

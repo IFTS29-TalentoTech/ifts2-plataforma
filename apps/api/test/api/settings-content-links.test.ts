@@ -43,6 +43,46 @@ describe('/settings', () => {
     }
   });
 
+  it('PUT guarda titular corto, imágenes y galería; /public/settings los publica y vaciar los quita', async () => {
+    const res = await as(admin.cookie).put('/api/v1/settings', {
+      hero_title: 'Titular corto',
+      hero_image_1: '/img/provisorio/inicio-plato.webp',
+      logo_url: 'https://cdn.example.org/logo.webp',
+      student_gallery: '/img/a.webp | Cocina | Equipo\n/img/b.webp | Solo título',
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      hero_title: 'Titular corto',
+      hero_image_1: '/img/provisorio/inicio-plato.webp',
+      hero_image_2: null,
+    });
+
+    const pub = await request(t.app).get('/api/v1/public/settings');
+    expect(pub.body).toMatchObject({
+      hero_title: 'Titular corto',
+      logo_url: 'https://cdn.example.org/logo.webp',
+    });
+    expect(pub.body.hero_image_2).toBeUndefined();
+
+    // Vaciar un valor lo quita de la vista pública (la pantalla usa su valor por defecto).
+    await as(admin.cookie).put('/api/v1/settings', { hero_title: '', hero_image_1: '' });
+    const pub2 = await request(t.app).get('/api/v1/public/settings');
+    expect(pub2.body.hero_title).toBeUndefined();
+    expect(pub2.body.hero_image_1).toBeUndefined();
+    expect(pub2.body.logo_url).toBe('https://cdn.example.org/logo.webp');
+  });
+
+  it('PUT rechaza imágenes que no son una ruta del sitio ni una dirección web (400)', async () => {
+    const res = await as(admin.cookie).put('/api/v1/settings', {
+      career_image: 'javascript:alert(1)',
+      student_gallery: 'sin ruta | Título',
+    });
+    expect(res.status).toBe(400);
+    expect(Object.keys(res.body.errors ?? {})).toEqual(
+      expect.arrayContaining(['career_image', 'student_gallery']),
+    );
+  });
+
   it('PUT guarda parcialmente, normaliza el hashtag, tipa el booleano y audita solo las claves', async () => {
     const res = await as(admin.cookie).put('/api/v1/settings', {
       institution_name: 'Instituto de Prueba',
@@ -205,6 +245,7 @@ describe('/links', () => {
       group: 'academico',
       order: 2,
       visible: true,
+      enrollment: false,
     });
     await createLinkRow({ title: 'Primero', order: 1 });
     await createLinkRow({ title: 'Oculto', order: 3, visible: false });
@@ -217,6 +258,21 @@ describe('/links', () => {
     expect(list.body.total).toBe(3);
     expect((await as(admin.cookie).get('/api/v1/links?visible=false')).body.total).toBe(1);
     expect(await testPrisma.auditLog.count({ where: { action: 'link.create' } })).toBe(1);
+  });
+
+  it('A07: el panel marca y desmarca el enlace de inscripción de alumnos', async () => {
+    const res = await as(admin.cookie).post('/api/v1/links', {
+      title: 'Sistema de alumnos',
+      url: 'https://alumnos.test/',
+      enrollment: true,
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.enrollment).toBe(true);
+    const off = await as(admin.cookie).patch(`/api/v1/links/${res.body.id}`, {
+      enrollment: false,
+    });
+    expect(off.body.enrollment).toBe(false);
+    expect((await as(admin.cookie).post('/api/v1/links', { enrollment: 'si' })).status).toBe(400);
   });
 
   it('valida: título/URL obligatorios y bien formados; título duplicado => 409', async () => {

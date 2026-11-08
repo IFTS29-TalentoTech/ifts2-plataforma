@@ -4,6 +4,9 @@ on:
   pull_request:
   push:
     branches: [main]
+  # El job `e2e` (Cypress completo, ~15 min) no corre en cada PR: se lanza a mano desde la pestaña
+  # Actions ("Run workflow") antes de una entrega o un release. Local: `pnpm e2e`.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -50,9 +53,17 @@ jobs:
         run: psql -h localhost -p 5433 -U ifts2 -d ifts2_test -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE ifts2_test IS 'ifts2:disposable-test-database'"
       - run: pnpm test
       - run: pnpm build
+      - name: Portadas públicas con API e imágenes simuladas (sin base de datos)
+        run: pnpm test:covers
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: portadas-screenshots
+          path: apps/web/.next/covers-screenshots
 
-  # Cypress (smoke + accesibilidad) contra la web compilada. Sin secretos.
+  # Cypress (suite completa + accesibilidad) contra la web compilada. Sin secretos. Solo manual.
   e2e:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: verify

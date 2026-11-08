@@ -6,9 +6,9 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 
 | N.° | Pregunta | Supuesto provisorio | Impacta |
 |---|---|---|---|
-| Q1 | ¿Qué hashtag identifica las publicaciones de Instagram que pueden ir al sitio? | `#ifts2web` configurable en Configuración | RF04 |
+| Q1 | ¿Qué hashtag identifica las publicaciones de Instagram que pueden ir al sitio? | `#ifts2web` **provisorio** (decisión del equipo del 06/11/2026: se deja así por ahora); configurable en Configuración; la semilla demo lo carga y la `prod` lo deja vacío | RF04 |
 | Q2 | ¿La cuenta de Instagram `ifts_2_ok` es profesional (Business/Creator) y quién autoriza la conexión? | Se asume que se puede convertir; si no, solo carga manual | ADR-09 |
-| Q3 | ¿Editores (comunicación) y Bedelía son roles separados? ¿Quiénes son las personas de cada rol? | Tres roles separados: ADMIN, BEDELIA, EDITOR | ADR-18 |
+| Q3 | ¿Editores (comunicación) y Bedelía son roles separados? ¿Quiénes son las personas de cada rol? | **Cuatro** roles de sistema: SUPERADMIN (agregado el 06/11/2026), ADMIN, BEDELIA y EDITOR; Editor y Bedelía separados. Pendiente: nombres de las personas de cada rol | ADR-18 |
 | Q4 | La paleta de marrones está **definida** con el cliente (feedback posterior a la reunión del 06/10). ¿Hay otras correcciones de diseño tras explorar el prototipo? | El Figma vigente; los tokens se cambian en un solo archivo | Diseño |
 | Q5 | ¿A qué correo debe llegar el formulario de contacto? | `dfts_ifts2_de20@bue.edu.ar` | RF08 |
 | Q6 | ¿Cuál es la URL de SIU Guaraní para alumnos, la de Mi Argentina para el título digital y el enlace o contacto de Tutoría? | Enlaces marcados "a confirmar" ocultos hasta tenerlos | RF07 |
@@ -18,16 +18,16 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q10 | ¿Cuántas fotos por álbum o publicación son razonables? | Máximo 10 por publicación; imágenes comprimidas | RNF05 |
 | Q11 | ¿Quién redacta el aviso de uso de datos y el consentimiento de imágenes? | Texto estándar a validar con la supervisión del GCABA | RNF08 |
 | Q12 | Contacto, Galería y Plantel docente: ¿se diseñan para el MVP? | Se resuelven con los componentes existentes (prioridad S o C) | Alcance |
+| Q13 | Dominio .edu.ar: ¿quién tiene o gestiona la documentación? | Subdominio provisorio gratuito | ADR-15 |
 | Q20 | Nombres finales de los ítems de menú al separar "ingreso a la tecnicatura" de "inscripción a carreras y exámenes" | "Ingreso" (aspirantes) y "Inscripciones" (alumnos) | Navegación |
 | Q21 | ¿Se confirma el acceso de todos los grupos a la carpeta de Drive con logos y materiales de marca? | Usar los logos de `cliente/ifts2/` | Diseño |
-| Q13 | Dominio .edu.ar: ¿quién tiene o gestiona la documentación? | Subdominio provisorio gratuito | ADR-15 |
 
 ## Con la cátedra y el equipo
 
 | N.° | Pregunta | Supuesto provisorio | Responsable |
 |---|---|---|---|
 | Q14 | Hosting, base de datos, almacenamiento y correo gratuitos definitivos, sin vencimiento ni suspensión | Interfaces reemplazables; proveedor a elegir | Santiago Cuda |
-| Q15 | ¿El panel necesita versión móvil diseñada para el MVP? | Usable en móvil, sin diseño específico | Gastón Zampar |
+| Q15 | **Resuelta:** ¿el panel necesita versión móvil diseñada para el MVP? | El Figma vigente **incluye el panel móvil** (`docs/design/mobile/`, 13 pantallas y modales) y el panel es **responsive** (verificado a 390 y 1440 px) | Gastón Zampar |
 | Q16 | ¿Se acepta que "¿Olvidaste tu clave?" lo resuelva un administrador en el MVP? | Sí (ADR-06) | Martín Juan |
 | Q17 | ¿Existe tabla navegable de plan de estudios y correlatividades en el MVP o solo tarjetas? | Tarjetas por año con enlace al documento; tabla navegable es S | Martín Juan |
 | Q18 | El hito de la semana 13: ¿se acuerda un MVP recortado con el cliente si el PERT se confirma? | Sí; recorte de abajo hacia arriba (Could, Should) | Martín Juan |
@@ -38,18 +38,18 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 1. **Figma vs relevamiento (horarios):** el relevamiento pidió datos estructurados en lugar de Excel o PDF incrustado; el Figma carga **archivos** por comisión. Se resolvió provisoriamente en Q9.
 2. **Datos de ejemplo del Figma** (correo y teléfono) no coinciden con los reales.
 3. **Etapa 2 entregada** describe la paleta verde y un panel con "Institucional, Contacto, Galería y Plantel" como pendientes de diseño; el Figma vigente sí diseñó Institucional, Archivo, Configuración y Login, y reemplazó la paleta. Esta carpeta se basa en el Figma vigente.
-4. **Nombres de rol:** la Etapa 2 habla de Administrador y Editor; el Figma habla de Rectoría / Dirección y Bedelía Académica. ADR-18 propone tres roles que cubren ambos.
+4. **Nombres de rol:** la Etapa 2 habla de Administrador y Editor; el Figma habla de Rectoría / Dirección y Bedelía Académica. ADR-18 propone cuatro roles de sistema (SUPERADMIN, ADMIN, BEDELIA, EDITOR) que cubren ambos.
 
 ## Agregadas por el agente de fundación
 
 | N.° | Pregunta | Supuesto provisorio | Impacta |
 |---|---|---|---|
 | Q22 | Nombres finales del menú: se implementó **Ingreso** (aspirantes, `/ingreso`) e **Inscripciones** (alumnos, `/inscripciones`) separados, más el botón **Administración** | Confirmar con el cliente (relacionada con Q20) | Navegación |
-| Q23 | Tipografía: el JSON de tokens decía Inter pero las capturas del Figma lucen Plus Jakarta Sans | Se usa Plus Jakarta Sans (un solo archivo para cambiarla) | Diseño |
+| Q23 | Tipografía: el JSON de tokens decía Inter pero las capturas del Figma lucen Plus Jakarta Sans | **Confirmado por el equipo (06/11/2026): es Plus Jakarta Sans.** ADR-11 se corrigió (la Etapa 2 proponía Inter); un solo archivo para cambiarla (`apps/web/src/app/fonts.ts`) | Diseño |
 | Q24 | Contraste: el color `primary` del Figma no alcanza AA para botones con texto blanco (4,25:1) ni para texto sobre fondo base (3,93:1) | Se usan tokens derivados `primary-strong`, `font-strong`, `warning-text-strong` (ADR-021); validar con el cliente | Diseño / RNF07 |
-| Q25 | Hashtag de Instagram: Q1 propone `#ifts2web` pero 08-contenido dice "definir con el cliente" | La semilla `prod` no lo carga; la semilla demo usa `#ifts2web`; se configura desde el panel | RF04 |
+| Q25 | Hashtag de Instagram: Q1 propone `#ifts2web` y 08-contenido decía "definir con el cliente" | **Unificado (06/11/2026):** `#ifts2web` es provisorio en 00, 02 (ADR-09), 08 y 09; la semilla `prod` no lo carga; la semilla demo usa `#ifts2web`; se configura desde el panel | RF04 |
 | Q26 | El cliente debe crear y administrar su app de Meta (App ID/Secret, redirección, permisos) | La pantalla de Configuración guía el paso a paso (`setupSteps`); falta definir quién del instituto lo hace | ADR-09 |
-| Q27 | Los roles (Rectoría / Dirección, Bedelía Académica, Comunicación) están escritos como etiquetas de producto en `ROLE_LABELS`; para otra institución habría que llevarlos a configuración | Se deja así en el MVP | ADR-22 |
+| Q27 | Los nombres de los cuatro roles de sistema (Superadministrador, Rectoría / Dirección, Bedelía Académica, Comunicación) están en la semilla (`prisma/seed-data.ts`, tabla `Role`), no en el código; antes eran etiquetas de producto en `ROLE_LABELS` | **Superada por RF11:** los roles son datos y el Superadministrador puede renombrarlos o crear otros, así que no hace falta llevarlos a configuración aparte | ADR-22 |
 | Q28 | El cierre de sesión por inactividad no está definido | Sesión de 8 h fijas (14 días con "recordar"), sin renovación deslizante | RNF06 |
 | Q29 | El rate limit está en memoria: con más de una instancia de la API los contadores no se comparten | Aceptado para una instancia; DevOps decide un store compartido si se escala | ADR-15 |
 
@@ -73,24 +73,9 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q60 | Contacto, Inscripciones y avisos de aspirantes no tienen diseño en el Figma | Contacto como sección `#contacto` de `/institucional` (formulario con aviso de datos, consentimiento y señuelo); `/inscripciones` e `/ingreso` armadas con las tarjetas del kit. Validar con el cliente | RF08 / Q20 |
 | Q61 | Plan por año, correlatividades y requisitos/fechas de ingreso no están cargados | **Parcialmente resuelta (integración)**: plan por área con horas y correlatividades cargados desde la Res. MEGC 1202/07 y la ficha (ver Q120 a Q122 para lo que sigue pendiente) | 08-contenido |
 | Q62 | "Material de consulta" de Ingreso pide documentos públicos descargables y no existe endpoint para ellos | Se muestra como sección de contenido; falta decidir si `/public/content/ingreso` lleva archivos o se crea `/public/documents` | RF02 |
-| Q63 | Fotografías del hero, de La carrera y "Vida en la cocina" (galería) | No se incluyen: requieren imágenes provistas y consentimiento (RNF08); la galería es RF09 (Could) | RNF08 |
-| Q64 | El titular de Inicio usa la frase ancla completa (`tagline`) y el Figma una frase más corta ("Formamos emprendedores gastronómicos") | Se usa `tagline`; si el cliente quiere un titular distinto hace falta un ajuste nuevo en `SiteSetting` | ADR-22 |
+| Q63 | Fotografías del hero, de La carrera, de Ingreso, de Novedades y "Vida en la cocina" (galería) | **Parcialmente resuelta (07/11/2026, ADR-035):** el equipo decidió mostrar las fotos del Figma como **PROVISORIAS**. Procedencia: exportadas del Figma (`aRnoXCbNpkCFkHPH0En5B5`, nodos 1:2, 1:63, 1:106, 1:154 y 1:196), optimizadas a webp y guardadas en `apps/web/public/img/provisorio/`. Se configuran en Panel → Configuración (ajustes `hero_image_1/2`, `career_image`, `ingreso_image`, `student_gallery`, `logo_url`). **Pendiente:** el instituto debe entregar sus imágenes con consentimiento de las personas que aparecen (RNF08) y se reemplazan antes de producción; hasta entonces el sitio no debe publicarse con estas fotos. La galería editable por categorías sigue siendo RF09 (Could) | RNF08 |
+| Q64 | El titular de Inicio usaba la frase ancla completa (`tagline`) y el Figma una frase más corta ("Formamos emprendedores gastronómicos") | **Resuelta (07/11/2026):** titular corto en el ajuste nuevo `hero_title` y la frase ancla (`tagline`) como subtítulo; sin `hero_title` la frase ancla vuelve a ser el titular. También `hero_eyebrow` (rótulo) y todo editable en Configuración | ADR-22 |
 | Q65 | Menú móvil: el Figma muestra una barra inferior de navegación | Se mantiene el menú hamburguesa del layout compartido (accesible) | RNF04 |
-
-
-
-## Agregadas por el agente del Panel B (rama `feat/web-panel-b`)
-
-| N.° | Pregunta | Supuesto provisorio | Impacta |
-| --- | --- | --- | --- |
-| Q100 | El Figma pide SMTP con "remitente", pero `PUT /integrations/mail` solo guarda `contactToEmail` y una cadena `smtpUrl` | La pantalla arma `smtp(s)://usuario:clave@host:puerto` desde host, puerto, usuario y contraseña; no hay campo "remitente" hasta que la API lo soporte | RF08, ADR-020 |
-| Q101 | "Período académico" del Figma (año lectivo y cuatrimestre visible) | En Configuración es solo lectura (muestra el ciclo público) con enlace a Horarios, donde se cambia con confirmación (`PUT /terms/:id/public-current`); un solo lugar para esa regla | RF06 |
-| Q102 | Quién puede crear ciclos: BEDELIA tiene `terms:manage` | BEDELIA puede crear ciclos (no públicos) pero no cambiar el público (solo ADMIN) | RF06 |
-| Q103 | Al subir una grilla o cronograma el documento queda en el Archivo con tipo SCHEDULE / EXAM_CALENDAR y el ciclo del horario | Si el segundo paso (crear el horario) falla, el documento queda subido y se puede reutilizar; no hay transacción entre ambos pasos | RF03 |
-| Q104 | "Próximo turno oficial" de Horarios | Primer llamado publicado del ciclo cuya fecha de fin no pasó | RF06 |
-| Q105 | La web (`next.config.ts`) no encuentra `API_ORIGIN` del `.env` raíz (el reenvío `/api/v1` cae en el puerto 4000) | Se levanta la web con `API_ORIGIN` exportado en el entorno; conviene que DevOps lo corrija (`loadEnvConfig` ya fue invocado antes por Next) | DevOps |
-| Q106 | Cypress (Electron) no ejecuta el clic nativo de Enter sobre un botón | La prueba E2E-13 enfoca y hace clic, y verifica con teclado real (`cy.press`) el foco atrapado y devuelto en diálogos | RNF07 |
-
 
 ## Agregadas por el agente del panel A (rama `feat/web-panel-a`)
 
@@ -105,6 +90,17 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q86 | Reanudar un aviso cuya vigencia ya terminó | Se pide una nueva fecha de fin (la API responde 422 sin ella): botón "Reactivar" con diálogo de fecha | RF03 |
 | Q87 | El mensaje de bloqueo por intentos de login menciona "unos 15 minutos" (valor por defecto de `LOGIN_WINDOW_MINUTES`) | Texto fijo en la web; si se cambia la variable de entorno hay que ajustarlo o exponerla en la API | RNF06 |
 
+## Agregadas por el agente del Panel B (rama `feat/web-panel-b`)
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q100 | El Figma pide SMTP con "remitente", pero `PUT /integrations/mail` solo guarda `contactToEmail` y una cadena `smtpUrl` | La pantalla arma `smtp(s)://usuario:clave@host:puerto` desde host, puerto, usuario y contraseña; no hay campo "remitente" hasta que la API lo soporte | RF08, ADR-020 |
+| Q101 | "Período académico" del Figma (año lectivo y cuatrimestre visible) | En Configuración es solo lectura (muestra el ciclo público) con enlace a Horarios, donde se cambia con confirmación (`PUT /terms/:id/public-current`); un solo lugar para esa regla | RF06 |
+| Q102 | Quién puede crear ciclos: BEDELIA tiene `terms:manage` | BEDELIA puede crear ciclos (no públicos) pero no cambiar el público (solo ADMIN) | RF06 |
+| Q103 | Al subir una grilla o cronograma el documento queda en el Archivo con tipo SCHEDULE / EXAM_CALENDAR y el ciclo del horario | Si el segundo paso (crear el horario) falla, el documento queda subido y se puede reutilizar; no hay transacción entre ambos pasos | RF03 |
+| Q104 | "Próximo turno oficial" de Horarios | Primer llamado publicado del ciclo cuya fecha de fin no pasó | RF06 |
+| Q105 | La web (`next.config.ts`) no encuentra `API_ORIGIN` del `.env` raíz (el reenvío `/api/v1` cae en el puerto 4000) | Se levanta la web con `API_ORIGIN` exportado en el entorno; conviene que DevOps lo corrija (`loadEnvConfig` ya fue invocado antes por Next) | DevOps |
+| Q106 | Cypress (Electron) no ejecuta el clic nativo de Enter sobre un botón | La prueba E2E-13 enfoca y hace clic, y verifica con teclado real (`cy.press`) el foco atrapado y devuelto en diálogos | RNF07 |
 
 ## Agregadas por el agente de integración y calidad
 
@@ -123,3 +119,29 @@ Cada fila indica **qué se asume mientras no haya respuesta** para que el agente
 | Q125 | **Resuelta (06/11/2026):** SUPERADMIN y ADMIN crean usuarios, también otros administradores. Un ADMIN asigna solo roles cuyos permisos incluye y nunca SUPERADMIN (regla de seguridad que agrega el equipo; se puede relajar si el cliente lo pide). | Ver ADR-18 | RF05, RF11 |
 | Q126 | ¿Un ADMIN puede administrar (editar, desactivar o restablecer la clave) a un usuario con más permisos que él, por ejemplo el Superadministrador? | **No** (403). Restablecer la clave del Superadministrador le permitiría entrar con su cuenta: es la misma regla anti-escalada de Q125 aplicada a la administración de usuarios. Ver ADR-031 | RF05, RF11 |
 | Q127 | La spec pide que toda ruta fuera de `/public` y `/auth` declare un permiso, pero `GET /settings` (datos básicos que usa cualquier pantalla del panel) solo exige sesión y `POST /social/cron` se autentica con `CRON_SECRET` | Quedan como excepciones explícitas, con su motivo, en la prueba `route-permissions.test.ts`. Si el equipo prefiere, `GET /settings` puede pedir `dashboard:read`, pero un rol sin Resumen dejaría de ver la cabecera | RF11, 06-testing |
+| Q128 | ¿Qué pasa si se elimina un rol de sistema (ADMIN, BEDELIA o EDITOR) y después se vuelve a ejecutar la semilla? | En modo `prod` esos tres roles se crean solo en el primer arranque, así que **no reaparecen**; en modo `demo` se recrean siempre (los usuarios de demostración los necesitan). SUPERADMIN se asegura siempre. Confirmar con el equipo si conviene quitar la condición | RF11, ADR-031 |
+| Q129 | Las rutas de `/integrations/*` pasaron de "solo ADMIN" al permiso `integrations:manage` (marcado como sensible en la pantalla de roles). ¿Se quiere dar este permiso a otros roles además de ADMIN? | No: lo trae ADMIN por defecto y SUPERADMIN siempre; el Superadministrador lo puede quitar o dar desde "Roles y permisos" | RF11, ADR-020 |
+| Q130 | La historia de "destacar" (llamado o aviso) estaba numerada US-36, igual que la de roles configurables | **Resuelta (06/11/2026):** US-36 queda para roles configurables; "destacar" pasó a US-37 (`07-backlog-y-plan.md`) | Backlog |
+
+## Agregadas por el equipo (07/11/2026): Resumen del panel (auditoría A14)
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q133 | ¿El año de ingreso del Resumen debe seguir siendo una estimación (año del período vigente + 1) o el instituto va a definir una convocatoria con fechas propias (preinscripción abierta o cerrada)? | Se mantiene la estimación y se muestra como **estimada**. La tarjeta informa solo lo verificable: si la página de Ingreso tiene contenido visible y si le quedan datos `[a confirmar ...]`. Ver ADR-034 | US-12, A14 |
+## Agregadas por el equipo (07/11/2026): Inscripciones (auditoría A07 y A08)
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q131 | El ajuste "Inscripciones a mesas SIU habilitadas" (`exam_enrollment_open`), ¿es un **bloqueo general** o solo un texto informativo? ¿Un llamado ya terminado con su casilla marcada debe figurar cerrado? | **Bloqueo general:** con el ajuste apagado ningún llamado figura con inscripción abierta en el sitio, aunque tenga su casilla. Un llamado terminado figura cerrado. Se calcula al consultar; la casilla guardada no cambia. Si el instituto lo usa solo como texto, se cambia una función (`effectiveExamEnrollmentOpen`). Ver ADR-033 | RF06, A08 |
+| Q132 | ¿Qué enlace es el de inscripción de **alumnos** y qué trámites permite? (completa Q6) | El panel tiene la marca "Enlace de inscripción de alumnos"; Inscripciones muestra solo los enlaces marcados. La semilla marca "SIU Guaraní — Acceso alumnos", que sigue oculto hasta tener la URL oficial. Mientras tanto la página avisa que el enlace está pendiente y muestra el correo de Bedelía. Nunca se ofrece el SIU de profesores y secretaría. Ver ADR-033 | RF07, A07 |
+
+## Agregadas por el agente del sitio público fiel al Figma (07/11/2026)
+
+| N.° | Pregunta | Supuesto provisorio | Impacta |
+| --- | --- | --- | --- |
+| Q134 | **Contradicción Figma vs. datos:** La carrera del Figma muestra "Plan de estudios por año" (tarjetas Primer, Segundo y Tercer año con "Ver materias y cuatrimestres") y un botón "Consultar correlatividades". Los documentos del cliente no indican en qué año se cursa cada materia (Q120) | No se dibujan las tarjetas por año ni se inventan materias: se mantiene el plan por área formativa con horas y las correlatividades de la Res. MEGC 1202/07, y la sección "Plan por año" sigue marcada `[a confirmar con el cliente]` | 08-contenido, RF02 |
+| Q135 | El Figma muestra la galería "Vida en la cocina" (Estudiantes) y la foto de La carrera como **carrusel** con flechas y puntos | **Resuelta (07/11/2026, ADR-036):** carrusel accesible (sin reproducción automática) y **editable desde el panel** (Galerías: subir, editar, ordenar, eliminar; hasta 10 por área). Las fotos que vienen cargadas siguen siendo provisorias (Q63). Pendiente: categorías de la galería (RF09 completo) | RNF07, RF09 |
+| Q136 | Las pantallas de Ingreso del Figma muestran una descripción debajo de cada paso (Requisitos, Preinscripción, Confirmación) y "Material de consulta" con el botón "Consultar documentos" | No se escriben textos institucionales: los pasos se dibujan como están cargados en el contenido de Ingreso (solo títulos) hasta que el instituto apruebe el texto (Q7, Q122). El material de consulta sigue pendiente de Q62 | RF02 |
+| Q138 | Datos reales del **plantel docente**: nombres, cargos, materias a cargo y orden en que se muestran. Ningún documento del cliente los trae | RF10 está implementado (ADR-037) pero la semilla de producción deja el plantel **vacío** y la sección pública no aparece hasta que el instituto cargue personas desde el panel. La semilla demo trae 6 docentes **ficticios** (nombres inventados con ilustraciones, uno oculto), solo para demostración | RF10, ADR-037 |
+| Q139 | **Consentimiento para publicar fotos** de docentes (y de estudiantes en las galerías): ¿quién lo recaba, en qué formato y dónde se conserva? | El formulario del panel recuerda que la foto es un dato personal (Ley 25.326) y es opcional; la semilla no carga fotos de personas. Antes de producción: definir el procedimiento y reemplazar las fotos provisorias (Q63) | RNF08, RF10 |
+| Q137 | El logo del Figma (I2FTS verde) se usa como `logo_url` provisorio | Es el logo de la carpeta de marca del cliente (Q21); confirmar que se puede usar así y su versión definitiva | Diseño |

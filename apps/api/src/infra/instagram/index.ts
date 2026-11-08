@@ -19,8 +19,8 @@ export { captionHasHashtag, normalizeHashtag } from './hashtag';
 /**
  * Resuelve el cliente de Instagram EN CADA USO (no se cachea), para que los cambios hechos desde el
  * panel se apliquen de inmediato. Orden:
- *  1. Configuración guardada desde el panel (base, cifrada): modo `real` con App ID/Secret -> Graph;
- *     modo `demo` -> Fake.
+ *  1. Configuración guardada desde el panel (base, cifrada): modo `real` con token pegado, o con
+ *     App ID/Secret -> Graph; modo `demo` -> Fake.
  *  2. Variables de entorno (INSTAGRAM_PROVIDER=graph con App ID/Secret) como valor por defecto.
  *  3. Si no hay nada: FakeInstagramClient (modo demostración).
  */
@@ -31,6 +31,14 @@ export async function createInstagramClient(
 ): Promise<InstagramClient> {
   const stored = await store.get('instagram');
   if (stored) {
+    if (stored.mode === 'real' && stored.connectionMethod === 'token' && stored.accessToken) {
+      // Conexión con token pegado: no hacen falta App ID ni Secret.
+      return new GraphInstagramClient({
+        method: 'token',
+        accessToken: stored.accessToken,
+        fetchFn,
+      });
+    }
     if (stored.mode === 'real' && stored.appId && stored.appSecret) {
       return new GraphInstagramClient({
         appId: stored.appId,

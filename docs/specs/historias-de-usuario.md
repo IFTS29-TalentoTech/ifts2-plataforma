@@ -1,6 +1,6 @@
 # Historias de usuario
 
-Formato pedido por la cátedra: **Como [tipo de usuario], quiero [acción] para [objetivo]**, entre 8 y 12 historias, ordenadas por prioridad (alta, media, baja). La prioridad define qué entra en la primera versión del sistema. Cada historia indica los requerimientos que cubre (`especificaciones/01-requerimientos.md`), las historias técnicas del backlog (`especificaciones/07-backlog-y-plan.md`) y las pantallas del Figma (`especificaciones/05-ui-y-pantallas.md`).
+Formato pedido por la cátedra: **Como [tipo de usuario], quiero [acción] para [objetivo]**, entre 8 y 12 historias, ordenadas por prioridad (alta, media, baja). La prioridad define qué entra en la primera versión del sistema. Cada historia indica los requerimientos que cubre (`docs/specs/01-requerimientos.md`), las historias técnicas del backlog (`docs/specs/07-backlog-y-plan.md`) y las pantallas del Figma (`docs/specs/05-ui-y-pantallas.md`).
 
 ## Actores
 
@@ -37,7 +37,7 @@ Como **personal de bedelía**, quiero **publicar avisos académicos con un archi
 
 **H5 · Cargar horarios y llamados a examen**
 Como **personal de bedelía**, quiero **cargar los horarios de cada comisión y los llamados a examen** para **que los alumnos consulten la información del ciclo en curso**.
-- RF06 · US-13, US-14 · Pantalla 10.
+- RF06 · US-13, US-14, US-37 · Pantalla 10.
 - *Criterio:* los datos cargados se publican solo si pertenecen al ciclo público vigente.
 
 **H6 · Definir el ciclo público**
@@ -60,7 +60,7 @@ Como **aspirante**, quiero **conocer la carrera, el plan de estudios y los pasos
 **H9 · Gestionar usuarios, roles y permisos**
 Como **administrador**, quiero **crear usuarios con un rol y desactivarlos** para **que cada persona acceda solo a lo que le corresponde**. Como **superadministrador**, quiero **crear roles y elegir qué puede hacer cada uno** para **adaptar los accesos a cómo se organiza el instituto**.
 - RF05, RF11, RNF06 · US-04, US-05, US-26, US-36 · Pantalla 12 (modal de usuarios y nueva sección Roles y permisos, Q123) y 13.
-- *Criterio:* un usuario de bedelía no ve ni puede usar las opciones de redes ni de usuarios; un usuario desactivado no puede ingresar; el correo no se puede duplicar; un rol creado por el superadministrador limita lo que ve y puede hacer quien lo recibe; un rol con usuarios no se elimina; siempre queda un superadministrador activo; el superadministrador tilda exactamente los permisos de cada rol y el administrador puede crear otros administradores, pero no superadministradores.
+- *Criterio:* un usuario de bedelía no ve ni puede usar las opciones de redes ni de usuarios; un usuario desactivado no puede ingresar; el correo no se puede duplicar; un rol creado por el superadministrador limita lo que ve y puede hacer quien lo recibe; un rol con usuarios no se elimina (los roles ADMIN, BEDELIA y EDITOR sí se pueden eliminar si están sin usuarios; SUPERADMIN no); el último superadministrador activo no se puede desactivar ni cambiar de rol (409); el superadministrador tilda exactamente los permisos de cada rol y el administrador puede crear otros administradores, pero no superadministradores.
 
 **H10 · Ordenar el archivo documental**
 Como **personal autorizado**, quiero **archivar, buscar, restaurar y eliminar documentos antiguos con confirmación** para **mantener ordenado el repositorio sin perder información por error**.

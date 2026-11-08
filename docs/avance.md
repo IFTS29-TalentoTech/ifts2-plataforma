@@ -1,67 +1,93 @@
 # Avance
 
-Registro de tareas completadas y pendientes, dificultades y soluciones. Un agente agrega una entrada por tarea.
+Registro de tareas completadas y pendientes, dificultades y soluciones. Un agente agrega una entrada por tarea. **Orden cronológico (lo más viejo arriba)**, reconstruido con `git log`; lo vigente y lo pendiente están al final, en "Estado actual" y "Pendiente".
 
 ## Completado
+
+### 2026-11-07 · Categorías de galería y plantel docente (RF09 completo, RF10, ADR-036 y ADR-037, rama `feat/publico-fiel-al-figma`)
+
+**Hecho.** (1) **RF09/US-30:** `GalleryItem.category` (migración aditiva `20261107120000_galeria_categoria`), esquema zod, API, campo con sugerencias en el panel y **filtro por categoría accesible en Estudiantes** (botones con `aria-pressed`, se muestra solo si hay categorías). (2) **RF10/US-29:** modelo `Teacher` y migración `20261107130000_plantel` (también concede `teachers:manage` a los ADMIN y EDITOR existentes), módulo de API `teachers` (alta, edición, foto, orden, baja lógica y eliminación manual solo de personas ocultas, 409 si siguen visibles, todo auditado), lectura pública `/public/teachers`, página `/panel/plantel` (y pestaña de Configuración) y sección **Plantel docente** en Institucional (no se dibuja si no hay personas visibles). (3) **Semilla demo:** 6 docentes **ficticios** (nombres inventados, ilustraciones en lugar de fotos, uno oculto) y categorías provisorias en la galería (Prácticas, Ingredientes, Platos, Perfil); producción deja el plantel vacío. Las bases que ya tenían las diapositivas provisorias reciben su categoría al volver a correr `pnpm db:seed` (solo si siguen sin categoría).
+
+**Pruebas.** `shared` (teachers y categorías), API (`teachers.test.ts`, 16 casos; categorías en `gallery.test.ts`) y Cypress: `public/plantel.cy.ts`, `panel-b/plantel.cy.ts`, filtro de `public/carrusel.cy.ts` y categoría en `panel-b/galerias.cy.ts` (390 y 1440 px, con axe).
+
+**Decisiones y preguntas.** ADR-037 y Q138 (datos reales del plantel) y Q139 (consentimiento de fotos).
+
+**Dificultad.** `prisma generate` falla con EPERM mientras un `pnpm dev` tiene abierto el motor de Prisma en Windows. Se regeneró el cliente en una carpeta temporal y se copiaron todos los archivos menos el `.dll` (el motor es el mismo; el esquema viaja en el cliente). Para uso normal: detener `pnpm dev`, `pnpm db:migrate`, volver a levantar.
+
+### 2026-11-07 · Carrusel editable y galerías (RF09, ADR-036, rama `feat/publico-fiel-al-figma`)
+
+**Hecho.** Modelo `GalleryItem` y migración `20261107075740_galeria` (aditiva; también concede `gallery:manage` a los ADMIN y EDITOR existentes). Módulo de API `gallery` (alta con imagen a WebP de 1600 px, textos, reemplazo de foto, orden, eliminación manual auditada, hasta 10 por área) y lectura pública `/public/gallery`. Componente `Carousel` accesible (scroll-snap, botones, puntos, teclado, sin reproducción automática). Sección **Galerías** del panel (`/panel/galerias` y pestaña de Configuración) con subir, editar, Subir/Bajar y eliminar con confirmación. Estudiantes y La carrera usan el carrusel; sin diapositivas se usa el respaldo (`student_gallery`, `career_image`). La semilla crea las diapositivas provisorias solo si el área está vacía.
+
+**Pruebas.** API (`gallery.test.ts`, 18 casos), `shared` (7 casos nuevos) y Cypress: `public/carrusel.cy.ts` (semántica, botones, puntos, teclado, axe, 390 y 1440 px) y `panel-b/galerias.cy.ts` (flujo completo del EDITOR, 403 de BEDELIA).
+
+**Para correr.** `pnpm db:migrate` (con el servidor de desarrollo apagado si falla el cliente de Prisma en Windows: EPERM) y `pnpm db:seed`.
+
+**Pendiente.** Categorías de la galería (RF09 completo); reemplazar las fotos provisorias por las del instituto con consentimiento (Q63).
+
+### 2026-11-07 · Instagram: conexión con token pegado (sin App ID ni Secret)
+
+**Hecho.** La configuración de Instagram tiene `connectionMethod` (`oauth` o `token`). Con `token`, pegar el token alcanza: pasa a modo real, el cliente Graph funciona solo con el token y se puede probar la conexión. La tarjeta de Configuración tiene un selector de método y muestra solo el formulario correspondiente. Cambiar de método descarta lo conectado con el otro. Pruebas: 5 casos nuevos de API (`integrations.test.ts`) y un spec Cypress (`integraciones-a11y`). ADR-020 enmendado.
+
+**Pendiente.** Probar contra Meta real (cuenta profesional y token generado en el panel de Meta); la renovación automática del token no se verificó con tokens pegados.
+
+### 2026-11-07 · Pantallas públicas fieles al Figma (rama `feat/publico-fiel-al-figma`)
+
+**Hecho.** Fotos del Figma como **provisorias** (ADR-035, Q63): 13 imágenes webp (472 KB) en `apps/web/public/img/provisorio/`. Inicio: titular corto + frase ancla como subtítulo (resuelve Q64) y las dos fotos del encabezado; La carrera: foto junto al perfil; Estudiantes: galería "Vida en la cocina" (grilla estática); Ingreso: foto en el encabezado; Novedades: portadas de demostración y bloque neutro sin portada; logo configurable en el encabezado. Todo sale de ajustes nuevos de `SiteSetting` (`hero_title`, `hero_eyebrow`, `logo_url`, `hero_image_1/2`, `career_image`, `ingreso_image`, `student_gallery`) editables en Configuración; los valores del IFTS están solo en la semilla (hay que correr `pnpm db:seed`, idempotente).
+
+**Pruebas.** `shared` (esquema y `parseGallery`), API (guardar, rechazar y publicar los ajustes; portadas con ruta propia), unitaria de `toSiteInfo` y el spec Cypress `public/imagenes-figma.cy.ts` (390 y 1440 px: ninguna imagen rota).
+
+**Pendiente / decisiones.** Q134 (plan por año del Figma sin datos), Q135 (carrusel vs. grilla), Q136 (descripciones de los pasos de Ingreso) y Q137 (logo). Las fotos tienen personas sin consentimiento documentado: reemplazarlas antes de producción.
+
+### 2026-11-07 · Tarjeta "Ingreso" del Resumen con datos verificables (A14)
+
+**Hecho.** Rama `fix/indicador-ingreso` desde `develop` (`f0c236f`). `GET /dashboard` agrega
+`ingresoContent` (secciones visibles de Ingreso y si les quedan datos `[a confirmar ...]`). La
+tarjeta muestra "Sin publicar", "A confirmar" o "Publicada" y presenta el año como estimado. Ya no
+afirma una "ficha de preinscripción activa". Nuevo `hasPendingConfirmation` en `@ifts2/shared`.
+
+**Pruebas.** 1 caso de integración nuevo y 1 ajustado, unitarias de shared y 4 E2E (390 y 1440 px,
+axe). Resultados en `docs/evidencias/2026-11-07-indicador-ingreso-a14.md`; decisión en ADR-034.
+
+**Pendiente.** Q133: definir si el año de ingreso seguirá siendo una estimación.
+
+### 2026-11-07 · Inscripciones: enlace de alumnos y estado efectivo (A07, A08)
+
+**Hecho.** Rama `fix/inscripciones-siu-y-estado` desde `develop` (`f0c236f`). **A07:** los enlaces
+tienen la marca `enrollment` ("Enlace de inscripción de alumnos" en el panel; migración
+`20261107030216_enlace_inscripcion`). `/inscripciones` muestra solo esos enlaces. Ya no busca "SIU"
+en el título ni ofrece todos los enlaces; si no hay ninguno, avisa que está pendiente y muestra el
+correo de Bedelía. **A08:** `effectiveExamEnrollmentOpen` (`@ifts2/shared`) combina el interruptor
+general, la casilla del llamado y `now < endsOn`. La API lo entrega en `/public/home` y
+`/public/students`, así que la insignia general y las tarjetas ya no se contradicen.
+
+**Pruebas.** 2 unitarias de shared, 4 de integración nuevas y 2 ajustadas, y un caso E2E a 390 y
+1440 px. Resultados en `docs/evidencias/2026-11-07-inscripciones-a07-a08.md`; decisión en ADR-033.
+
+**Pendiente / dificultades.** Q131 (¿el interruptor general es un bloqueo?) y Q132 (enlace oficial
+de alumnos) para confirmar con el instituto. En instalaciones existentes hay que marcar el enlace
+de alumnos a mano. `pnpm test` de la API falla por configuración de Vitest (problema anterior;
+ver la evidencia).
+
+### 2026-11-06 · Compatibilidad de portadas externas (A06)
+
+**Hecho.** Rama `fix/portadas-externas` creada desde `develop` actualizado, con A05
+(`4d2863b3e278014768efc94d6d0d5fcde0f57e38`) verificado. `Cover` optimiza solo rutas
+propias y URLs de la API sin parámetros; las externas y firmadas se cargan directamente.
+`remotePatterns` permanece limitado a la API y rechaza parámetros. Un componente cliente
+localizado muestra un fallback accesible si la imagen falla. No cambian A01, A05, los
+contratos públicos, el almacenamiento ni la limpieza de archivos A10.
+
+**Pruebas.** Seis casos nuevos de API, quince de política/atributos de imagen y veinte de
+Cypress contra la web compilada, con API e imágenes simuladas a 390 y 1440 px. Se verifican
+inicio, novedades, detalle, prioridad, carga diferida, dimensiones, accesibilidad, errores
+404/403 y el rechazo del optimizador. La suite se agrega a GitHub Actions. Resultados y
+limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión en ADR-032.
 
 ### 2026-11-06 · Histórico de publicaciones programadas (A05)
 
 **Hecho.** El filtro SQL compartido por el listado histórico, su total y el detalle archivado admite `SCHEDULED` con una ventana no vacía ya terminada. Los años disponibles incorporan las programadas elegibles, sin adelantar las futuras. Se preservan `PUBLISHED`, Instagram, los estados y la portada; no hay migraciones ni cambios visuales o de contratos.
 
 **Pruebas.** Cinco casos de integración nuevos con reloj controlado: matriz de estados y ventanas, ambos límites para publicaciones manuales y programadas, Instagram y filtros/años/paginación en Buenos Aires. Se reprodujo el fallo antes de corregirlo. PostgreSQL 17 aislado, con base descartable marcada y verificada mediante A04; ninguna operación sobre bases de desarrollo o producción. Resultados y comandos en `docs/evidencias/2026-11-06-historico-publicaciones-a05.md`.
-
-### 2026-10-30 · Entrega de la cátedra: documentación y empaquetado
-
-**Hecho.** `docs/entrega/`: Manual Técnico (con DER por áreas y tablas/campos derivados de `prisma/schema.prisma` por `pnpm docs:der`), Manual de Usuario (flujos con capturas, guía de Instagram para el cliente, mensajes frecuentes), Evidencias de pruebas y CRUD (3 unitarias + 2 de integración con salida real) y el PDF único `IFTS2-Etapa-3-Documentacion.pdf` (`pnpm docs:pdf`, 85 páginas). `pnpm package` genera el zip desde `HEAD` (sin `node_modules`, `.env` ni secretos). Pruebas nuevas: `apps/api/test/api/integracion-catedra.test.ts` (INT-1 e INT-2) y los specs Cypress `panel-a/capturas-crud.cy.ts` (CRUD de avisos, publicaciones, documentos y usuarios con la interfaz real) y `public/capturas-contacto.cy.ts`.
-
-**Corrida de entrega.** `pnpm test`: 43 + 352 pruebas; Cypress: 190 en 19 archivos; `pnpm verify`: 33/33; lint y tipos sin errores (salidas `docs/evidencias/2026-10-30-entrega-*`). Instalación en limpio desde el zip: `docs/evidencias/2026-10-30-instalacion-en-limpio.md`.
-
-**Dificultades.** Mermaid: dos diagramas compartían id y se pisaban (ahora se dibujan de a uno) y un `;` en un mensaje rompía el diagrama de secuencia; `pdftotext` devuelve Latin-1 por defecto (hace falta `-enc UTF-8` para numerar el índice); Cypress borra `cypress/screenshots` (versionado) al correr: restaurar con `git checkout`; `pnpm db:up` choca si ya existe un contenedor `ifts2-db`.
-
-**Pendiente.** Enlaces del repositorio y de la aplicación desplegada (`[completar]`); Instagram, SMTP y S3 reales; despliegue; k6 (se usó autocannon); datos de ingreso y ubicación de materias por año (cliente).
-
-### 2026-10-30 · Sitio público (agente web público, rama `feat/web-public`)
-
-**Qué se hizo.** Páginas `/`, `/institucional` (con formulario de contacto), `/la-carrera`, `/estudiantes`, `/ingreso`, `/inscripciones`, `/novedades` y `/novedades/[id]` con datos de `/public/*`, ISR de 60 s y degradación sin romperse si la API falla. Código en `apps/web/src/features/public/` (README con mapa páginas -> endpoints -> componentes). Specs Cypress en `apps/web/cypress/e2e/public/` (recorrido 390/1440 con axe, Estudiantes/Inscripciones/Ingreso, Novedades, Contacto E2E-14, degradación, capturas). Capturas en `docs/capturas/publico/` (15). Lighthouse móvil en `docs/evidencias/2026-10-30-web-public-lighthouse.md` (Inicio: rendimiento 93, accesibilidad 100).
-
-**Decisiones.** Contacto dentro de Institucional; Ingreso (aspirantes: convocatoria y pasos desde la sección `ingreso`) separado de Inscripciones (alumnos: llamados con `enrollmentOpen` y enlace a SIU); renderizador Markdown propio que escapa HTML; hero con `primary-strong` por contraste AA; filtros de Novedades como formulario GET que funciona sin JavaScript. Preguntas Q60 a Q65.
-
-**Dificultades.** (1) `next.config.ts` nunca leía el `.env` de la raíz (Next ya había cacheado el entorno): con puertos propios la web llamaba a la API en 4000; se corrigió con `forceReload`. (2) `text-base` es a la vez tamaño y color en este tema: botones `size="lg"` y textos quedaban casi invisibles; se evitó y se documentó. (3) Next exige `revalidate` como literal. (4) La 404 del detalle devuelve 404 real en producción. (5) Dos servidores no pueden compartir `.next`.
-
-**Pendiente.** Fotos, galería, plan por año y documentos públicos de ingreso (Q61 a Q63); prueba de carga k6 del sitio; barra inferior móvil del Figma (Q65).
-
-### 2026-10-30 · Panel parte A: login, Resumen, Publicaciones, Avisos y Mensajes (agente web, rama `feat/web-panel-a`)
-
-**Qué se hizo.** Pantallas del panel en `apps/web/src/features/panel-a/` (README propio con pantallas, endpoints, permisos y cómo probar): login con límite de intentos, "¿Olvidaste tu clave?" y cambio obligatorio de contraseña; Resumen (US-12) con estado de Instagram, modo demostración, tarjetas y bloques por rol; Publicaciones (moderación con consentimiento, descartar/restaurar, carga manual, publicaciones propias con publicar/pausar/programar/reactivar/eliminar); Avisos (filtros con conteos, adjunto, pausar/reanudar/reactivar/eliminar, validación en línea); Mensajes de contacto. Toda confirmación usa `ConfirmDialog`. Ítem "Mensajes" en `PANEL_NAV` y cierre de sesión en el menú móvil.
-
-**Verificación.** `pnpm lint`, `pnpm typecheck`, `pnpm build` y Cypress (`e2e/panel-a/*`, `smoke`, `ui-kit`) en verde en 390 y 1440 px, con axe sin violaciones serias; salidas en `docs/evidencias/2026-10-30-panel-a-*.txt`. Capturas para el Manual de Usuario en `docs/capturas/panel/` (46 imágenes, generadas con `capturas.cy.ts`).
-
-**Decisiones.** Q80 a Q87 en `docs/specs/09-preguntas-abiertas.md` ("Revisar" a 30 días, filtro Origen en el navegador, conteos de Avisos sobre `status=ALL`, Mensajes sin diseño, "Prioridad visual" omitida, reactivar un aviso vencido pide fecha). Los fallos de login y el bloqueo 429 se simulan en Cypress para no bloquear la IP de la suite.
-
-**Dificultades.** (1) `next.config.ts` no aplicaba el `.env` raíz (la segunda llamada a `loadEnvConfig` devolvía lo cacheado): el proxy iba a `localhost:4000`; se arregló con `forceReload`. (2) Cypress 16 eliminó `Cypress.env`: los usuarios de prueba van fijos en `cypress/support/panel-a.ts`. (3) En desarrollo la pantalla se hidrata tarde y el primer clic se perdía: las pruebas esperan a que cargue la lista. (4) La API no permite crear avisos ya vencidos: la prueba los vence en la base con una tarea de Node. (5) Las capturas salían recortadas: se agranda la ventana de Electron en `before:browser:launch`.
-
-**Pendiente.** Pantalla de Configuración y Horarios/Archivo (panel B). Filtro `?source=` en `/social/posts` y conteos por estado en `/notices` si se quiere paginar en el servidor.
-
-### 2026-10-29 · Bloque académico de la API (agente académico, rama `feat/academic`)
-
-**Qué se hizo.** Diez módulos de API bajo `apps/api/src/modules/`, cada uno con su `README.md`: `notices`, `terms`, `schedules`, `exam-calls`, `documents`, `settings`, `content`, `links`, `contact` y `public` (solo lectura, sin sesión). Contrato de respuestas tipado en `packages/shared/src/academic.ts` (una línea nueva en `index.ts`); no se tocó `prisma/schema.prisma`. Utilidades en `src/lib/` (`documents`, `settings`, `markdown`). Documentación al día: `docs/specs/04-api.md` (sección "Bloque académico"), `docs/specs/09-preguntas-abiertas.md` (Q40 a Q47), `docs/ARQUITECTURA.md` y `apps/api/README.md`.
-
-**Verificación.** `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde: 37 pruebas en `shared` y 204 en `api` (125 nuevas: avisos, ciclos, horarios, llamados, documentos con subida real, ajustes, contenido, enlaces, contacto, `/public/*` con reloj fijo en los bordes de vigencia, lógica pura de `public-current` y sanitización de Markdown). Salidas en `docs/evidencias/2026-10-29-academic-*.txt`.
-
-**Decisiones.**
-
-- `EXPIRED` de un aviso nunca se guarda: `viewStatus` se calcula (PAUSED gana sobre EXPIRED). Reactivar un vencido exige una nueva fecha de fin.
-- `public` aplica la vigencia en dos capas: filtro SQL y verificación con las funciones de `@ifts2/shared`. Caché HTTP corta con `stale-while-revalidate`; archivos con URL firmada de 30 minutos (más larga que la caché) y `downloadUrl: null` si el almacenamiento falla.
-- Un único ciclo público: índice parcial de la migración + transacción (apaga el anterior y enciende el nuevo) + función pura `planPublicTermChange` con pruebas unitarias.
-- Borrado de documentos: se bloquea ante cualquier referencia (la clave foránea es `SET NULL`). Archivar con `force` deja el adjunto enlazado.
-- Contacto: honeypot + 5 envíos por hora por IP; el mensaje se guarda siempre antes de intentar el correo.
-- El módulo `contact` se monta en la raíz de la API (`mountPath: '/'`) porque expone `/public/contact` y `/contact-messages`.
-
-**Dificultades.** `Document` no tiene relación inversa con "visible": se calculó con las funciones de vigencia en `findReferences`. Las sesiones de las pruebas con reloj falso vencen: hay que iniciar sesión después de fijar la hora. La heredoc de Git Bash falló con ciertos caracteres, por eso algunos archivos se escribieron con la herramienta de archivos.
-
-**Pendiente / para el equipo.** Renderizador de Markdown en la web (la API entrega Markdown ya sanitizado). Revisar la matriz `PERMISSIONS` (`contact:delete` para BEDELIA, Q41). Prueba de carga k6 de `/public/*` (RNF09) y, si hace falta, una caché en memoria por proceso. Pantallas web que consuman los DTO.
-
-### 2026-10-29 · Fundación técnica (agente de fundación)
 
 **Monorepo y herramientas.** pnpm workspaces (`apps/api`, `apps/web`, `packages/shared`), TypeScript estricto, ESLint + Prettier, scripts raíz (`dev`, `build`, `lint`, `typecheck`, `test`, `test:api`, `test:e2e`, `db:*`, `tokens`, `contrast`). `docker-compose.yml` con `ifts2-db` (postgres:17, puerto 5433, bases `ifts2` e `ifts2_test`). `.env.example` completo y `.env` local. CI en `.github/workflows/ci.yml` (lint, tipos, pruebas con PostgreSQL de servicio, build, Cypress), sin secretos.
 
@@ -78,27 +104,6 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 **Contraste AA (ajustes anotados, ver ADR-021).** `primary` #8D775F con texto blanco da 4,25:1 y sobre `base` 3,93:1 -> botones con `primary-strong` #806C56 (5,00:1) y texto de acento con `accent` #6F5142 (6,62:1); `font` #6E7271 sobre `accent-2`/`success-back` da 3,64/4,10 -> `font-strong` #5F6261; `warning-text` #B77A3A sobre `warning-back` da 3,00 -> `warning-text-strong` #8D5E2D (4,66:1). Tipografía: Plus Jakarta Sans (las capturas no son Inter).
 
 **Evidencias** en `docs/evidencias/` (lint, tipos, tests, build, verificación de producción con login real, Cypress).
-
-## Pendiente (para los siguientes agentes)
-
-- Todas las pantallas del sitio y del panel (hoy placeholders) y los módulos de API restantes: `public` (incluye `GET /public/settings` que consumen la cabecera y el pie), `publications`, `social` (sincronización), `notices`, `schedules`, `exam-calls`, `documents`, `settings`, `content`, `links`, `contact`, `dashboard`.
-- `GraphInstagramClient`: **solo esqueleto**. Falta verificarlo contra la API real, la renovación del token (~50 días) y la sincronización idempotente por `externalId` (ADR-09, prueba de concepto).
-- `S3Storage` implementado pero **no probado contra un servicio real** (sin credenciales).
-- Pantalla de Configuración que consuma `/integrations/*` (estados, guía, conectar, probar, desconectar) y muestre el aviso de modo demostración.
-- Login real del panel (hoy placeholder; la API ya funciona).
-- Lighthouse CI, k6 y despliegue (`deploy.yml`, `lighthouse.yml`) quedan para las fases de endurecimiento.
-- Validar con el cliente: nombres Ingreso/Inscripciones, tipografía, contrastes, hashtag.
-
-## Dificultades y soluciones
-
-- **Prisma rechazó el schema de la spec**: enums en una sola línea. Se pasaron a varias líneas.
-- **pnpm 11 bloquea scripts de instalación**: se aprobaron en `pnpm-workspace.yaml` (`allowBuilds`).
-- **Cypress no arrancaba** (`bad option: --smoke-test`): el entorno define `ELECTRON_RUN_AS_NODE=1`; se ejecuta con la variable sin definir.
-- **Puerto 3000 ocupado por otro programa del equipo**: no se tocó; la web de verificación corrió en 3100 (`PORT`) y se documentó.
-- **El foco no volvía al botón que abrió un diálogo controlado**: Radix solo lo hace con `Trigger`; se agregó `useRestoreFocus` (verificado con Cypress).
-- **Variables CSS no admiten opacidad de Tailwind** (`bg-x/50`): se evita y se documentó.
-- **El menú móvil cerraba con un `setState` en un efecto** (regla de lint de React): se resolvió guardando la ruta en la que se abrió.
-- **`/ui-kit` quedaba prerenderizado y siempre devolvía 404 en producción**: se hizo dinámico (`ENABLE_UI_KIT`).
 
 ### 2026-10-29 · API de redes y publicaciones (agente `feat/social`)
 
@@ -126,7 +131,48 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 - Mensajes de `text()` en shared salen con género masculino ("La leyenda es obligatorio."): conviene un parámetro de género en el helper (cambio en `schemas.ts`, no tocado para no pisar a otros agentes).
 - Planificador interno sin prueba automatizada (se probó la tarea que ejecuta, `runSocialJob`, vía `POST /social/cron`).
 
-## Panel B: Horarios, Archivo y Configuración (rama `feat/web-panel-b`, 2026-10-30)
+### 2026-10-29 · Bloque académico de la API (agente académico, rama `feat/academic`)
+
+**Qué se hizo.** Diez módulos de API bajo `apps/api/src/modules/`, cada uno con su `README.md`: `notices`, `terms`, `schedules`, `exam-calls`, `documents`, `settings`, `content`, `links`, `contact` y `public` (solo lectura, sin sesión). Contrato de respuestas tipado en `packages/shared/src/academic.ts` (una línea nueva en `index.ts`); no se tocó `prisma/schema.prisma`. Utilidades en `src/lib/` (`documents`, `settings`, `markdown`). Documentación al día: `docs/specs/04-api.md` (sección "Bloque académico"), `docs/specs/09-preguntas-abiertas.md` (Q40 a Q47), `docs/ARQUITECTURA.md` y `apps/api/README.md`.
+
+**Verificación.** `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde: 37 pruebas en `shared` y 204 en `api` (125 nuevas: avisos, ciclos, horarios, llamados, documentos con subida real, ajustes, contenido, enlaces, contacto, `/public/*` con reloj fijo en los bordes de vigencia, lógica pura de `public-current` y sanitización de Markdown). Salidas en `docs/evidencias/2026-10-29-academic-*.txt`.
+
+**Decisiones.**
+
+- `EXPIRED` de un aviso nunca se guarda: `viewStatus` se calcula (PAUSED gana sobre EXPIRED). Reactivar un vencido exige una nueva fecha de fin.
+- `public` aplica la vigencia en dos capas: filtro SQL y verificación con las funciones de `@ifts2/shared`. Caché HTTP corta con `stale-while-revalidate`; archivos con URL firmada de 30 minutos (más larga que la caché) y `downloadUrl: null` si el almacenamiento falla.
+- Un único ciclo público: índice parcial de la migración + transacción (apaga el anterior y enciende el nuevo) + función pura `planPublicTermChange` con pruebas unitarias.
+- Borrado de documentos: se bloquea ante cualquier referencia (la clave foránea es `SET NULL`). Archivar con `force` deja el adjunto enlazado.
+- Contacto: honeypot + 5 envíos por hora por IP; el mensaje se guarda siempre antes de intentar el correo.
+- El módulo `contact` se monta en la raíz de la API (`mountPath: '/'`) porque expone `/public/contact` y `/contact-messages`.
+
+**Dificultades.** `Document` no tiene relación inversa con "visible": se calculó con las funciones de vigencia en `findReferences`. Las sesiones de las pruebas con reloj falso vencen: hay que iniciar sesión después de fijar la hora. La heredoc de Git Bash falló con ciertos caracteres, por eso algunos archivos se escribieron con la herramienta de archivos.
+
+**Pendiente / para el equipo.** Renderizador de Markdown en la web (la API entrega Markdown ya sanitizado). Revisar la matriz `PERMISSIONS` (`contact:delete` para BEDELIA, Q41). Prueba de carga k6 de `/public/*` (RNF09) y, si hace falta, una caché en memoria por proceso. Pantallas web que consuman los DTO.
+
+### 2026-10-30 · Panel parte A: login, Resumen, Publicaciones, Avisos y Mensajes (agente web, rama `feat/web-panel-a`)
+
+**Qué se hizo.** Pantallas del panel en `apps/web/src/features/panel-a/` (README propio con pantallas, endpoints, permisos y cómo probar): login con límite de intentos, "¿Olvidaste tu clave?" y cambio obligatorio de contraseña; Resumen (US-12) con estado de Instagram, modo demostración, tarjetas y bloques por rol; Publicaciones (moderación con consentimiento, descartar/restaurar, carga manual, publicaciones propias con publicar/pausar/programar/reactivar/eliminar); Avisos (filtros con conteos, adjunto, pausar/reanudar/reactivar/eliminar, validación en línea); Mensajes de contacto. Toda confirmación usa `ConfirmDialog`. Ítem "Mensajes" en `PANEL_NAV` y cierre de sesión en el menú móvil.
+
+**Verificación.** `pnpm lint`, `pnpm typecheck`, `pnpm build` y Cypress (`e2e/panel-a/*`, `smoke`, `ui-kit`) en verde en 390 y 1440 px, con axe sin violaciones serias; salidas en `docs/evidencias/2026-10-30-panel-a-*.txt`. Capturas para el Manual de Usuario en `docs/capturas/panel/` (46 imágenes, generadas con `capturas.cy.ts`).
+
+**Decisiones.** Q80 a Q87 en `docs/specs/09-preguntas-abiertas.md` ("Revisar" a 30 días, filtro Origen en el navegador, conteos de Avisos sobre `status=ALL`, Mensajes sin diseño, "Prioridad visual" omitida, reactivar un aviso vencido pide fecha). Los fallos de login y el bloqueo 429 se simulan en Cypress para no bloquear la IP de la suite.
+
+**Dificultades.** (1) `next.config.ts` no aplicaba el `.env` raíz (la segunda llamada a `loadEnvConfig` devolvía lo cacheado): el proxy iba a `localhost:4000`; se arregló con `forceReload`. (2) Cypress 16 eliminó `Cypress.env`: los usuarios de prueba van fijos en `cypress/support/panel-a.ts`. (3) En desarrollo la pantalla se hidrata tarde y el primer clic se perdía: las pruebas esperan a que cargue la lista. (4) La API no permite crear avisos ya vencidos: la prueba los vence en la base con una tarea de Node. (5) Las capturas salían recortadas: se agranda la ventana de Electron en `before:browser:launch`.
+
+**Pendiente.** Pantalla de Configuración y Horarios/Archivo (panel B). Filtro `?source=` en `/social/posts` y conteos por estado en `/notices` si se quiere paginar en el servidor.
+
+### 2026-10-30 · Sitio público (agente web público, rama `feat/web-public`)
+
+**Qué se hizo.** Páginas `/`, `/institucional` (con formulario de contacto), `/la-carrera`, `/estudiantes`, `/ingreso`, `/inscripciones`, `/novedades` y `/novedades/[id]` con datos de `/public/*`, ISR de 60 s y degradación sin romperse si la API falla. Código en `apps/web/src/features/public/` (README con mapa páginas -> endpoints -> componentes). Specs Cypress en `apps/web/cypress/e2e/public/` (recorrido 390/1440 con axe, Estudiantes/Inscripciones/Ingreso, Novedades, Contacto E2E-14, degradación, capturas). Capturas en `docs/capturas/publico/` (15). Lighthouse móvil en `docs/evidencias/2026-10-30-web-public-lighthouse.md` (Inicio: rendimiento 93, accesibilidad 100).
+
+**Decisiones.** Contacto dentro de Institucional; Ingreso (aspirantes: convocatoria y pasos desde la sección `ingreso`) separado de Inscripciones (alumnos: llamados con `enrollmentOpen` y enlace a SIU); renderizador Markdown propio que escapa HTML; hero con `primary-strong` por contraste AA; filtros de Novedades como formulario GET que funciona sin JavaScript. Preguntas Q60 a Q65.
+
+**Dificultades.** (1) `next.config.ts` nunca leía el `.env` de la raíz (Next ya había cacheado el entorno): con puertos propios la web llamaba a la API en 4000; se corrigió con `forceReload`. (2) `text-base` es a la vez tamaño y color en este tema: botones `size="lg"` y textos quedaban casi invisibles; se evitó y se documentó. (3) Next exige `revalidate` como literal. (4) La 404 del detalle devuelve 404 real en producción. (5) Dos servidores no pueden compartir `.next`.
+
+**Pendiente.** Fotos, galería, plan por año y documentos públicos de ingreso (Q61 a Q63); prueba de carga k6 del sitio; barra inferior móvil del Figma (Q65).
+
+### 2026-10-30 · Panel parte B: Horarios, Archivo y Configuración (rama `feat/web-panel-b`)
 
 **Hecho.** `/panel/horarios` (ciclo público, cambio con confirmación, alta de ciclos, grillas por comisión y llamados: crear, editar, publicar, eliminar no publicados), `/panel/archivo` (búsqueda, filtros, tabla y tarjetas móviles, detalle con referencias, restaurar, archivar con `force`, eliminar, subida con metadatos), `/panel/configuracion` (ajustes globales con confirmación, usuarios y roles con clave temporal única, contenido en Markdown con vista previa, enlaces) e Integraciones (Instagram con guía, redirectUri copiable, secreto enmascarado, conectar OAuth, token manual, probar, desconectar; correo con SMTP y prueba). Código y mapa en `apps/web/src/features/panel-b/README.md`.
 
@@ -136,7 +182,7 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 **Pendiente.** Remitente SMTP (Q100); probar OAuth de Instagram contra Meta real.
 
-## Integración y calidad (agente de integración, 2026-10-30)
+### 2026-10-30 · Integración y calidad (agente de integración)
 
 **Verificado sobre `main` integrado.** `pnpm lint`, `pnpm typecheck`, `pnpm test` (43 de shared + 350 de API), `pnpm build`, y `pnpm e2e --build` (toda la suite Cypress a 390 y 1440 px, incluida la web degradada). Salidas en `docs/evidencias/2026-10-30-integracion-*.txt`. Flujos H1 a H8 y seguridad de punta a punta con `pnpm verify` (`2026-10-30-flujos-y-seguridad.md`). Carga con `pnpm load` (`2026-10-30-carga-publico.md`) y Lighthouse móvil con `pnpm lighthouse` (`2026-10-30-lighthouse-movil.md`).
 
@@ -155,7 +201,29 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 **Pendiente.** Probar Instagram y SMTP reales; el techo de un solo proceso web ronda 300-360 pedidos/s en saturación (se resuelve con CDN o más procesos); `pnpm e2e --reset` borra la base de desarrollo y debe correrlo una persona (Prisma bloquea el reset a agentes).
 
-## Roles y permisos configurables (rama `feat/US-36-roles-configurables`, 2026-11-06)
+### 2026-10-30 · Entrega de la cátedra: documentación y empaquetado
+
+**Hecho.** `docs/entrega/`: Manual Técnico (con DER por áreas y tablas/campos derivados de `prisma/schema.prisma` por `pnpm docs:der`), Manual de Usuario (flujos con capturas, guía de Instagram para el cliente, mensajes frecuentes), Evidencias de pruebas y CRUD (3 unitarias + 2 de integración con salida real) y el PDF único `IFTS2-Etapa-3-Documentacion.pdf` (`pnpm docs:pdf`, 85 páginas). `pnpm package` genera el zip desde `HEAD` (sin `node_modules`, `.env` ni secretos). Pruebas nuevas: `apps/api/test/api/integracion-catedra.test.ts` (INT-1 e INT-2) y los specs Cypress `panel-a/capturas-crud.cy.ts` (CRUD de avisos, publicaciones, documentos y usuarios con la interfaz real) y `public/capturas-contacto.cy.ts`.
+
+**Corrida de entrega.** `pnpm test`: 43 + 352 pruebas; Cypress: 190 en 19 archivos; `pnpm verify`: 33/33; lint y tipos sin errores (salidas `docs/evidencias/2026-10-30-entrega-*`). Instalación en limpio desde el zip: `docs/evidencias/2026-10-30-instalacion-en-limpio.md`.
+
+**Dificultades.** Mermaid: dos diagramas compartían id y se pisaban (ahora se dibujan de a uno) y un `;` en un mensaje rompía el diagrama de secuencia; `pdftotext` devuelve Latin-1 por defecto (hace falta `-enc UTF-8` para numerar el índice); Cypress borra `cypress/screenshots` (versionado) al correr: restaurar con `git checkout`; `pnpm db:up` choca si ya existe un contenedor `ifts2-db`.
+
+**Pendiente.** Enlaces del repositorio y de la aplicación desplegada (`[completar]`); Instagram, SMTP y S3 reales; despliegue; k6 (se usó autocannon); datos de ingreso y ubicación de materias por año (cliente).
+
+### 2026-11-04 · Ajuste de la CI
+
+**Hecho.** `ci.yml` actualizado para la versión vigente de Node de las acciones (commit `3caabf7`). Sin cambios de código de la aplicación.
+
+### 2026-11-06 · Especificaciones actualizadas (commit `595efb7`)
+
+**Hecho.** Se incorporaron a `docs/specs/` los cambios acordados con el cliente: roles configurables y Superadministrador (RF11, ADR-18 ampliada, E2E-18 a E2E-20, Q123 a Q125), historias H9 y US-36, y `docs/specs/prisma/schema.prisma`.
+
+### 2026-11-06 · Protección de las bases de pruebas (A04, PR #1)
+
+**Hecho.** Antes de migrar o limpiar, las pruebas de integración validan que el destino sea una base descartable (nombre y marca), de modo que un `DATABASE_URL` mal apuntado no borre datos de desarrollo o producción. Se separaron las pruebas unitarias de las de integración (`apps/api/vitest.config.ts`) y se agregó `docker/init-test-db.sql`. **Pruebas.** `test-database*.test.ts`.
+
+### 2026-11-06 · Roles y permisos configurables (rama `feat/US-36-roles-configurables`, PR #4)
 
 **Hecho (RF11, US-36, ADR-18 ampliada, ADR-031).**
 
@@ -184,3 +252,155 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 - La prueba nueva de rutas encontró `POST /social/cron` sin permiso. Es intencional, porque usa `CRON_SECRET`, y quedó documentado como excepción (Q127).
 
 **Preguntas nuevas.** Q126 (un ADMIN no administra a usuarios con más permisos) y Q127 (excepciones a "toda ruta declara permiso").
+
+**Enmienda del mismo día (decisión del equipo, ver ADR-031).** Los roles de sistema ADMIN, BEDELIA y EDITOR **sí se pueden eliminar** (manual, con confirmación, auditado como `role.delete`, 409 si tienen usuarios); SUPERADMIN no se edita ni se elimina. En modo `prod` la semilla crea esos tres solo en el primer arranque, para no resucitar un rol eliminado (Q128). `/integrations/*` se protege con el permiso `integrations:manage` y no con el rol ADMIN (Q129). La implementación está en `apps/api/src/modules/roles`, `prisma/seed.ts` y la pantalla `/panel/roles`.
+
+### 2026-11-06 · Descargas remotas seguras (A01, PR #2)
+
+**Hecho.** La descarga de imágenes por URL (carga manual y aprobación de Instagram) valida las direcciones DNS **durante la conexión y en cada redirección**, para impedir destinos internos (SSRF), sin cambiar los límites de tamaño ni de tiempo (`apps/api/src/infra/media-download.ts`). **Pruebas.** `media-download.test.ts` y `social.test.ts`. Reemplaza la limitación "no se resuelve DNS" anotada en la entrada de redes del 29/10.
+
+### 2026-11-06 · Administración ante operaciones concurrentes (A02, PR #3)
+
+**Hecho.** `PATCH` y `deactivate` de `/users` corren en una transacción **serializable** (`apps/api/src/modules/users/transaction.ts`): dos pedidos simultáneos no pueden dejar al sistema sin Superadministrador activo (escritura sesgada). **Pruebas.** `users-concurrency.test.ts` y `user-transaction.test.ts`.
+
+### 2026-11-06 · Histórico de publicaciones programadas (A05, PR #5)
+
+**Hecho.** El filtro SQL compartido por el listado histórico, su total y el detalle archivado admite `SCHEDULED` con una ventana no vacía ya terminada. Los años disponibles incorporan las programadas elegibles, sin adelantar las futuras. Se preservan `PUBLISHED`, Instagram, los estados y la portada; no hay migraciones ni cambios visuales o de contratos.
+
+**Pruebas.** Cinco casos de integración nuevos con reloj controlado: matriz de estados y ventanas, ambos límites para publicaciones manuales y programadas, Instagram y filtros/años/paginación en Buenos Aires. Se reprodujo el fallo antes de corregirlo. PostgreSQL 17 aislado, con base descartable marcada y verificada mediante A04; ninguna operación sobre bases de desarrollo o producción. Resultados y comandos en `docs/evidencias/2026-11-06-historico-publicaciones-a05.md`.
+
+### 2026-11-06 · Documentación alineada con las decisiones del equipo (agente de documentación)
+
+**Hecho (solo documentación, sin tocar código).**
+
+- **Backlog.** US-36 queda para roles y permisos configurables; "destacar" pasó a **US-37** (`07-backlog-y-plan.md`, `historias-de-usuario.md`, Q130).
+- **Roles.** Son **cuatro** roles de sistema (SUPERADMIN, ADMIN, BEDELIA, EDITOR): corregidos ADR-18, Q3, Q27, la discrepancia 4 de `09`, RF11 y los manuales. **Regla nueva:** ADMIN, BEDELIA y EDITOR se pueden eliminar (manual, confirmado, auditado, 409 si tienen usuarios); SUPERADMIN no se edita ni se elimina (409). El último SUPERADMIN activo no se desactiva ni cambia de rol: **409** (la sección Usuarios de `04-api.md` decía 422 y "último administrador"). Enmienda en ADR-031; Q128 (la semilla `prod` no resucita roles eliminados).
+- **Integraciones por permiso.** `/integrations/*` exige `integrations:manage` (ya estaba en el catálogo y en la matriz inicial de ADMIN); `04-api.md`, la matriz, ADR-18, ADR-020, el README y los manuales hablan de permiso y no del rol ADMIN (Q129).
+- **API.** `04-api.md` contrastada con los routers reales de `apps/api/src/modules`: Ingreso e Inscripciones **no tienen endpoints propios** (usan `/public/content/ingreso` y `/public/students`, este con `?audience=`); contacto real (campo señuelo y 5 envíos por hora, sin captcha); `GET /public/publications/:id?archived=`; lecturas por id y `PATCH /documents/:id` que faltaban; `DELETE /categories/:id` y `/roles/:id` en el listado de eliminaciones.
+- **Decisiones menores.** Hashtag `#ifts2web` provisorio y unificado (00, ADR-09, 08, Q1, Q25); tipografía Plus Jakarta Sans (ADR-11, Q23); carga con autocannon y no k6, con el porqué (RNF09, 06, 03); Q15 resuelta (el Figma incluye el panel móvil, 05).
+- **Orden y referencias.** IDs ordenados (RNF08/RNF09, E2E-19/E2E-20, Q13/Q20/Q21 y secciones de `09`); README con la sección 14 correcta, BUILD-NOTES en el mapa y la frase de "placeholders" actualizada; rutas `especificaciones/` cambiadas a `docs/specs/`; se aclaró que `consigna/`, `cliente/ifts2/` y `proyecto/decisiones.md` viven en el repositorio del equipo.
+- **Esta bitácora** se reordenó cronológicamente y se reescribió el pendiente.
+
+**Pendiente de documentación.** Regenerar las tablas de campos y el DER del Manual Técnico (`pnpm docs:der`) y el PDF (`pnpm docs:pdf`): reflejan el esquema del 30/10 (enum `Role`) y todavía no la tabla `Role`. Sumar capturas de la pantalla **Roles y permisos** al Manual de Usuario.
+
+### 2026-11-07 · Aprobación de redes ante fallas parciales (A10, rama `fix/A10-portada-aprobacion`)
+
+**Problema.** En `approvePost` (`apps/api/src/modules/social/social.service.ts`) un mismo `try` envolvía la transacción y el armado de la respuesta. Si fallaba algo **después** de confirmar (por ejemplo, la relectura de la base), el `catch` borraba la portada de una publicación ya guardada y publicada, y el moderador veía un error aunque la aprobación había ocurrido.
+
+**Hecho.**
+
+- La limpieza de la imagen copiada se limita a la falla de la transacción. Lo posterior a la confirmación ya no borra nada.
+- Ante una confirmación ambigua (la base guardó pero se informó un error), se consulta si existe una publicación con esa portada antes de borrar. Si no se puede verificar, se deja el archivo: mejor un huérfano que una portada rota.
+
+**Pruebas.** En `apps/api/test/api/social.test.ts`, "aprobación ante fallas parciales (A10)": falla al copiar la imagen, falla dentro de la transacción, confirmación ambigua y falla al releer la base después de confirmar, verificando registro y archivo en cada caso. La doble aprobación simultánea ya estaba cubierta (una 201, otra 409, un solo archivo).
+
+**Relacionado, sin cambios.** `documents` tiene el mismo patrón, pero lo posterior a la transacción (`toDocumentDto`) no puede fallar. En `publications/:id/cover` el riesgo es el inverso (si falla la transacción, el archivo queda huérfano), de menor gravedad.
+
+### 2026-11-07 · Ventana "Usuarios y roles" más clara (rama `usuarios-y-roles`)
+
+**Problema.** En la ventana de usuarios el nombre y el correo quedaban en una columna angosta (el correo se cortaba en dos), cada fila repetía el nombre en el rótulo del desplegable, el rol se guardaba apenas se tocaba el desplegable (sin confirmación) y se ofrecía "Desactivar" sobre el propio usuario.
+
+**Hecho.**
+
+- Cada fila muestra a la persona a lo ancho (nombre, correo completo y último ingreso) y el rol como etiqueta.
+- El rol se cambia con un botón **Cambiar rol**: abre un formulario que muestra qué permite cada rol y, al guardar, pide confirmación con el `ConfirmDialog` único. Avisa que se cierran las sesiones abiertas de esa persona.
+- El usuario propio aparece como "(vos)" y sin acciones; los usuarios con más permisos dicen que solo los administra un Superadministrador.
+- El formulario de alta muestra la descripción del rol elegido y, para el Superadministrador, el enlace "Ver qué puede hacer cada rol".
+- Los usuarios de demostración tienen nombres de persona ("Directora de prueba", "Bedel de prueba", "Editora de prueba"), para no confundirlos con los roles.
+
+**Pruebas.** Cypress `panel-b/usuarios-y-roles.cy.ts` (cambio de rol con confirmación, propio usuario sin acciones, 390 y 1440 px) y `panel-a/capturas-crud.cy.ts` adaptado al flujo nuevo.
+
+### 2026-11-07 · Tarjeta "Usuarios del panel" con menú por persona (rama `fix/configuracion-usuarios-menu`)
+
+**Problema.** La tarjeta "Seguridad y accesos" de Configuración se titulaba "Administradores del sistema" aunque listaba a todos los usuarios, mostraba solo 6 sin avisar si había más, las fichas no hacían nada al tocarlas y el botón "+ Administrar usuarios y roles" parecía un alta. El enlace "Roles y permisos" quedaba suelto debajo.
+
+**Hecho.**
+
+- La tarjeta pasa a llamarse "Usuarios del panel" y muestra cuántos usuarios hay y cuántos están activos.
+- Cada persona se toca y abre un **menú** con sus acciones: Cambiar rol, Restablecer contraseña y Desactivar o Reactivar. La ficha propia y la de quien tiene más permisos no abren menú y explican por qué.
+- Arriba a la derecha, **Gestionar usuarios** (abre la ventana con el alta y la lista completa) y, solo para el Superadministrador, **Roles y permisos**. Si hay más de 6 personas, un enlace "Ver los N restantes".
+- Las acciones sobre un usuario se movieron a `configuracion/user-actions.tsx`: la tarjeta y la ventana usan las mismas reglas, formularios y confirmaciones.
+- Componente nuevo del kit: `DropdownMenu` (Radix, `@radix-ui/react-dropdown-menu`), accesible con teclado y lectores de pantalla.
+
+**Pruebas.** Cypress `panel-b/usuarios-y-roles.cy.ts` suma el menú de la tarjeta (390 y 1440 px, con axe). Los specs que abrían la ventana usan el texto nuevo "Gestionar usuarios".
+
+### 2026-11-07 · Las pruebas E2E usan su propia base (rama `fix/configuracion-usuarios-menu`)
+
+**Problema.** `pnpm e2e` corría contra la base de desarrollo. Cada corrida dejaba usuarios y roles de prueba ("Rol 18", "Docentes invitados…", "Persona de prueba") que no se pueden borrar (los usuarios solo se desactivan): la base llegó a 70 usuarios y 28 roles, las listas se hicieron largas (las flechas de scroll tapaban opciones) y pruebas como E2E-10 dependían de lo que había dejado la corrida anterior.
+
+**Hecho.** `pnpm e2e` prepara una base propia, `ifts2_e2e` (`scripts/lib/e2e-db.mjs`): la vacía, aplica las migraciones y carga la semilla demo antes de cada corrida, y la API y las tareas de Cypress la usan. Solo acepta una base llamada `ifts2_e2e` en `localhost:5433`, así nunca puede vaciar la de desarrollo. `--reset` ya no hace falta (se ignora); `--keep-db` reutiliza la base E2E.
+
+### 2026-11-07 · Portada manual ante fallas y cambios simultáneos (A10, rama `fix/A10-portada-manual`)
+
+**Problema (pendiente de A10 tras el PR #12).** En `POST /publications/:id/cover` la portada anterior se decidía con un dato leído **antes** de la transacción. Una transacción fallida dejaba la imagen subida huérfana (y si la publicación se eliminaba en el medio, respondía 500). Dos subidas simultáneas dejaban una imagen huérfana, y una subida mientras otro guardaba un formulario con la portada vieja podía dejar la publicación **apuntando a una imagen borrada**.
+
+**Hecho (`apps/api/src/modules/publications/cover.service.ts`).**
+
+- La subida y el `PATCH` con `coverUrl` cambian la portada con un UPDATE condicional ("solo si sigue siendo la esperada"): si otro cambio ganó, **409** sin guardar nada. Se distingue **404** (no existe) de **409** (cambió).
+- Precondición opcional del cliente, `expectedCoverUrl` (en la subida va en el multipart). El formulario web la manda con la portada que vio al abrirse; el `PATCH` del formulario ya no reenviaba `coverUrl`.
+- Si la transacción falla, la imagen nueva se borra solo si nadie la usa; ante una confirmación ambigua o la base caída, se conserva.
+- La portada anterior se borra después de confirmar y solo si ya nadie la usa (también al eliminar una publicación). Un error posterior a la confirmación nunca borra archivos.
+- Sin migraciones. No se tocó la solución del PR #12 (aprobación de Instagram).
+
+**Pruebas.** 14 nuevas en `apps/api/test/api/publications.test.ts` ("portada ante fallas y cambios simultáneos (A10)"), deterministas (se intercepta la transacción): precondición vieja, otro cambio confirmado en el medio, dos subidas simultáneas reales (una 200 y otra 409, queda un solo archivo y es el referenciado), transacción fallida, publicación eliminada en el medio (404), confirmación ambigua, falla al borrar la anterior, portada anterior usada por otra publicación, formulario viejo en el `PATCH`, cambio a dirección externa y `PATCH` sin portada. Todas verifican base y almacenamiento. Contra el código anterior fallan 9 de las 14.
+
+**Trabajo posterior (no incluido).** Los archivos huérfanos históricos del almacenamiento no se limpian. Si hiciera falta, un script que solo **liste** las imágenes sin referencia, para revisarlas a mano (sin borrado automático, por la regla del proyecto).
+
+### 2026-11-07 · Cambio de contraseña voluntario: "Mi cuenta" (rama `feat/cambiar-contrasena`)
+
+**Problema.** La API ya permitía cambiar la propia contraseña (`POST /auth/change-password`), pero la web solo mostraba el formulario cuando el cambio era obligatorio (tras un restablecimiento). Nadie, ni el Superadministrador, podía cambiar su clave por voluntad propia.
+
+**Hecho.**
+
+- Página **Mi cuenta** (`/panel/cuenta`), para cualquier persona logueada: muestra nombre, correo y rol y permite cambiar la contraseña (pide la actual). Al cambiarla, la API cierra las demás sesiones y la actual sigue abierta; la pantalla lo avisa.
+- Se llega desde el menú de cuenta de la cabecera (escritorio) y desde el menú hamburguesa del panel (móvil), con "Cambiar contraseña".
+- El formulario existente (`change-password-form.tsx`) tiene dos modos: `forced` (el obligatorio, sin cambios) y `voluntary`.
+
+**Pruebas.** Cypress `panel-a/mi-cuenta.cy.ts` (390 y 1440 px, con axe): clave actual incorrecta, cambio correcto, la sesión sigue y solo la clave nueva sirve para entrar. `login.cy.ts` (cambio obligatorio) sigue en verde.
+
+### 2026-11-07 · Pie del sitio más bajo y sin espacio en blanco en el panel (rama `fix/panel-pie`)
+
+**Problema.** En el panel (escritorio) quedaba un espacio en blanco debajo del pie. Causa: el `<main>` que hace scroll no tenía posición propia, así que los elementos con `position: absolute` de adentro (los textos `sr-only` para lectores de pantalla) se ubicaban respecto de la página, escapaban del scroll y la estiraban (en Configuración, 992 px de alto con una ventana de 900). Además el pie ocupaba tres renglones.
+
+**Hecho.**
+
+- `panel-shell.tsx`: el `<main>` lleva `relative`. Ahora la página mide lo mismo que la ventana y el pie queda abajo, en todas las pantallas del panel.
+- `site-footer.tsx`: en escritorio, una sola fila (texto y contactos a la izquierda, redes a la derecha); en móvil se apila. Instagram y Facebook son íconos (SVG propios con `currentColor`, porque la versión de lucide-react ya no trae íconos de marcas) con nombre accesible y `title`.
+
+**Pruebas.** Cypress `recorrido`, `smoke`, `degradacion`, `integraciones-a11y` (axe) y `mi-cuenta` en verde; medido en el navegador: alto de página = alto de ventana.
+
+## Sincronización incremental de Instagram (07/11/2026, ADR-038)
+
+- `sync.service.ts` + `sync-window.ts`: cada fetch exitoso registra `lastFetchAt`, la marca y la identidad (id de cuenta de Graph, hashtag, método) en `IntegrationConfig` (`instagram_sync`); la siguiente trae solo lo posterior (margen de 6 h) y corta la paginación al ver una publicación vieja. Completa la primera vez, con `POST /social/sync?full=true` y al cambiar cuenta, hashtag o método. Un fetch fallido no avanza la marca. `InstagramClient` suma `since`, `onCoverage` y `getAccountId()` (doble incluido).
+- Panel: botón secundario "Sincronización completa" (con `ConfirmDialog`) y "Último fetch exitoso" en Publicaciones, Resumen y Configuración.
+- **Pruebas:** unitarias (`sync-window`, corte de paginación, doble) y de API (incremental, margen, fallo, forzada, cambio de cuenta/hashtag/método, sin duplicar, 401/403/400) + Cypress corto. **Sin verificar:** contra una cuenta real de Meta.
+
+## Semilla demo completa (07/11/2026)
+
+`prisma/seed.ts` (`seedDemoExtras`) suma datos ficticios para que la demo muestre todo: publicaciones en todos los estados y años, publicaciones de redes detectada / aprobada / descartada, avisos para cada público y en cada estado, llamados pasados, próximos y sin publicar, mensajes en cada estado, una cuenta desactivada, un enlace oculto y auditoría de varias personas. Es idempotente y solo corre en modo demo. Lo único que carga el equipo a mano es el token de Instagram. Verificado en una base descartable: dos corridas seguidas sin duplicados.
+
+## Estado actual (06/11/2026)
+
+- **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).
+- **Últimas verificaciones registradas:** 30/10: 43 + 352 pruebas, Cypress 190 en 19 archivos, `pnpm verify` 33/33 (`docs/evidencias/2026-10-30-entrega-*`). 06/11: pruebas de roles, concurrencia, descargas remotas y A05 (`docs/evidencias/2026-11-06-*`).
+
+## Pendiente
+
+- **Con servicios reales (faltan cuentas o credenciales):** probar Instagram contra una cuenta profesional y una app de Meta del cliente (`GraphInstagramClient` solo se probó contra un servidor simulado); SMTP real (remitente, Q100) y `S3Storage` contra un servicio real.
+- **Despliegue:** hosting, base y dominio sin definir (ADR-15, Q13, Q14); `deploy.yml` y `lighthouse.yml` de la CI; enlaces del repositorio y de la aplicación en `docs/entrega/Enlaces.md` (`[completar]`).
+- **Con el cliente:** datos de ingreso (Q122), ubicación de materias por año (Q120), nombres de la resolución (Q121), URL de SIU Guaraní, Mi Argentina y Tutoría (Q6), nombres finales Ingreso/Inscripciones (Q20, Q22), hashtag definitivo (Q1), a quién se entregan las credenciales del Superadministrador en producción (Q123), fotos y galería (Q63), plantel docente real (Q138) y consentimiento de fotos (Q139).
+- **Producto:** plan por año navegable (Q17), "Prioridad visual" en la moderación (Q84), barra inferior móvil del Figma (Q65), documentos públicos de Ingreso (Q62), remitente SMTP (Q100).
+- **Escala:** un proceso web se satura cerca de 300-360 pedidos/s (se resuelve con CDN o más procesos); el límite de frecuencia es en memoria (Q29).
+- **Documentación:** regenerar DER, tablas y PDF; capturas de Roles y permisos (ver arriba).
+- **Cuidado:** `pnpm db:reset` borra la base de desarrollo y lo corre una persona, no un agente. `pnpm e2e` ya no la toca: usa su propia base `ifts2_e2e`.
+
+## Dificultades y soluciones (de la fundación)
+
+- **Prisma rechazó el schema de la spec**: enums en una sola línea. Se pasaron a varias líneas.
+- **pnpm 11 bloquea scripts de instalación**: se aprobaron en `pnpm-workspace.yaml` (`allowBuilds`).
+- **Cypress no arrancaba** (`bad option: --smoke-test`): el entorno define `ELECTRON_RUN_AS_NODE=1`; se ejecuta con la variable sin definir.
+- **Puerto 3000 ocupado por otro programa del equipo**: no se tocó; la web de verificación corrió en 3100 (`PORT`) y se documentó.
+- **El foco no volvía al botón que abrió un diálogo controlado**: Radix solo lo hace con `Trigger`; se agregó `useRestoreFocus` (verificado con Cypress).
+- **Variables CSS no admiten opacidad de Tailwind** (`bg-x/50`): se evita y se documentó.
+- **El menú móvil cerraba con un `setState` en un efecto** (regla de lint de React): se resolvió guardando la ruta en la que se abrió.
+- **`/ui-kit` quedaba prerenderizado y siempre devolvía 404 en producción**: se hizo dinámico (`ENABLE_UI_KIT`).

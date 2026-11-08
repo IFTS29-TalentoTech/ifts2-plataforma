@@ -10,20 +10,37 @@
  *   "Próximo evento" (reunión del 06/10).
  * - RF07: enlaces de interés (SIU, Aula virtual, Tutoría, Mi Argentina) en pestaña nueva con
  *   `rel="noopener noreferrer"`.
- * - "Vida en la cocina" (galería) no se implementa: es RF09 (Could) y no tiene datos ni API todavía.
+ * - "Vida en la cocina": carrusel editable desde Configuración -> Galerías (RF09, ADR-036), con filtro
+ *   por categoría si alguna diapositiva la tiene (US-30). Si no hay diapositivas cargadas (o la API de galería falla) se usa el ajuste `student_gallery` como respaldo
+ *   (ruta | título | descripción por línea; fotos provisorias, ADR-035/Q63).
  */
 import type { Metadata } from 'next';
 import { Card, EmptyState } from '@/components/ui';
 import { ExamCallCard, NoticeCard, ScheduleCard } from '@/features/public/academic-parts';
-import { loadStudents } from '@/features/public/data';
-import { LinkCard, PageHero, Section, SectionError } from '@/features/public/parts';
+import { loadSlides, loadStudents } from '@/features/public/data';
+import { GalleryFilter } from '@/features/public/gallery-filter';
+import { LinkCard, PageHero, PhotoCard, Section, SectionError } from '@/features/public/parts';
+import { getSiteInfo } from '@/lib/site';
 
 export const metadata: Metadata = { title: 'Estudiantes' };
 // Debe ser un literal (Next lo analiza estáticamente); coincide con PUBLIC_REVALIDATE de data.ts.
 export const revalidate = 60;
 
 export default async function Page() {
-  const res = await loadStudents();
+  const site = await getSiteInfo();
+  const [res, gallery] = await Promise.all([
+    loadStudents(),
+    loadSlides(
+      'STUDENTS',
+      site.gallery.map((g) => ({
+        key: g.src,
+        src: g.src,
+        title: g.title,
+        caption: g.description,
+        alt: '',
+      })),
+    ),
+  ]);
   const d = res.ok ? res.data : null;
 
   return (
@@ -111,6 +128,28 @@ export default async function Page() {
               </div>
             )}
           </Section>
+
+          {gallery.length > 0 && (
+            <Section
+              eyebrow="Comunidad estudiantil"
+              title="Vida en la cocina"
+              id="vida-en-la-cocina"
+            >
+              <div data-testid="galeria">
+                <GalleryFilter
+                  label="Vida en la cocina"
+                  slideClassName="w-[85%] sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)]"
+                  slides={gallery.map((g) => ({
+                    key: g.key,
+                    category: g.category ?? '',
+                    node: (
+                      <PhotoCard src={g.src} title={g.title} description={g.caption} alt={g.alt} />
+                    ),
+                  }))}
+                />
+              </div>
+            </Section>
+          )}
 
           <Section eyebrow="Herramientas" title="Accesos académicos" id="accesos">
             {d.links.length === 0 ? (

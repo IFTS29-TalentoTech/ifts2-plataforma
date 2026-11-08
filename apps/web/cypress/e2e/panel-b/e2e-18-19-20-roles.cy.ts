@@ -107,6 +107,19 @@ for (const vp of viewports) {
       });
       cy.contains('[data-testid="role-row"]', roleName).should('exist');
 
+      // Roles del sistema: ADMIN/BEDELIA/EDITOR ofrecen "Eliminar" (ADMIN se llama "Rectoría / Dirección"); Superadministrador no.
+      cy.contains('[data-testid="role-row"]', 'Superadministrador')
+        .contains('button', 'Eliminar')
+        .should('not.exist');
+      // El rol ADMIN se busca por su clave: el nombre visible ("Rectoría / Dirección" en la semilla)
+      // lo puede cambiar el Superadministrador.
+      cy.api('GET', '/roles').then((roles) => {
+        const admin = roles.body.items.find((x: RoleRow) => x.key === 'ADMIN');
+        cy.contains('[data-testid="role-row"]', admin.name)
+          .contains('button', 'Eliminar')
+          .should('exist');
+      });
+
       // El último Superadministrador no se puede quitar (409).
       cy.api('GET', '/auth/me').then((me) => {
         cy.api('GET', '/roles').then((roles) => {
@@ -141,7 +154,7 @@ for (const vp of viewports) {
       const email = `dir20.${tag}@ifts2.local`;
       cy.loginAsApi('ADMIN');
       cy.visit('/panel/configuracion');
-      cy.contains('button', 'Administrar usuarios y roles').click();
+      cy.contains('button', 'Gestionar usuarios').click();
       cy.get('[role="dialog"]').within(() => {
         cy.contains('Solo ves los roles cuyos permisos también tenés vos');
         cy.byLabel('Nombre y apellido').type('Otra Dirección');

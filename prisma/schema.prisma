@@ -296,6 +296,9 @@ model ExternalLink {
   group       String  @default("academico")
   order       Int     @default(0)
   visible     Boolean @default(true)
+  // A07: marca explícita del enlace donde los ALUMNOS se inscriben (página /inscripciones).
+  // No se deduce del título: "SIU Guaraní" existe para alumnos y para profesores/secretaría.
+  enrollment  Boolean @default(false)
 }
 
 // Should (RF08)
@@ -312,6 +315,31 @@ model ContactMessage {
 }
 
 // Una sola fila (id = 1)
+// Galerías editables del sitio público (RF09, ADR-036): carrusel "Vida en la cocina" de Estudiantes y
+// fotos de La carrera. `image` es una ruta propia del sitio (`/img/...`, la deja la semilla) o una CLAVE
+// del almacenamiento (`gallery/<uuid>.webp`, la deja la subida desde el panel); nunca una URL firmada,
+// porque vence (se resuelve al responder, ver apps/api/src/lib/cover.ts).
+enum GalleryArea {
+  STUDENTS
+  CAREER
+}
+
+model GalleryItem {
+  id        String      @id @default(uuid())
+  area      GalleryArea
+  order     Int         @default(0)
+  title     String      @default("")
+  caption   String      @default("")
+  alt       String      @default("")
+  /// Categoría libre y corta (RF09, US-30). Vacía = sin categoría. El filtro público agrupa por este texto.
+  category  String      @default("")
+  image     String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([area, order])
+}
+
 model InstagramToken {
   id          Int       @id @default(1)
   tokenEnc    String    // AES-256-GCM con APP_ENCRYPTION_KEY
@@ -341,4 +369,24 @@ model AuditLog {
   at       DateTime @default(now())
   @@index([entity, entityId])
   @@index([at])
+}
+
+/// Plantel docente (RF10, US-29). Baja lógica: `visible = false` oculta a la persona del sitio sin
+/// borrarla; la eliminación es siempre manual, con confirmación, y solo si está oculta (regla de ADR-07).
+/// No hay datos reales en la semilla de producción: los carga el instituto (Q138).
+model Teacher {
+  id        String   @id @default(uuid())
+  name      String
+  /// Cargo o rol libre ("Profesora"); vacío si no se cargó.
+  role      String   @default("")
+  /// Materias a cargo (texto libre; el plan de estudios vive en ContentSection).
+  subjects  String[] @default([])
+  /// Foto opcional: ruta propia (/img/...) o clave del almacenamiento; vacío = sin foto. Ley 25.326: requiere consentimiento.
+  photo     String   @default("")
+  order     Int      @default(0)
+  visible   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([visible, order])
 }

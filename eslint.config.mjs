@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/.next/**',
       '**/.next-degraded/**',
+      '**/.next-e2e/**',
       '**/dist/**',
       '**/coverage/**',
       '**/uploads/**',

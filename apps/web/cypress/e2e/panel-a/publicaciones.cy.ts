@@ -88,6 +88,7 @@ for (const vp of VIEWPORTS) {
         currentTerm: null,
         examCallNext: null,
         ingresoCycle: { year: 2027, derived: true },
+        ingresoContent: { visibleSections: 0, pendingConfirmation: false },
       });
       cy.intercept('POST', '/api/v1/social/sync', {
         statusCode: 502,
@@ -118,6 +119,41 @@ for (const vp of VIEWPORTS) {
       cy.contains('Publicación cargada').should('be.visible');
       cy.visit('/panel/publicaciones');
       cy.contains('h3', title).should('be.visible');
+    });
+
+    it('ADR-038: la sincronización completa pide confirmación y manda ?full=true; la común no', () => {
+      cy.intercept('POST', '/api/v1/social/sync*', (req) => {
+        req.reply({
+          statusCode: 200,
+          body: {
+            created: 0,
+            matched: 3,
+            alreadyKnown: 3,
+            demo: true,
+            lastSyncAt: new Date().toISOString(),
+            lastFetchAt: new Date().toISOString(),
+            mode: req.url.includes('full=true') ? 'full' : 'incremental',
+            fullReason: null,
+            since: null,
+          },
+        });
+      }).as('sync');
+      cy.visit('/panel/publicaciones');
+      // Cancelar no sincroniza.
+      cy.contains('button', 'Sincronización completa').click();
+      cy.get('[role="alertdialog"]').should('contain', '¿Hacer una sincronización completa?');
+      cy.a11y();
+      cy.get('[role="alertdialog"]').contains('button', 'Cancelar').click();
+      cy.get('[role="alertdialog"]').should('not.exist');
+      // Confirmar manda la completa.
+      cy.contains('button', 'Sincronización completa').click();
+      cy.get('[role="alertdialog"]').contains('button', 'Sí, sincronizar todo').click();
+      cy.wait('@sync').its('request.url').should('include', 'full=true');
+      cy.contains('Sincronización completa lista').should('be.visible');
+      // La común es incremental: sin el parámetro y sin confirmación.
+      cy.contains('button', 'Sincronizar con Instagram').click();
+      cy.wait('@sync').its('request.url').should('not.include', 'full=');
+      cy.get('[role="alertdialog"]').should('not.exist');
     });
 
     it('E2E-13: el diálogo de moderación atrapa el foco, cierra con Escape y devuelve el foco', () => {
@@ -162,6 +198,44 @@ for (const vp of VIEWPORTS) {
       cy.get('[role="alertdialog"]').contains('button', 'Sí, eliminar').click();
       cy.contains('Publicación eliminada').should('be.visible');
       cy.contains('li', title).should('not.exist');
+    });
+
+    it('portada (A10): se sube desde el formulario y no pisa un cambio hecho mientras estaba abierto', () => {
+      const title = unique('Con portada');
+      const coverOf = () =>
+        cy.api('GET', `/publications?q=${encodeURIComponent(title)}`).its('body.items.0.coverUrl');
+      cy.visit('/panel/publicaciones');
+      cy.contains('[role="tab"]', 'Propias del sitio').click();
+      // Alta con portada (precondición "sin portada").
+      cy.contains('button', 'Nueva publicación').click();
+      cy.contains('label', 'Título').parent().find('input').type(title);
+      cy.contains('label', 'Resumen').parent().find('textarea').type('Con imagen.');
+      cy.get('#portada').selectFile('cypress/fixtures/cover.png');
+      cy.contains('button', 'Crear borrador').click();
+      cy.contains('Publicación creada como borrador').should('be.visible');
+      cy.contains('Se guardó, pero la portada no se pudo subir').should('not.exist');
+      coverOf().should('match', /^covers\/.+\.webp$/);
+
+      // Mientras el formulario de edición está abierto, otra persona cambia la portada.
+      cy.contains('li', title).contains('button', 'Editar').click();
+      cy.contains('[role="dialog"]', 'Editar publicación').should('be.visible');
+      coverOf().then((seen) => {
+        cy.api('GET', `/publications?q=${encodeURIComponent(title)}`).then((r) => {
+          const id = r.body.items[0].id as string;
+          cy.api('PATCH', `/publications/${id}`, {
+            coverUrl: 'https://cdn.ejemplo.com/de-otra-persona.jpg',
+            expectedCoverUrl: seen,
+          })
+            .its('status')
+            .should('eq', 200);
+        });
+      });
+      cy.get('#portada').selectFile('cypress/fixtures/cover.png');
+      cy.contains('button', 'Guardar cambios').click();
+      // Se guardan los textos, pero la portada NO pisa la de la otra persona: aviso claro.
+      cy.contains('Se guardó, pero la portada no se pudo subir').should('be.visible');
+      cy.contains('La portada cambió').should('be.visible');
+      coverOf().should('eq', 'https://cdn.ejemplo.com/de-otra-persona.jpg');
     });
   });
 }

@@ -20,6 +20,16 @@ for (const vp of viewports) {
       cy.wait(400);
       cy.screenshot(`b-${name}-${vp.tag}`, { overwrite: true });
     };
+    /** Las fotos cargan perezosamente: se espera a que las de la pantalla estén dibujadas antes de capturar. */
+    const imagesLoaded = () => {
+      cy.get('main img').each(($img) => {
+        cy.wrap($img).scrollIntoView();
+        cy.wrap($img).should(($i) =>
+          expect(($i[0] as HTMLImageElement).naturalWidth).to.be.greaterThan(0),
+        );
+      });
+      cy.get('main').scrollTo('top', { ensureScrollable: false });
+    };
     const loaded = () => cy.get('[role="status"][aria-busy="true"]').should('not.exist');
 
     it('Horarios', () => {
@@ -76,7 +86,7 @@ for (const vp of viewports) {
       cy.contains('button', 'Guardar cambios').click();
       shot('configuracion-confirmar-cambios');
       cy.contains('button', 'Cancelar').click();
-      cy.contains('button', 'Administrar usuarios y roles').click();
+      cy.contains('button', 'Gestionar usuarios').click();
       cy.get('[data-testid="user-row"]').should('exist');
       shot('configuracion-usuarios');
       cy.get('body').type('{esc}');
@@ -91,6 +101,27 @@ for (const vp of viewports) {
       shot('integraciones-guia');
       cy.get('[data-testid="mail-status"]').scrollIntoView();
       shot('integraciones-correo');
+    });
+
+    it('Roles y permisos (Superadministrador)', () => {
+      cy.loginAsApi('SUPERADMIN');
+      cy.visit('/panel/roles');
+      cy.contains('h1', 'Roles y permisos').should('be.visible');
+      loaded();
+      shot('roles');
+    });
+
+    it('Galerías y plantel docente', () => {
+      cy.visit('/panel/galerias');
+      cy.contains('h1', 'Galerías').should('be.visible');
+      loaded();
+      imagesLoaded();
+      shot('galerias');
+      cy.visit('/panel/plantel');
+      cy.contains('h1', 'Plantel docente').should('be.visible');
+      loaded();
+      imagesLoaded();
+      shot('plantel');
     });
   });
 }

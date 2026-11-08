@@ -51,9 +51,10 @@ packages/
 prisma/           schema.prisma, migrations/, seed.ts (demo/prod) y seed-data.ts (datos reales del IFTS)
 scripts/          generate-tokens.mjs, check-no-hardcoded-styles.mjs, contrast.mjs
 docs/
-  specs/          ESPECIFICACIONES: la fuente de verdad (leer en orden, ver sección 12)
+  specs/          ESPECIFICACIONES: la fuente de verdad (leer en orden, ver sección 14)
   design/         Capturas del Figma (desktop y mobile)
   decisiones/     ADR: por qué se decidió cada cosa
+  BUILD-NOTES.md  Entorno, reglas de la fundación y cambios posteriores a las specs (leer primero)
   ARQUITECTURA.md Diagrama de capas y módulos
   avance.md       Bitácora de lo hecho, pendiente y problemas
   evidencias/     Salidas de pruebas con fecha (se piden en la entrega de la cátedra)
@@ -93,31 +94,34 @@ Comprobá: `http://localhost:4000/health` responde `{"status":"ok","db":"ok",…
 
 Los permisos de ADMIN, BEDELIA y EDITOR son los iniciales: el Superadministrador los cambia en **Panel → Roles y permisos** (RF11, ADR-031).
 
-La semilla **demo** crea ciclo 2026-2.º público, avisos (vigente, urgente y vencido), publicaciones de redes detectadas, documentos archivados, llamado "Turno extraordinario de Diciembre 2026", contenido de páginas y enlaces. La semilla **prod** (`SEED_MODE=prod`) crea solo los roles del sistema, el superadministrador (con cambio de clave obligatorio), ajustes y enlaces reales; **nunca** datos de demostración. Ambas son idempotentes (se pueden repetir).
+La semilla **demo** está pensada para mostrar **todo** en la plataforma con datos ficticios: ciclo 2026-2.º público y el anterior; avisos en cada estado y para cada público (vigente, urgente, vencido, pausado, programado, de aspirantes y de graduados); publicaciones en borrador, programada, pausada, vencida, de 2025 y aprobada desde Instagram; publicaciones de redes en cada estado (una queda detectada para moderar en vivo); llamados pasados, próximos y sin publicar; mensajes nuevos, leídos y respondidos; una cuenta desactivada; un enlace oculto; movimientos de auditoría; documentos archivados, llamado "Turno extraordinario de Diciembre 2026", contenido de páginas, enlaces, **6 docentes ficticios** del plantel con ilustraciones de ejemplo (uno oculto) y las fotos provisorias de las galerías con categorías. La semilla **prod** (`SEED_MODE=prod`) crea solo los roles del sistema, el superadministrador (con cambio de clave obligatorio), ajustes y enlaces reales (y el plantel docente **vacío**); **nunca** datos de demostración. Ambas son idempotentes (se pueden repetir).
+
+La cuenta inicial se crea solo si no hay usuarios. Si el correo configurado ya existe, debe ser un SUPERADMIN activo; la semilla no cambia su contraseña, estado ni rol. Para instalaciones con usuarios sin acceso administrativo, seguir el [procedimiento de recuperación de SUPERADMIN](docs/operaciones/recuperacion-superadmin.md).
 
 ## 6. Comandos útiles
 
-| Comando                                              | Qué hace                                                                                                    |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                                           | API y web en modo desarrollo                                                                                |
-| `pnpm build`                                         | Compila todo                                                                                                |
-| `pnpm lint`                                          | ESLint + Prettier + regla de "sin colores ni fuentes escritos a mano" + `tokens.css` sincronizado           |
-| `pnpm format`                                        | Formatea con Prettier                                                                                       |
-| `pnpm typecheck`                                     | TypeScript estricto en los tres paquetes                                                                    |
-| `pnpm test`                                          | Pruebas de `shared` y de la API                                                                             |
-| `pnpm test:api`                                      | Solo API (Supertest sobre `ifts2_test`)                                                                     |
-| `pnpm test:e2e`                                      | Cypress (390 y 1440 px, axe) contra una web ya levantada                                                    |
-| `pnpm e2e`                                           | Levanta API y web de producción, corre toda la suite Cypress y cierra todo (`--build`, `--reset`, `--spec`) |
-| `pnpm load`                                          | Prueba de carga del sitio público (400 usuarios virtuales, autocannon); `--users`, `--duration`, `--out`    |
-| `pnpm lighthouse`                                    | Lighthouse móvil (Inicio, Estudiantes, Novedades, login del panel); rendimiento >= 80, accesibilidad >= 90  |
-| `pnpm db:up` / `db:migrate` / `db:seed` / `db:reset` | Base: levantar, migrar, sembrar, reiniciar (borra y resiembra)                                              |
-| `pnpm db:migrate:dev`                                | Crear una migración nueva tras editar `prisma/schema.prisma`                                                |
-| `pnpm tokens`                                        | Regenera `apps/web/src/styles/tokens.css` desde `docs/specs/design-tokens.json`                             |
-| `pnpm contrast`                                      | Calcula contrastes WCAG de la paleta                                                                        |
-| `pnpm verify`                                        | Flujos de negocio y seguridad de punta a punta contra el build de producción (33 comprobaciones)            |
-| `pnpm docs:pdf`                                      | Regenera el PDF único de la entrega (`docs/entrega/`); necesita Google Chrome                               |
-| `pnpm docs:der`                                      | Regenera el DER (`.mmd`) y las tablas de campos del Manual Técnico desde `prisma/schema.prisma`             |
-| `pnpm package`                                       | Genera `dist-entrega/ifts2-plataforma-<fecha>.zip` desde `HEAD` (sin `node_modules`, `.env` ni secretos)    |
+| Comando                                              | Qué hace                                                                                                                                                                      |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                           | API y web en modo desarrollo; con Ctrl+C mata los dos árboles de procesos y libera los puertos, y avisa si 3000 o 4000 ya están ocupados (`pnpm dev:raw` es el modo anterior) |
+| `pnpm build`                                         | Compila todo                                                                                                                                                                  |
+| `pnpm lint`                                          | ESLint + Prettier + regla de "sin colores ni fuentes escritos a mano" + `tokens.css` sincronizado                                                                             |
+| `pnpm format`                                        | Formatea con Prettier                                                                                                                                                         |
+| `pnpm typecheck`                                     | TypeScript estricto en los tres paquetes                                                                                                                                      |
+| `pnpm test`                                          | Pruebas de `shared` y de la API                                                                                                                                               |
+| `pnpm test:api`                                      | Solo API (Supertest sobre `ifts2_test`)                                                                                                                                       |
+| `pnpm test:e2e`                                      | Cypress (390 y 1440 px, axe) contra una web ya levantada                                                                                                                      |
+| `pnpm e2e`                                           | Levanta API y web de producción, corre la suite Cypress (sin los specs de capturas) y cierra todo (`--build`, `--keep-db`, `--spec`)                                          |
+| `pnpm e2e:capturas`                                  | Solo los specs `capturas*.cy.ts`: regenera `docs/capturas/` y `cypress/screenshots` (correr antes de mergear a `main`)                                                        |
+| `pnpm load`                                          | Prueba de carga del sitio público (400 usuarios virtuales, autocannon); `--users`, `--duration`, `--out`                                                                      |
+| `pnpm lighthouse`                                    | Lighthouse móvil (Inicio, Estudiantes, Novedades, login del panel); rendimiento >= 80, accesibilidad >= 90                                                                    |
+| `pnpm db:up` / `db:migrate` / `db:seed` / `db:reset` | Base: levantar, migrar, sembrar, reiniciar (borra y resiembra)                                                                                                                |
+| `pnpm db:migrate:dev`                                | Crear una migración nueva tras editar `prisma/schema.prisma`                                                                                                                  |
+| `pnpm tokens`                                        | Regenera `apps/web/src/styles/tokens.css` desde `docs/specs/design-tokens.json`                                                                                               |
+| `pnpm contrast`                                      | Calcula contrastes WCAG de la paleta                                                                                                                                          |
+| `pnpm verify`                                        | Flujos de negocio y seguridad de punta a punta contra el build de producción (33 comprobaciones)                                                                              |
+| `pnpm docs:pdf`                                      | Regenera el PDF único de la entrega (`docs/entrega/`); necesita Google Chrome                                                                                                 |
+| `pnpm docs:der`                                      | Regenera el DER (`.mmd`) y las tablas de campos del Manual Técnico desde `prisma/schema.prisma`                                                                               |
+| `pnpm package`                                       | Genera `dist-entrega/ifts2-plataforma-<fecha>.zip` desde `HEAD` (sin `node_modules`, `.env` ni secretos)                                                                      |
 
 ## 7. Pruebas
 
@@ -128,7 +132,9 @@ pnpm dev            # en otra terminal, y luego:
 pnpm test:e2e       # Cypress contra http://localhost:3000 (CYPRESS_BASE_URL para otro puerto)
 ```
 
-**Una sola orden para la suite completa de punta a punta:** `pnpm e2e --build` compila, levanta la API (con `LOGIN_MAX_ATTEMPTS` alto para que los inicios de sesión repetidos de los specs no activen el bloqueo por IP) y la web de producción en los puertos 4000 y 3100 (`E2E_API_PORT`, `E2E_WEB_PORT`), corre todos los specs —incluida la web degradada sin API— y cierra todo. `pnpm e2e --reset` antes recrea la base de desarrollo con la semilla demo (borra datos: la ejecuta una persona, no un agente). Los registros de los procesos quedan en `.e2e-logs/`.
+**Una sola orden para la suite completa de punta a punta:** `pnpm e2e --build` compila, levanta la API (con `LOGIN_MAX_ATTEMPTS` alto para que los inicios de sesión repetidos de los specs no activen el bloqueo por IP) y la web de producción en los puertos 4000 y 3100 (`E2E_API_PORT`, `E2E_WEB_PORT`), corre todos los specs —incluida la web degradada sin API— y cierra todo. La suite usa una **base propia, `ifts2_e2e`**, en el mismo contenedor: antes de cada corrida la vacía, aplica las migraciones y carga la semilla demo, así siempre arranca del mismo estado (como en CI) y **la base de desarrollo no se toca**. Antes las pruebas dejaban usuarios y roles de prueba en `ifts2`. Por seguridad, el script solo vacía una base llamada `ifts2_e2e` en `localhost:5433` (`E2E_DATABASE_URL` para cambiar usuario o clave). `--keep-db` reutiliza la base E2E como quedó, para repetir un spec rápido. `pnpm test:e2e` contra `pnpm dev` sigue escribiendo en la base de desarrollo: preferí `pnpm e2e`. Los registros de los procesos quedan en `.e2e-logs/`.
+
+**Capturas del Manual de Usuario:** los specs `capturas*.cy.ts` no corren en `pnpm e2e` (tardan y reescriben archivos versionados). Regeneralas con `pnpm e2e:capturas` solo cuando vayas a mergear a `main` o a actualizar el manual, y commiteá las imágenes que cambien con sentido. Los pasos de GitHub Actions tampoco corren Cypress en cada pull request: el job `e2e` es manual (Actions → Run workflow).
 
 Para guardar evidencia (la cátedra la pide) volcá la salida a `docs/evidencias/AAAA-MM-DD-<cosa>.txt`. Cómo escribir pruebas de API: `apps/api/README.md`. Cómo escribir pruebas de Cypress: `apps/web/README.md`.
 
@@ -154,7 +160,7 @@ Plantilla completa con validación zod, auditoría, paginación y pruebas: **`ap
 
 ### Una pantalla
 
-Cada ruta ya existe como placeholder (`apps/web/src/app/(public)/…` y `apps/web/src/app/panel/(shell)/…`). Editá su `page.tsx`, reemplazá `<Placeholder />` y armá la pantalla con el kit (`Button`, `Card`, `Table`, `Dialog`, `ConfirmDialog`, `Input`, `useToast`…):
+Las pantallas del sitio y del panel ya están implementadas (`apps/web/src/app/(public)/…` y `apps/web/src/app/panel/(shell)/…`, con su lógica en `apps/web/src/features/`). Para una pantalla nueva creá su `page.tsx` y armala con el kit (`Button`, `Card`, `Table`, `Dialog`, `ConfirmDialog`, `Input`, `useToast`…):
 
 ```tsx
 import { PageHeader } from '@/components/layout/page-header';
@@ -186,11 +192,11 @@ En componentes **no se escriben hex ni nombres de fuente**: solo clases de Tailw
 
 La regla: **cambiar de proveedor es cambiar configuración, nunca código**. Sin configuración real, todo funciona en **modo demostración** y el panel lo avisa.
 
-| Integración                    | Quién la configura                                         | Cómo                                                                                                                                      |
-| ------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Instagram**                  | El **cliente**, desde el panel (Configuración, solo ADMIN) | App ID/Secret de su app de Meta, conexión por OAuth o token pegado, hashtag. Se guarda cifrado (AES-256-GCM)                              |
-| **Correo** (contacto)          | El **cliente**, desde el panel                             | Correo de destino y, opcionalmente, SMTP (`smtp://usuario:clave@host:587`)                                                                |
-| **Almacenamiento de archivos** | DevOps, por variables de entorno                           | `STORAGE_PROVIDER=local` (disco `uploads/`), `memory` (pruebas) o `s3` (compatible S3: Supabase Storage, Cloudflare R2, MinIO) con `S3_*` |
+| Integración                    | Quién la configura                                                                                       | Cómo                                                                                                                                      |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Instagram**                  | El **cliente**, desde el panel (Configuración, permiso `integrations:manage`; ADMIN lo trae por defecto) | App ID/Secret de su app de Meta, conexión por OAuth o token pegado, hashtag. Se guarda cifrado (AES-256-GCM)                              |
+| **Correo** (contacto)          | El **cliente**, desde el panel                                                                           | Correo de destino y, opcionalmente, SMTP (`smtp://usuario:clave@host:587`)                                                                |
+| **Almacenamiento de archivos** | DevOps, por variables de entorno                                                                         | `STORAGE_PROVIDER=local` (disco `uploads/`), `memory` (pruebas) o `s3` (compatible S3: Supabase Storage, Cloudflare R2, MinIO) con `S3_*` |
 
 Todas las variables, con comentarios, están en `.env.example`. Si el proveedor elegido exige variables que faltan, la API **no arranca** y dice cuáles.
 
@@ -201,7 +207,9 @@ Todas las variables, con comentarios, están en `.env.example`. Si el proveedor 
 3. Agregar el producto **Instagram** (inicio de sesión de Instagram).
 4. Registrar la **dirección de redirección** que muestra la pantalla (`<API_ORIGIN>/api/v1/integrations/instagram/callback`) en "URI de redireccionamiento de OAuth válidos".
 5. Copiar **App ID** y **App Secret** y pegarlos en la pantalla.
-6. Pulsar **Conectar con Instagram**, iniciar sesión con la cuenta del instituto, aceptar, y usar **Probar conexión**. Alternativa: pegar un token de larga duración.
+6. Pulsar **Conectar con Instagram**, iniciar sesión con la cuenta del instituto, aceptar, y usar **Probar conexión**.
+
+La pantalla pide elegir **cómo conectar**: con el inicio de sesión de Meta (pasos de arriba, necesita una dirección pública con HTTPS) o **con un token de acceso**, que se pega y alcanza (sin App ID ni App Secret; sirve también en un equipo local).
 
 Estados posibles: sin configurar (modo demostración) · credenciales guardadas, falta conectar · conectada · token por vencer · error. El cliente real contra la API de Meta (`GraphInstagramClient`) está implementado y se probó **solo contra un servidor simulado**: falta la prueba con una cuenta profesional y una app de Meta reales (ver `docs/avance.md` y _Limitaciones conocidas_ en el Manual Técnico).
 
@@ -214,20 +222,20 @@ Estados posibles: sin configurar (modo demostración) · credenciales guardadas,
 
 ## 12. Problemas frecuentes
 
-| Síntoma                                                    | Causa y solución                                                                                                                                                                                                |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `EADDRINUSE :3000`                                         | Otro programa usa el puerto. `PORT=3100 pnpm --filter @ifts2/web dev` y poné `APP_ORIGIN=http://localhost:3100` en `.env`                                                                                       |
-| `pnpm install` avisa "Ignored build scripts"               | pnpm 11 exige aprobar scripts de instalación: ya están aprobados en `pnpm-workspace.yaml` (`allowBuilds`). Si agregás un paquete con binarios, sumalo ahí                                                       |
-| La API no arranca y lista variables                        | Es a propósito: `.env` incompleto o proveedor mal configurado. Compará con `.env.example`                                                                                                                       |
-| `pnpm db:up`: "container name /ifts2-db is already in use" | Ya hay un contenedor con ese nombre: `docker start ifts2-db` y reutilizalo (podés crear tu propia base con `docker exec ifts2-db psql -U ifts2 -c "CREATE DATABASE ifts2_mia"` y apuntar `DATABASE_URL` a ella) |
-| `ECONNREFUSED` o `P1001` a la base                         | Docker Desktop apagado o contenedor caído: `pnpm db:up`. El puerto es **5433**, no 5432                                                                                                                         |
-| Pruebas de API fallan por la base                          | `pnpm db:up` y confirmá que existe `ifts2_test` (la crea el script de init al primer arranque; si el volumen ya existía: `docker exec ifts2-db psql -U ifts2 -c "CREATE DATABASE ifts2_test"`)                  |
-| Cypress falla con `429` al iniciar sesión                  | El límite de intentos fallidos por IP (5 en 15 min, ADR-06) se activó en una corrida anterior. Reiniciá la API o usá `pnpm e2e`, que la levanta con `LOGIN_MAX_ATTEMPTS=1000`                                   |
-| Cypress: `bad option: --smoke-test`                        | El entorno define `ELECTRON_RUN_AS_NODE`. Ejecutá `env -u ELECTRON_RUN_AS_NODE pnpm test:e2e` (PowerShell: `$env:ELECTRON_RUN_AS_NODE=$null`)                                                                   |
-| Cambié el schema y falla el tipo de Prisma                 | `pnpm db:migrate:dev` (crea la migración) y `pnpm db:generate`                                                                                                                                                  |
-| Saltos de línea / "CRLF will be replaced"                  | Normal en Windows: el repo normaliza a LF (`.gitattributes`)                                                                                                                                                    |
-| `next build` falla bajando la fuente                       | `next/font` descarga Plus Jakarta Sans de Google Fonts al compilar: hace falta internet                                                                                                                         |
-| El panel redirige siempre al login                         | La cookie de sesión no llega: `APP_ORIGIN` debe coincidir con el origen real de la web                                                                                                                          |
+| Síntoma                                                    | Causa y solución                                                                                                                                                                                                     |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EADDRINUSE :3000`                                         | Otro programa usa el puerto (a veces un `pnpm dev` viejo que quedó vivo: `pnpm dev` te avisa cuál puerto está ocupado). `PORT=3100 pnpm --filter @ifts2/web dev` y poné `APP_ORIGIN=http://localhost:3100` en `.env` |
+| `pnpm install` avisa "Ignored build scripts"               | pnpm 11 exige aprobar scripts de instalación: ya están aprobados en `pnpm-workspace.yaml` (`allowBuilds`). Si agregás un paquete con binarios, sumalo ahí                                                            |
+| La API no arranca y lista variables                        | Es a propósito: `.env` incompleto o proveedor mal configurado. Compará con `.env.example`                                                                                                                            |
+| `pnpm db:up`: "container name /ifts2-db is already in use" | Ya hay un contenedor con ese nombre: `docker start ifts2-db` y reutilizalo (podés crear tu propia base con `docker exec ifts2-db psql -U ifts2 -c "CREATE DATABASE ifts2_mia"` y apuntar `DATABASE_URL` a ella)      |
+| `ECONNREFUSED` o `P1001` a la base                         | Docker Desktop apagado o contenedor caído: `pnpm db:up`. El puerto es **5433**, no 5432                                                                                                                              |
+| Pruebas de API fallan por la base                          | `pnpm db:up` y confirmá que existe `ifts2_test` (la crea el script de init al primer arranque; si el volumen ya existía: `docker exec ifts2-db psql -U ifts2 -c "CREATE DATABASE ifts2_test"`)                       |
+| Cypress falla con `429` al iniciar sesión                  | El límite de intentos fallidos por IP (5 en 15 min, ADR-06) se activó en una corrida anterior. Reiniciá la API o usá `pnpm e2e`, que la levanta con `LOGIN_MAX_ATTEMPTS=1000`                                        |
+| Cypress: `bad option: --smoke-test`                        | El entorno define `ELECTRON_RUN_AS_NODE`. Ejecutá `env -u ELECTRON_RUN_AS_NODE pnpm test:e2e` (PowerShell: `$env:ELECTRON_RUN_AS_NODE=$null`)                                                                        |
+| Cambié el schema y falla el tipo de Prisma                 | `pnpm db:migrate:dev` (crea la migración) y `pnpm db:generate`                                                                                                                                                       |
+| Saltos de línea / "CRLF will be replaced"                  | Normal en Windows: el repo normaliza a LF (`.gitattributes`)                                                                                                                                                         |
+| `next build` falla bajando la fuente                       | `next/font` descarga Plus Jakarta Sans de Google Fonts al compilar: hace falta internet                                                                                                                              |
+| El panel redirige siempre al login                         | La cookie de sesión no llega: `APP_ORIGIN` debe coincidir con el origen real de la web                                                                                                                               |
 
 ## 13. Entregables de la cátedra (Etapa 3)
 
@@ -250,7 +258,7 @@ Todo está en `docs/entrega/`:
 
 | Dónde                                                                   | Qué hay                                                                                                                                                                       | Cuándo leerlo                              |
 | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `CLAUDE.md`, `docs/BUILD-NOTES.md`                                      | Reglas de trabajo y entorno                                                                                                                                                   | **Primero**                                |
+| `CLAUDE.md`, `docs/BUILD-NOTES.md`                                      | Reglas de trabajo y entorno (BUILD-NOTES: puertos, base propia, reglas de la fundación y cambios posteriores a las specs que prevalecen sobre ellas)                          | **Primero**                                |
 | `docs/specs/AGENTS.md`                                                  | Reglas no negociables del proyecto                                                                                                                                            | **Primero**                                |
 | `docs/specs/00-vision-y-alcance.md` a `10-entregables-etapa-3.md`       | Visión, requerimientos con criterios de aceptación, decisiones técnicas, arquitectura, API, pantallas, pruebas, backlog, datos, preguntas abiertas, entregables de la cátedra | Leer en orden antes de programar           |
 | `docs/specs/prisma/schema.prisma`, `design-tokens.json`                 | Modelo de datos original y tokens de diseño (el vigente está en `prisma/` y se genera a CSS)                                                                                  | Al tocar datos o estilos                   |
