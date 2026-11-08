@@ -10,7 +10,7 @@
  * - DELETE manual: solo si NO está publicado o si su ciclo ya no es el público (409 si no).
  */
 import { Router, type Request } from 'express';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   idParam,
   isScheduleVisible,
@@ -58,6 +58,29 @@ async function find(req: Request, id: string): Promise<Row> {
   const s = await req.ctx.prisma.schedule.findUnique({ where: { id }, include });
   if (!s) throw errors.notFound('No encontramos el horario.');
   return s;
+}
+
+/** La precondición se comprueba en el mismo UPDATE que toma el bloqueo de fila en PostgreSQL.
+ * Una lectura anterior nunca autoriza publicar/quitar el adjunto tras un cambio concurrente.
+ * P2025 aborta también la auditoría dentro de la transacción; el cliente debe recargar.
+ */
+async function updateCurrent(
+  tx: Prisma.TransactionClient,
+  current: Row,
+  data: Prisma.ScheduleUncheckedUpdateInput,
+): Promise<Row> {
+  try {
+    return await tx.schedule.update({
+      where: { id: current.id, published: current.published, documentId: current.documentId },
+      data,
+      include,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      throw errors.conflict('El horario cambió durante la operación. Recargá y revisá su estado.');
+    }
+    throw error;
+  }
 }
 
 async function assertTerm(req: Request, termId: string) {
@@ -184,16 +207,12 @@ router.patch(
       });
     }
     const row = await req.ctx.prisma.$transaction(async (tx) => {
-      const s = await tx.schedule.update({
-        where: { id },
-        data: {
-          ...(body.termId ? { termId: body.termId } : {}),
-          ...(body.commissionName ? { commissionName: body.commissionName } : {}),
-          ...(body.documentId !== undefined ? { documentId: body.documentId } : {}),
-          ...(body.notes !== undefined ? { notes: body.notes } : {}),
-          updatedBy: req.auth!.user.id,
-        },
-        include,
+      const s = await updateCurrent(tx, current, {
+        ...(body.termId ? { termId: body.termId } : {}),
+        ...(body.commissionName ? { commissionName: body.commissionName } : {}),
+        ...(body.documentId !== undefined ? { documentId: body.documentId } : {}),
+        ...(body.notes !== undefined ? { notes: body.notes } : {}),
+        updatedBy: req.auth!.user.id,
       });
       await audit.fromReq(
         req,
@@ -234,11 +253,7 @@ router.post(
       );
     }
     const row = await req.ctx.prisma.$transaction(async (tx) => {
-      const s = await tx.schedule.update({
-        where: { id },
-        data: { published: true, updatedBy: req.auth!.user.id },
-        include,
-      });
+      const s = await updateCurrent(tx, current, { published: true, updatedBy: req.auth!.user.id });
       await audit.fromReq(
         req,
         { action: 'schedule.publish', entity: 'Schedule', entityId: id },
@@ -259,10 +274,9 @@ router.post(
     const current = await find(req, id);
     if (!current.published) throw errors.conflict('El horario no está publicado.');
     const row = await req.ctx.prisma.$transaction(async (tx) => {
-      const s = await tx.schedule.update({
-        where: { id },
-        data: { published: false, updatedBy: req.auth!.user.id },
-        include,
+      const s = await updateCurrent(tx, current, {
+        published: false,
+        updatedBy: req.auth!.user.id,
       });
       await audit.fromReq(
         req,
