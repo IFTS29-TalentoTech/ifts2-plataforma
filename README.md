@@ -246,7 +246,7 @@ Todo está en `docs/entrega/`:
 | `Manual-Tecnico.md`               | Instalación y puesta en marcha, arquitectura, estructura, base de datos (DER, tablas, relaciones), configuración, componentes, errores y validaciones, pruebas y limitaciones |
 | `Manual-de-Usuario.md`            | Uso del sitio y del panel paso a paso con capturas, CRUD demostrable y mensajes frecuentes (incluye la guía de Instagram para el cliente)                                     |
 | `Evidencias-de-pruebas.md`        | 3 pruebas unitarias y 2 de integración con salida real, resumen de todas las suites y matriz de CRUD                                                                          |
-| `Enlaces.md`                      | Repositorio y Figma                                                                                                                    |
+| `Enlaces.md`                      | Repositorio y Figma                                                                                                                                                           |
 | `IFTS2-Etapa-3-Documentacion.pdf` | PDF único con todo lo anterior (portada, índice, manuales y evidencias)                                                                                                       |
 | `diagramas/`                      | DER por áreas (`.mmd` fuente generado desde `prisma/schema.prisma` + `.png`/`.svg`)                                                                                           |
 

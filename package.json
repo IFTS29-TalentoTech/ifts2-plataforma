@@ -23,6 +23,7 @@
     "db:reset": "prisma migrate reset --force --skip-seed && tsx prisma/seed.ts",
     "db:generate": "prisma generate",
     "postinstall": "prisma generate",
+    "prepare": "husky",
     "tokens": "node scripts/generate-tokens.mjs",
     "contrast": "node scripts/contrast.mjs",
     "lint:styles": "node scripts/check-no-hardcoded-styles.mjs",
@@ -50,6 +51,8 @@
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "marked": "^18.1.2",
     "mermaid": "^12.2.0",
     "prettier": "^3.9.10",
@@ -59,5 +62,14 @@
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5",
     "zod": "^3.25.76"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }
