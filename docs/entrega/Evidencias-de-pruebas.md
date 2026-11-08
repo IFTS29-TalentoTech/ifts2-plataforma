@@ -280,7 +280,6 @@ Corrida de la entrega (30/10/2026), sobre el código entregado, en la máquina d
 
 - **Instagram real:** `GraphInstagramClient` se probó **solo contra un servidor HTTP simulado** (paginación, errores 190/429/500, fallas de red, canje y renovación de token). No hubo cuenta profesional ni app de Meta para una prueba en vivo.
 - **Correo SMTP real y almacenamiento S3 real:** no se probaron contra servicios reales (se usaron el correo falso y el almacenamiento local o en memoria).
-- **Despliegue:** no hay aplicación desplegada, por lo que no se probó en un hosting.
 - **Carga:** se usó **autocannon**, no k6. Un solo proceso de Node se satura a ~300–360 pedidos por segundo; con el uso real esperado (~133 pedidos/s) cumple los objetivos. Los escenarios de saturación con una sola página marcan «NO CUMPLE» en el informe y están documentados como límite.
 - **Datos pendientes del cliente:** fechas y documentación de ingreso, y ubicación de las materias por año.
 

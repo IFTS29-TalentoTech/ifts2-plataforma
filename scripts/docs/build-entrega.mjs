@@ -6,7 +6,8 @@
 // (4) completa los números de página del índice buscando cada título en el PDF (con `pdftotext`, si está).
 //
 // Requisitos: Google Chrome (CHROME_PATH para otra ruta), `pnpm install` (marked y mermaid son devDependencies).
-// Uso: node scripts/docs/build-entrega.mjs [--no-regen]
+// Uso: node scripts/docs/build-entrega.mjs [--no-regen] [--solo=Manual-Tecnico|Manual-de-Usuario]
+// Con --solo genera un PDF aparte de un único manual (docs/entrega/<manual>.pdf); `pnpm docs:pdf:all` genera los tres.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -16,8 +17,9 @@ import { marked } from 'marked';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const entrega = path.join(root, 'docs', 'entrega');
-const outPdf = path.join(entrega, 'IFTS2-Etapa-3-Documentacion.pdf');
-const htmlFile = path.join(entrega, '.build.html'); // junto a los .md: las imágenes se resuelven con las mismas rutas relativas
+const solo = process.argv.find((a) => a.startsWith('--solo='))?.slice('--solo='.length);
+const outPdf = path.join(entrega, solo ? `${solo}.pdf` : 'IFTS2-Etapa-3-Documentacion.pdf');
+const htmlFile = path.join(entrega, solo ? '.build-solo.html' : '.build.html'); // junto a los .md: las imágenes se resuelven con las mismas rutas relativas
 
 const CHROME =
   process.env.CHROME_PATH ??
@@ -40,12 +42,24 @@ if (!process.argv.includes('--no-regen')) {
 }
 
 // ------------------------------------------------------------------ contenido
-const PARTS = [
+const ALL_PARTS = [
   { file: 'Enlaces.md', eyebrow: null },
   { file: 'Manual-Tecnico.md', eyebrow: 'Parte I' },
   { file: 'Manual-de-Usuario.md', eyebrow: 'Parte II' },
   { file: 'Evidencias-de-pruebas.md', eyebrow: 'Parte III' },
 ];
+// En modo --solo se imprime un único manual, sin «Parte I/II» en los títulos.
+const PARTS = solo
+  ? ALL_PARTS.filter((p) => p.file === `${solo}.md`).map((p) => ({ ...p, eyebrow: null }))
+  : ALL_PARTS;
+if (!PARTS.length) {
+  console.error(`--solo=${solo} no coincide con ningún Markdown de docs/entrega/.`);
+  process.exit(1);
+}
+const SOLO_TITLES = {
+  'Manual-Tecnico': 'Manual Técnico',
+  'Manual-de-Usuario': 'Manual de Usuario',
+};
 
 const slugs = new Map();
 const slugify = (text) => {
@@ -116,7 +130,7 @@ const cover = `
   <div class="cover-bar"></div>
   <p class="cover-eyebrow">Práctica Profesionalizante IV · Etapa 3 · Desarrollo completo</p>
   <h1 class="cover-title">Plataforma web del IFTS N.°&nbsp;2</h1>
-  <p class="cover-sub">Documentación de la entrega: Manual Técnico, Manual de Usuario, evidencias de pruebas y CRUD</p>
+  <p class="cover-sub">${solo ? (SOLO_TITLES[solo] ?? solo) : 'Documentación de la entrega: Manual Técnico, Manual de Usuario, evidencias de pruebas y CRUD'}</p>
   <div class="cover-grid">
     <div><h4>Equipo</h4><p><strong>Talento Tech</strong> (IFTS N.° 29)</p>
       <ul><li>Santiago Cuda</li><li>Adrián Madroñal</li><li>Martín Juan</li><li>Nicolás Rolón</li><li>Gastón Zampar</li></ul></div>
