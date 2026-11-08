@@ -369,6 +369,14 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 **Pruebas.** Cypress `recorrido`, `smoke`, `degradacion`, `integraciones-a11y` (axe) y `mi-cuenta` en verde; medido en el navegador: alto de página = alto de ventana.
 
+### 2026-11-08 · Auditoría B (B01, B04, B08), hook de pre-commit y entrega final
+
+- **B01 (permisos y navegación):** el menú y las páginas contenedoras usan la misma decisión por capacidades (`lib/nav.ts`); Configuración, Horarios y Publicaciones montan solo las secciones autorizadas. Detalle en `docs/auditoria-b/B01.md`.
+- **B04 (confirmaciones HTTP):** el cliente de la API ya no devuelve `undefined` ante un error JSON; las mutaciones validan su contrato (`lib/mutation-contracts.ts`, `lib/confirm-publication.ts`) y la pantalla solo anuncia éxito si el servidor confirmó. `docs/auditoria-b/B04.md`.
+- **B08 (integridad de horarios):** PATCH, publicar y despublicar usan una precondición atómica; el que pierde la carrera recibe 409 y no deja auditoría de éxito. La relación `Schedule.document` pasa a `onDelete: Restrict` (migración `20261107192000_schedule_document_restrict`). `docs/auditoria-b/B08.md`.
+- **Hook de pre-commit:** husky + lint-staged formatean y corrigen los archivos en staging (`pnpm install` lo activa). La CI fallaba en `prettier --check` por el README.
+- **Entrega final:** enlace al repositorio (`main`) en `Enlaces.md`; se quitó toda mención a aplicación desplegada; PDFs sueltos de los dos manuales y carátula de una hoja (`pnpm docs:pdf:all`, `pnpm docs:caratula`); PDF de entrega y zip regenerados desde `main`.
+
 ## Sincronización incremental de Instagram (07/11/2026, ADR-038)
 
 - `sync.service.ts` + `sync-window.ts`: cada fetch exitoso registra `lastFetchAt`, la marca y la identidad (id de cuenta de Graph, hashtag, método) en `IntegrationConfig` (`instagram_sync`); la siguiente trae solo lo posterior (margen de 6 h) y corta la paginación al ver una publicación vieja. Completa la primera vez, con `POST /social/sync?full=true` y al cambiar cuenta, hashtag o método. Un fetch fallido no avanza la marca. `InstagramClient` suma `since`, `onCoverage` y `getAccountId()` (doble incluido).
@@ -379,7 +387,7 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 `prisma/seed.ts` (`seedDemoExtras`) suma datos ficticios para que la demo muestre todo: publicaciones en todos los estados y años, publicaciones de redes detectada / aprobada / descartada, avisos para cada público y en cada estado, llamados pasados, próximos y sin publicar, mensajes en cada estado, una cuenta desactivada, un enlace oculto y auditoría de varias personas. Es idempotente y solo corre en modo demo. Lo único que carga el equipo a mano es el token de Instagram. Verificado en una base descartable: dos corridas seguidas sin duplicados.
 
-## Estado actual (06/11/2026)
+## Estado actual (08/11/2026)
 
 - **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).
 - **Últimas verificaciones registradas:** 30/10: 43 + 352 pruebas, Cypress 190 en 19 archivos, `pnpm verify` 33/33 (`docs/evidencias/2026-10-30-entrega-*`). 06/11: pruebas de roles, concurrencia, descargas remotas y A05 (`docs/evidencias/2026-11-06-*`).
@@ -387,11 +395,11 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 ## Pendiente
 
 - **Con servicios reales (faltan cuentas o credenciales):** probar Instagram contra una cuenta profesional y una app de Meta del cliente (`GraphInstagramClient` solo se probó contra un servidor simulado); SMTP real (remitente, Q100) y `S3Storage` contra un servicio real.
-- **Despliegue:** hosting, base y dominio sin definir (ADR-15, Q13, Q14); `deploy.yml` y `lighthouse.yml` de la CI; enlaces del repositorio y de la aplicación en `docs/entrega/Enlaces.md` (`[completar]`).
+- **Despliegue:** hosting, base y dominio sin definir (ADR-15, Q13, Q14); `deploy.yml` y `lighthouse.yml` de la CI. No hay aplicación desplegada: la entrega se ejecuta en local con las instrucciones del Manual Técnico.
 - **Con el cliente:** datos de ingreso (Q122), ubicación de materias por año (Q120), nombres de la resolución (Q121), URL de SIU Guaraní, Mi Argentina y Tutoría (Q6), nombres finales Ingreso/Inscripciones (Q20, Q22), hashtag definitivo (Q1), a quién se entregan las credenciales del Superadministrador en producción (Q123), fotos y galería (Q63), plantel docente real (Q138) y consentimiento de fotos (Q139).
 - **Producto:** plan por año navegable (Q17), "Prioridad visual" en la moderación (Q84), barra inferior móvil del Figma (Q65), documentos públicos de Ingreso (Q62), remitente SMTP (Q100).
 - **Escala:** un proceso web se satura cerca de 300-360 pedidos/s (se resuelve con CDN o más procesos); el límite de frecuencia es en memoria (Q29).
-- **Documentación:** regenerar DER, tablas y PDF; capturas de Roles y permisos (ver arriba).
+- **Documentación:** capturas de Roles y permisos en el Manual de Usuario (el DER, las tablas y los PDF se regeneraron el 08/11 con `pnpm docs:pdf:all`).
 - **Cuidado:** `pnpm db:reset` borra la base de desarrollo y lo corre una persona, no un agente. `pnpm e2e` ya no la toca: usa su propia base `ifts2_e2e`.
 
 ## Dificultades y soluciones (de la fundación)

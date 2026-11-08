@@ -588,7 +588,7 @@ Horarios de cursada por comisión (con grilla adjunta).
 | `termId` | String | obligatorio, FK → AcademicTerm.id | Ciclo al que pertenece. |
 | `term` | AcademicTerm | (no es columna) | Relación con AcademicTerm. |
 | `commissionName` | String | obligatorio | Comisión (por ejemplo «Comisión A y B»). |
-| `documentId` | String | opcional, FK → Document.id | Grilla de horarios adjunta (documento). |
+| `documentId` | String | opcional, FK → Document.id (Restrict) | Grilla de horarios adjunta (documento). |
 | `document` | Document | (no es columna) | Relación con Document. |
 | `notes` | String | opcional | Observaciones. |
 | `published` | Boolean | obligatorio, por defecto false | Si está publicado. Solo se ve si además su ciclo es el público. |
