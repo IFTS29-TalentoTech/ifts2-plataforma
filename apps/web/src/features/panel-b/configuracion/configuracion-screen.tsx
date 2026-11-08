@@ -145,8 +145,9 @@ export function ConfiguracionScreen({
   instagramResult?: 'connected' | 'error';
 }) {
   const { toast } = useToast();
-  const settings = useResource<SettingsDto>('/settings');
-  const terms = useResource<Page<TermDto>>('/terms?pageSize=100');
+  const canSettings = can(perms, 'settings:manage');
+  const settings = useResource<SettingsDto>(canSettings ? '/settings' : null);
+  const terms = useResource<Page<TermDto>>(canSettings ? '/terms?pageSize=100' : null);
   const users = useResource<Page<PanelUser>>(
     can(perms, 'users:manage') ? '/users?pageSize=100' : null,
   );
@@ -184,6 +185,7 @@ export function ConfiguracionScreen({
   const changedKeys = Object.keys(changes);
 
   function requestSave() {
+    if (!canSettings) return;
     // Validación con los mismos esquemas que usa la API: mensajes iguales, sin ida y vuelta.
     const parsed = settingsUpdateInput.safeParse(changes);
     if (!parsed.success) {
@@ -203,6 +205,13 @@ export function ConfiguracionScreen({
   const publicTerm = terms.data?.items.find((t) => t.publicCurrent);
   const canUsers = can(perms, 'users:manage');
   const canIntegrations = can(perms, 'integrations:manage');
+  const tabs = [
+    { value: 'contenido', label: 'Contenido de páginas', allowed: can(perms, 'content:manage') },
+    { value: 'enlaces', label: 'Enlaces de interés', allowed: can(perms, 'links:manage') },
+    { value: 'galerias', label: 'Galerías', allowed: can(perms, 'gallery:manage') },
+    { value: 'plantel', label: 'Plantel docente', allowed: can(perms, 'teachers:manage') },
+    { value: 'integraciones', label: 'Integraciones', allowed: canIntegrations },
+  ].filter((tab) => tab.allowed);
 
   return (
     <div>
@@ -210,13 +219,15 @@ export function ConfiguracionScreen({
         title="Configuración del sitio y sede"
         description="Administrá los parámetros globales, la información edilicia y los usuarios del panel."
         action={
-          <Button onClick={requestSave} disabled={changedKeys.length === 0}>
-            Guardar cambios
-          </Button>
+          canSettings && (
+            <Button onClick={requestSave} disabled={changedKeys.length === 0}>
+              Guardar cambios
+            </Button>
+          )
         }
       />
 
-      {settings.status === 'loading' && (
+      {canSettings && settings.status === 'loading' && (
         <LoadingRegion label="Cargando configuración">
           <div className="grid gap-4 lg:grid-cols-3">
             <Skeleton className="h-64" />
@@ -225,109 +236,116 @@ export function ConfiguracionScreen({
           </div>
         </LoadingRegion>
       )}
-      {settings.status === 'error' && !settings.data && (
+      {canSettings && settings.status === 'error' && !settings.data && (
         <ErrorState onRetry={settings.reload} description={errorText(settings.error)} />
       )}
 
-      {settings.data && (
+      {(settings.data || canUsers) && (
         <div className="grid gap-4 lg:grid-cols-3">
-          <Card className="flex flex-col gap-4" role="region" aria-labelledby="card-period">
-            <div>
-              <Eyebrow>Período académico</Eyebrow>
-              <h2 id="card-period" className="font-display text-lg font-bold text-accent-3">
-                Ciclo activo en cartelera
-              </h2>
-            </div>
-            <div className="border-t border-accent-2 pt-3">
-              <p className="text-sm font-semibold text-accent-3">Ciclo lectivo público</p>
-              <p className="text-sm text-font-strong" data-testid="cfg-public-term">
-                {terms.status === 'loading' ? 'Cargando…' : (publicTerm?.label ?? 'Sin definir')}
-              </p>
-              {can(perms, 'terms:setPublic') && (
-                <Link
-                  href="/panel/horarios"
-                  className="mt-1 inline-block text-sm font-semibold text-accent underline focus-visible:outline-none focus-visible:shadow-focus"
-                >
-                  Cambiarlo en Horarios
-                </Link>
-              )}
-            </div>
-            <div className="border-t border-accent-2 pt-3">
-              <Checkbox
-                label="Inscripciones a mesas SIU habilitadas"
-                hint="Se muestra en el sitio como inscripción abierta."
-                checked={enrollment}
-                onCheckedChange={setEnrollment}
-              />
-            </div>
-          </Card>
+          {canSettings && settings.data && (
+            <>
+              <Card className="flex flex-col gap-4" role="region" aria-labelledby="card-period">
+                <div>
+                  <Eyebrow>Período académico</Eyebrow>
+                  <h2 id="card-period" className="font-display text-lg font-bold text-accent-3">
+                    Ciclo activo en cartelera
+                  </h2>
+                </div>
+                <div className="border-t border-accent-2 pt-3">
+                  <p className="text-sm font-semibold text-accent-3">Ciclo lectivo público</p>
+                  <p className="text-sm text-font-strong" data-testid="cfg-public-term">
+                    {terms.status === 'loading'
+                      ? 'Cargando…'
+                      : (publicTerm?.label ?? 'Sin definir')}
+                  </p>
+                  {can(perms, 'terms:setPublic') && (
+                    <Link
+                      href="/panel/horarios"
+                      className="mt-1 inline-block text-sm font-semibold text-accent underline focus-visible:outline-none focus-visible:shadow-focus"
+                    >
+                      Cambiarlo en Horarios
+                    </Link>
+                  )}
+                </div>
+                <div className="border-t border-accent-2 pt-3">
+                  <Checkbox
+                    label="Inscripciones a mesas SIU habilitadas"
+                    hint="Se muestra en el sitio como inscripción abierta."
+                    checked={enrollment}
+                    onCheckedChange={setEnrollment}
+                  />
+                </div>
+              </Card>
 
-          <Card
-            className="flex flex-col gap-4 lg:col-span-2"
-            role="region"
-            aria-labelledby="card-inst"
-          >
-            <div>
-              <Eyebrow>Datos institucionales</Eyebrow>
-              <h2 id="card-inst" className="font-display text-lg font-bold text-accent-3">
-                Sede y canales oficiales
-              </h2>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {TEXT_FIELDS.map((f) => (
-                <Input
-                  key={f.key}
-                  label={f.label}
-                  hint={f.hint}
-                  value={form[f.key] ?? ''}
-                  onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
-                  error={errors[f.key]}
-                  className={f.key === 'footer_text' ? 'md:col-span-2' : undefined}
-                />
-              ))}
-            </div>
-          </Card>
+              <Card
+                className="flex flex-col gap-4 lg:col-span-2"
+                role="region"
+                aria-labelledby="card-inst"
+              >
+                <div>
+                  <Eyebrow>Datos institucionales</Eyebrow>
+                  <h2 id="card-inst" className="font-display text-lg font-bold text-accent-3">
+                    Sede y canales oficiales
+                  </h2>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {TEXT_FIELDS.map((f) => (
+                    <Input
+                      key={f.key}
+                      label={f.label}
+                      hint={f.hint}
+                      value={form[f.key] ?? ''}
+                      onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+                      error={errors[f.key]}
+                      className={f.key === 'footer_text' ? 'md:col-span-2' : undefined}
+                    />
+                  ))}
+                </div>
+              </Card>
 
-          <Card
-            className="flex flex-col gap-4 lg:col-span-3"
-            role="region"
-            aria-labelledby="card-sitio"
-          >
-            <div>
-              <Eyebrow>Sitio público</Eyebrow>
-              <h2 id="card-sitio" className="font-display text-lg font-bold text-accent-3">
-                Encabezado de Inicio e imágenes
-              </h2>
-              <p className="text-sm text-font-strong">
-                Las imágenes son una ruta del sitio (por ejemplo /img/foto.webp) o una dirección
-                https completa. Las que vienen cargadas son provisorias hasta tener las del
-                instituto.
-              </p>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {[...HOME_FIELDS, ...IMAGE_FIELDS].map((f) => (
-                <Input
-                  key={f.key}
-                  label={f.label}
-                  hint={f.hint}
-                  value={form[f.key] ?? ''}
-                  onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
-                  error={errors[f.key]}
-                  className={f.key === 'tagline' ? 'md:col-span-2' : undefined}
-                />
-              ))}
-              <Textarea
-                label={GALLERY_FIELD.label}
-                hint={GALLERY_FIELD.hint}
-                rows={4}
-                value={form[GALLERY_FIELD.key] ?? ''}
-                onChange={(e) => setForm((s) => ({ ...s, [GALLERY_FIELD.key]: e.target.value }))}
-                error={errors[GALLERY_FIELD.key]}
-                className="md:col-span-2"
-              />
-            </div>
-          </Card>
-
+              <Card
+                className="flex flex-col gap-4 lg:col-span-3"
+                role="region"
+                aria-labelledby="card-sitio"
+              >
+                <div>
+                  <Eyebrow>Sitio público</Eyebrow>
+                  <h2 id="card-sitio" className="font-display text-lg font-bold text-accent-3">
+                    Encabezado de Inicio e imágenes
+                  </h2>
+                  <p className="text-sm text-font-strong">
+                    Las imágenes son una ruta del sitio (por ejemplo /img/foto.webp) o una dirección
+                    https completa. Las que vienen cargadas son provisorias hasta tener las del
+                    instituto.
+                  </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {[...HOME_FIELDS, ...IMAGE_FIELDS].map((f) => (
+                    <Input
+                      key={f.key}
+                      label={f.label}
+                      hint={f.hint}
+                      value={form[f.key] ?? ''}
+                      onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+                      error={errors[f.key]}
+                      className={f.key === 'tagline' ? 'md:col-span-2' : undefined}
+                    />
+                  ))}
+                  <Textarea
+                    label={GALLERY_FIELD.label}
+                    hint={GALLERY_FIELD.hint}
+                    rows={4}
+                    value={form[GALLERY_FIELD.key] ?? ''}
+                    onChange={(e) =>
+                      setForm((s) => ({ ...s, [GALLERY_FIELD.key]: e.target.value }))
+                    }
+                    error={errors[GALLERY_FIELD.key]}
+                    className="md:col-span-2"
+                  />
+                </div>
+              </Card>
+            </>
+          )}
           {canUsers && (
             <Card
               className="flex flex-col gap-4 lg:col-span-3"
@@ -395,63 +413,71 @@ export function ConfiguracionScreen({
         </div>
       )}
 
-      <Tabs defaultValue={instagramResult ? 'integraciones' : 'contenido'} className="mt-10">
-        <TabsList aria-label="Más configuración">
-          <TabsTrigger value="contenido">Contenido de páginas</TabsTrigger>
-          <TabsTrigger value="enlaces">Enlaces de interés</TabsTrigger>
-          {can(perms, 'gallery:manage') && <TabsTrigger value="galerias">Galerías</TabsTrigger>}
-          {can(perms, 'teachers:manage') && (
-            <TabsTrigger value="plantel">Plantel docente</TabsTrigger>
-          )}
-          {canIntegrations && <TabsTrigger value="integraciones">Integraciones</TabsTrigger>}
-        </TabsList>
-        <TabsContent value="contenido">
-          {can(perms, 'content:manage') && <ContentEditor perms={perms} />}
-        </TabsContent>
-        <TabsContent value="enlaces">
-          {can(perms, 'links:manage') && <LinksEditor perms={perms} />}
-        </TabsContent>
-        {can(perms, 'gallery:manage') && (
-          <TabsContent value="galerias">
-            <GalleryEditor />
-          </TabsContent>
-        )}
-        {can(perms, 'teachers:manage') && (
-          <TabsContent value="plantel">
-            <TeachersEditor />
-          </TabsContent>
-        )}
-        {canIntegrations && (
-          <TabsContent value="integraciones">
-            <IntegrationsPanel instagramResult={instagramResult} />
-          </TabsContent>
-        )}
-      </Tabs>
-
-      <p className="mt-8 rounded-lg border border-accent-2 bg-surface px-4 py-3 text-sm text-font-strong">
-        Los cambios aplicados en los datos de la sede y el período lectivo impactan en el encabezado
-        y el pie de página del portal estudiantil.
-      </p>
-
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Confirmar cambios globales"
-        description="Estos datos se muestran en todo el sitio. ¿Querés guardarlos ahora?"
-        details={
-          <ul className="list-disc pl-5">
-            {changedKeys.map((k) => (
-              <li key={k}>{LABELS[k] ?? k}</li>
+      {tabs.length > 0 && (
+        <Tabs
+          key={tabs.map((tab) => tab.value).join(':')}
+          defaultValue={instagramResult && canIntegrations ? 'integraciones' : tabs[0]!.value}
+          className="mt-10"
+        >
+          <TabsList aria-label="Más configuración">
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {tab.label}
+              </TabsTrigger>
             ))}
-          </ul>
-        }
-        confirmLabel="Guardar cambios"
-        onConfirm={async () => {
-          await api.put('/settings', changes);
-          toast({ tone: 'success', title: 'Cambios guardados.' });
-          settings.reload();
-        }}
-      />
+          </TabsList>
+          <TabsContent value="contenido">
+            {can(perms, 'content:manage') && <ContentEditor perms={perms} />}
+          </TabsContent>
+          <TabsContent value="enlaces">
+            {can(perms, 'links:manage') && <LinksEditor perms={perms} />}
+          </TabsContent>
+          {can(perms, 'gallery:manage') && (
+            <TabsContent value="galerias">
+              <GalleryEditor />
+            </TabsContent>
+          )}
+          {can(perms, 'teachers:manage') && (
+            <TabsContent value="plantel">
+              <TeachersEditor />
+            </TabsContent>
+          )}
+          {canIntegrations && (
+            <TabsContent value="integraciones">
+              <IntegrationsPanel instagramResult={instagramResult} />
+            </TabsContent>
+          )}
+        </Tabs>
+      )}
+
+      {canSettings && (
+        <p className="mt-8 rounded-lg border border-accent-2 bg-surface px-4 py-3 text-sm text-font-strong">
+          Los cambios aplicados en los datos de la sede y el período lectivo impactan en el
+          encabezado y el pie de página del portal estudiantil.
+        </p>
+      )}
+
+      {canSettings && (
+        <ConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Confirmar cambios globales"
+          description="Estos datos se muestran en todo el sitio. ¿Querés guardarlos ahora?"
+          details={
+            <ul className="list-disc pl-5">
+              {changedKeys.map((k) => (
+                <li key={k}>{LABELS[k] ?? k}</li>
+              ))}
+            </ul>
+          }
+          confirmLabel="Guardar cambios"
+          onConfirm={async () => {
+            await api.put('/settings', changes);
+            toast({ tone: 'success', title: 'Cambios guardados.' });
+            settings.reload();
+          }}
+        />
+      )}
       {canUsers && (
         <UsersDialog open={usersOpen} onOpenChange={setUsersOpen} onChanged={users.reload} />
       )}

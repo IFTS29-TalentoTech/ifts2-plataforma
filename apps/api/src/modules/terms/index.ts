@@ -17,7 +17,7 @@ import {
 import { z } from 'zod';
 import { errors } from '../../infra/errors';
 import { pageArgs, toPage } from '../../lib/pagination';
-import { requirePermission } from '../../middleware/auth';
+import { requireAnyPermission, requirePermission } from '../../middleware/auth';
 import { valid, validate } from '../../middleware/validate';
 import { audit } from '../audit/audit.service';
 import { setPublicTerm, toTermDto } from './terms.service';
@@ -26,43 +26,42 @@ export const mountPath = '/terms';
 export const router = Router();
 
 const withCounts = { _count: { select: { schedules: true, examCalls: true } } } as const;
+// Leer ciclos es necesario para operar horarios, llamados, su publicación o los ajustes.
+// Esto no concede creación/edición ni cambio de ciclo público.
+const readTerms = requireAnyPermission(
+  'terms:manage',
+  'terms:setPublic',
+  'schedules:manage',
+  'examCalls:manage',
+  'settings:manage',
+);
 const DUPLICATE = {
   year: ['Ya existe un ciclo con ese año y período.'],
   kind: ['Ya existe un ciclo con ese año y período.'],
 };
 
 /** GET /terms — más nuevos primero; el ciclo público se reconoce por `publicCurrent`. */
-router.get(
-  '/',
-  requirePermission('terms:manage'),
-  validate({ query: termListQuery }),
-  async (req, res) => {
-    const q = valid<z.infer<typeof termListQuery>>(req, 'query');
-    const [total, rows] = await Promise.all([
-      req.ctx.prisma.academicTerm.count(),
-      req.ctx.prisma.academicTerm.findMany({
-        include: withCounts,
-        orderBy: [{ year: 'desc' }, { kind: 'desc' }],
-        ...pageArgs(q),
-      }),
-    ]);
-    res.json(toPage(rows.map(toTermDto), total, q));
-  },
-);
-
-router.get(
-  '/:id',
-  requirePermission('terms:manage'),
-  validate({ params: idParam }),
-  async (req, res) => {
-    const t = await req.ctx.prisma.academicTerm.findUnique({
-      where: { id: req.valid.params.id },
+router.get('/', readTerms, validate({ query: termListQuery }), async (req, res) => {
+  const q = valid<z.infer<typeof termListQuery>>(req, 'query');
+  const [total, rows] = await Promise.all([
+    req.ctx.prisma.academicTerm.count(),
+    req.ctx.prisma.academicTerm.findMany({
       include: withCounts,
-    });
-    if (!t) throw errors.notFound('No encontramos el ciclo.');
-    res.json(toTermDto(t));
-  },
-);
+      orderBy: [{ year: 'desc' }, { kind: 'desc' }],
+      ...pageArgs(q),
+    }),
+  ]);
+  res.json(toPage(rows.map(toTermDto), total, q));
+});
+
+router.get('/:id', readTerms, validate({ params: idParam }), async (req, res) => {
+  const t = await req.ctx.prisma.academicTerm.findUnique({
+    where: { id: req.valid.params.id },
+    include: withCounts,
+  });
+  if (!t) throw errors.notFound('No encontramos el ciclo.');
+  res.json(toTermDto(t));
+});
 
 /** POST /terms — año + período únicos (409 con `errors.year`/`errors.kind` si se repite). Nace NO público. */
 router.post(

@@ -83,7 +83,9 @@ export function SocialPostsTab({
   );
   // Estado del último fetch exitoso: lo informa el Resumen. Si no se puede leer, simplemente no se muestra.
   const fetchInfo = useResource('social:last-fetch', () =>
-    api.get<DashboardDto>('/dashboard').catch(() => null),
+    can(perms, 'dashboard:read')
+      ? api.get<DashboardDto>('/dashboard').catch(() => null)
+      : Promise.resolve(null),
   );
   const lastFetchAt = fetchInfo.data?.instagram.lastFetchAt ?? null;
   const lastFetchMode = fetchInfo.data?.instagram.lastSyncMode ?? 'incremental';

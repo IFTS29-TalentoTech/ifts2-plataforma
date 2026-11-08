@@ -151,8 +151,12 @@ export function HorariosScreen({ perms }: { perms: PermissionList }) {
                   el ciclo público vigente.
                 </p>
               )}
-              <SchedulesSection perms={perms} term={term} onChange={terms.reload} />
-              <ExamCallsSection perms={perms} term={term} onChange={terms.reload} />
+              {can(perms, 'schedules:manage') && (
+                <SchedulesSection perms={perms} term={term} onChange={terms.reload} />
+              )}
+              {can(perms, 'examCalls:manage') && (
+                <ExamCallsSection perms={perms} term={term} onChange={terms.reload} />
+              )}
             </>
           )}
         </>
@@ -511,6 +515,7 @@ function ExamCallsSection({
       </ul>
 
       <ExamCallDialog
+        canUploadDocument={can(perms, 'documents:manage')}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         term={term}
