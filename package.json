@@ -34,6 +34,7 @@
     "verify": "node scripts/verify-flows.mjs",
     "docs:der": "node scripts/docs/prisma-to-docs.mjs",
     "docs:pdf": "node scripts/docs/build-entrega.mjs",
+    "docs:pdf:all": "node scripts/docs/build-entrega.mjs && node scripts/docs/build-entrega.mjs --no-regen --solo=Manual-Tecnico && node scripts/docs/build-entrega.mjs --no-regen --solo=Manual-de-Usuario",
     "package": "node scripts/package.mjs",
     "test:covers": "node scripts/test-public-covers.mjs"
   },

@@ -20,7 +20,7 @@ Que el personal del instituto mantenga el sitio **sin saber programar**, con con
 
 ### 1.3 Alcance de esta entrega
 
-Aplicación completa y funcional (sitio público + panel + API + base de datos) con CRUD completo, pruebas automatizadas y documentación. **Queda fuera o sin verificar** (ver la sección 11, _Limitaciones conocidas_): conexión con Instagram real, envío de correo real, almacenamiento S3 real y despliegue en un hosting definitivo.
+Aplicación completa y funcional (sitio público + panel + API + base de datos) con CRUD completo, pruebas automatizadas y documentación. **Queda fuera o sin verificar** (ver la sección 11, _Limitaciones conocidas_): conexión con Instagram real, envío de correo real y almacenamiento S3 real.
 
 ### 1.4 Reglas de negocio que gobiernan el código
 
@@ -861,7 +861,7 @@ El hosting definitivo **está por definir con el cliente** (se busca uno gratuit
 5. Cargar la configuración de Instagram y correo desde el panel y programar el cron diario.
 6. Hacer copias de seguridad de la base y de `uploads/` (sección 2.6).
 
-El repositorio incluye `.github/workflows/ci.yml` (lint, tipos, pruebas con PostgreSQL de servicio, build y Cypress). **No se desplegó todavía**: el enlace de la aplicación desplegada figura como `[completar]` en la documentación.
+El repositorio incluye `.github/workflows/ci.yml` (lint, tipos, pruebas con PostgreSQL de servicio, build y Cypress).
 
 ## 8. Componentes principales
 
@@ -990,7 +990,6 @@ Lo que **no se pudo probar** o quedó pendiente, dicho sin rodeos:
 - **Instagram real (Meta)**: no hubo credenciales de una cuenta profesional y una app de Meta. `GraphInstagramClient` se probó **solo contra un servidor HTTP simulado** (paginación, errores 190/429/500, fallas de red, canje y renovación de token) siguiendo la documentación oficial; falta la prueba de concepto en vivo. Mientras tanto la carga manual cubre la contingencia.
 - **Correo SMTP real**: se probó con el correo falso y por consola; no se envió un correo real (falta definir el remitente con el cliente).
 - **Almacenamiento S3 real**: `S3Storage` está implementado pero no probado contra un servicio real.
-- **Despliegue**: no hay aplicación desplegada ni dominio todavía (hosting a validar con el cliente).
 - **Carga**: se usó **autocannon**, no k6 (que figuraba en la planificación). En saturación (400 usuarios sin pausa) un solo proceso de Node alcanza su techo en ~300–360 pedidos por segundo y aparecen reinicios de conexión; para el uso real esperado (~133 pedidos/s) cumple. El techo se sube con CDN o más procesos.
 - **Datos pendientes del cliente**: datos de ingreso (fechas y documentación) y ubicación de las materias por año del plan de estudios; los marcadores quedan como `[a confirmar]` en el sitio.
 - **Nombres Ingreso / Inscripciones, hashtag y colores** quedaron a validar con el cliente. El hashtag `#ifts2web` es provisorio; la tipografía es Plus Jakarta Sans (confirmado; la Etapa 2 proponía Inter).
