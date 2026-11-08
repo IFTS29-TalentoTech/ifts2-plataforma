@@ -32,8 +32,9 @@ export function LogoutButton({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
           try {
             await api.post('/auth/logout');
           } catch (e) {
+            // Logout es idempotente: el reintento manual no duplica registros ni concede éxito.
             setError(
-              `No pudimos confirmar el cierre de sesión. ${e instanceof ApiError ? e.userMessage : 'Intentá de nuevo.'}`,
+              `No pudimos confirmar el cierre de sesión. ${e instanceof ApiError ? e.userMessage : 'Revisá la conexión.'} Revisá tu conexión. Intentá de nuevo para cerrar la sesión.`,
             );
             return;
           } finally {
