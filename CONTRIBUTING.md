@@ -9,6 +9,9 @@ Flujo corto para quien se suma. El detalle de reglas está en `docs/specs/AGENTS
 3. **Trabajá en tu carpeta**: un módulo de API (`apps/api/src/modules/<nombre>/`) o tus pantallas (`apps/web/src/app/...`, componentes propios en `apps/web/src/features/<pantalla>/`). Evitá editar archivos compartidos; si hace falta (esquemas en `packages/shared`, kit de UI), hacé el cambio chico y aislado.
 4. **Escribí pruebas** junto con el código (ver `apps/api/README.md` y `apps/web/README.md`).
 5. **Verificá antes de abrir el PR**: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
+
+> **Hook de pre-commit:** al hacer `pnpm install` se activa solo (husky + lint-staged). En cada commit formatea y corrige con ESLint/Prettier los archivos que estás commiteando, así el `pnpm lint` del CI no falla por formato. Si no se activó, corré `pnpm prepare`. Saltearlo con `--no-verify` es posible, pero el CI igual lo va a frenar.
+
 6. **Actualizá la documentación** que toques: README del paquete, `.env.example`, `docs/specs/04-api.md` si agregaste endpoints, un ADR en `docs/decisiones/` si decidiste algo, y una entrada en `docs/avance.md`.
 7. **Pull request chico** con el criterio de aceptación verificado. Lo revisa otra persona. No se hace push directo a `main`.
 
