@@ -12,6 +12,7 @@
  *    se muestra el motivo que manda la API. Si venía de Instagram, la publicación de redes vuelve a pendiente.
  *  - Pausar saca del sitio sin perder nada (nada se borra solo).
  */
+import { can, type PermissionList } from '@ifts2/shared';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -29,6 +30,7 @@ import {
 } from '@/components/ui';
 import type { BadgeTone } from '@/components/ui';
 import { api } from '@/lib/api';
+import { confirmPublication } from '@/lib/confirm-publication';
 import { formatDateAR } from '@/lib/dates';
 import { toDisplayError } from '../lib/display-error';
 import { handleSessionExpired, humanError } from '../lib/errors';
@@ -76,7 +78,13 @@ function vigenciaText(p: PublicationDto): string {
   return 'Sin fecha de fin';
 }
 
-export function OwnPublicationsTab({ onChanged }: { onChanged: () => void }) {
+export function OwnPublicationsTab({
+  onChanged,
+  perms,
+}: {
+  onChanged: () => void;
+  perms: PermissionList;
+}) {
   const confirm = useConfirm();
   const { toast } = useToast();
   const [status, setStatus] = useState('all');
@@ -116,7 +124,7 @@ export function OwnPublicationsTab({ onChanged }: { onChanged: () => void }) {
     });
     if (!ok) return;
     try {
-      await api.post(`/publications/${p.id}/${action}`);
+      await confirmPublication(p.id, action);
       toast({ title: cfg.done, tone: 'success' });
     } catch (e) {
       if (!handleSessionExpired(e))
@@ -181,7 +189,9 @@ export function OwnPublicationsTab({ onChanged }: { onChanged: () => void }) {
     <ul className="flex flex-col gap-3">
       {data.items.map((p) => {
         const info = statusInfo(p);
-        const canDelete = p.status === 'DRAFT' || p.status === 'PAUSED' || p.expired;
+        const canDelete =
+          can(perms, 'publications:delete') &&
+          (p.status === 'DRAFT' || p.status === 'PAUSED' || p.expired);
         return (
           <li key={p.id}>
             <Card padded={false} className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center">

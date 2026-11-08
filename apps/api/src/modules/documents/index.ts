@@ -20,7 +20,7 @@ import {
   type DocumentMetaInput,
   type DocumentUpdateInput,
 } from '@ifts2/shared';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { storeUpload } from '../../infra/storage';
 import { pageArgs, toPage } from '../../lib/pagination';
@@ -299,19 +299,28 @@ router.delete(
         { references: refs },
       );
     }
-    await req.ctx.prisma.$transaction(async (tx) => {
-      await tx.document.delete({ where: { id } });
-      await audit.fromReq(
-        req,
-        {
-          action: 'document.delete',
-          entity: 'Document',
-          entityId: id,
-          detail: { title: doc.title },
-        },
-        tx,
-      );
-    });
+    try {
+      await req.ctx.prisma.$transaction(async (tx) => {
+        await tx.document.delete({ where: { id } });
+        await audit.fromReq(
+          req,
+          {
+            action: 'document.delete',
+            entity: 'Document',
+            entityId: id,
+            detail: { title: doc.title },
+          },
+          tx,
+        );
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        throw errors.conflict(
+          'El archivo fue adjuntado durante la operación. Recargá y revisá sus referencias antes de eliminarlo.',
+        );
+      }
+      throw error;
+    }
     await req.ctx.storage.remove(doc.storageKey).catch((e: Error) => {
       req.ctx.logger.warn(
         { err: e.message, documentId: id },

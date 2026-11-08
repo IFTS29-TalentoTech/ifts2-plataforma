@@ -1,3 +1,4 @@
+import { can } from '@ifts2/shared';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { PanelShell } from '@/components/layout/panel-shell';
@@ -33,7 +34,11 @@ export default async function Layout({ children }: { children: ReactNode }) {
 
   // Datos opcionales del menú: si fallan, el panel igual se muestra.
   const [dashboard, health] = await Promise.all([
-    api.get<Dashboard>('/dashboard', { cookie, cache: 'no-store' }).catch(() => ({}) as Dashboard),
+    can(session.permissions, 'dashboard:read')
+      ? api
+          .get<Dashboard>('/dashboard', { cookie, cache: 'no-store' })
+          .catch(() => ({}) as Dashboard)
+      : Promise.resolve({} as Dashboard),
     api
       .get<{ demoMode?: boolean }>('/health', { cache: 'no-store' })
       .catch(() => ({}) as { demoMode?: boolean }),

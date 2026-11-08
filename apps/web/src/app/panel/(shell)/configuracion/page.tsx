@@ -1,4 +1,4 @@
-import { can } from '@ifts2/shared';
+import { canAccessPanel, PANEL_CAPABILITIES } from '@/lib/nav';
 import type { Metadata } from 'next';
 import { Placeholder } from '@/components/layout/page-header';
 import { requireSession } from '@/lib/session';
@@ -6,17 +6,14 @@ import { ConfiguracionScreen } from '@/features/panel-b/configuracion/configurac
 
 export const metadata: Metadata = { title: 'Configuración' };
 
-/**
- * RF01, RF05 (US-25/26). Solo ADMIN (`settings:manage`). `?instagram=connected|error` lo agrega la API
- * al volver del flujo OAuth de Meta (ver /integrations/instagram/callback).
- */
+/** Configuración: usuarios, contenido, enlaces, integraciones y ajustes según capacidad. */
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ instagram?: string }>;
 }) {
   const session = await requireSession();
-  if (!can(session.permissions, 'settings:manage')) {
+  if (!canAccessPanel(session.permissions, PANEL_CAPABILITIES.configuration)) {
     return (
       <Placeholder title="Configuración" description="No tenés permiso para ver esta sección." />
     );

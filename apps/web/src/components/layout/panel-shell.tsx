@@ -1,6 +1,5 @@
-import { can } from '@ifts2/shared';
 import type { ReactNode } from 'react';
-import { PANEL_NAV } from '@/lib/nav';
+import { PANEL_NAV, canAccessNav } from '@/lib/nav';
 import type { Session } from '@/lib/session';
 import type { SiteInfo } from '@/lib/site';
 import { LogoutButton } from './logout-button';
@@ -24,7 +23,7 @@ export interface PanelShellProps {
  * Lo aplica `src/app/panel/(shell)/layout.tsx`; las páginas usan <PageHeader> y su contenido.
  */
 export function PanelShell({ session, site, counts = {}, demoMode, children }: PanelShellProps) {
-  const items = PANEL_NAV.filter((i) => can(session.permissions, i.permission)).map((i) => ({
+  const items = PANEL_NAV.filter((i) => canAccessNav(session.permissions, i)).map((i) => ({
     href: i.href,
     label: i.label,
     count: i.countKey ? counts[i.countKey] : undefined,
