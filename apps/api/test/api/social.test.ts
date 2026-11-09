@@ -733,7 +733,7 @@ describe('POST /social/manual (contingencia)', () => {
     expect(ok.body.publication.origin).toBe('INSTAGRAM');
   });
 
-  it('valida los campos con mensajes en español', async () => {
+  it('valida el enlace y la fecha con mensajes en español (la leyenda se exige después, si no se puede traer sola)', async () => {
     const res = await manual({
       permalink: 'instagram.com/p/x',
       caption: '',
@@ -742,7 +742,6 @@ describe('POST /social/manual (contingencia)', () => {
     });
     expect(res.status).toBe(400);
     expect(res.body.errors.permalink[0]).toMatch(/http/);
-    expect(res.body.errors.caption[0]).toMatch(/La leyenda es obligator/);
     expect(res.body.errors.postedAt[0]).toMatch(/fecha válida/);
   });
 

@@ -1,5 +1,12 @@
 import { captionHasHashtag } from './hashtag';
-import type { ConnectionTest, FetchMediaOptions, InstagramClient, InstagramMedia } from './types';
+import { samePermalink } from './permalink';
+import type {
+  ConnectionDiagnosis,
+  ConnectionTest,
+  FetchMediaOptions,
+  InstagramClient,
+  InstagramMedia,
+} from './types';
 
 export const FAKE_MEDIA: InstagramMedia[] = [
   {
@@ -63,6 +70,44 @@ export class FakeInstagramClient implements InstagramClient {
   async getAccountId() {
     if (this.failWith) throw this.failWith;
     return this.accountId;
+  }
+  async findMediaByPermalink(permalink: string) {
+    if (this.failWith) throw this.failWith;
+    return this.media.find((m) => samePermalink(m.permalink, permalink)) ?? null;
+  }
+  async diagnose(): Promise<ConnectionDiagnosis> {
+    if (this.failWith) {
+      return {
+        ok: false,
+        steps: [
+          { id: 'token', label: 'Token de acceso', status: 'fail', detail: this.failWith.message },
+        ],
+      };
+    }
+    return {
+      ok: true,
+      username: 'cuenta_de_demostracion',
+      steps: [
+        {
+          id: 'token',
+          label: 'Token de acceso',
+          status: 'ok',
+          detail: 'Modo demostración: no se contactó a Instagram.',
+        },
+        {
+          id: 'identity',
+          label: 'Cuenta conectada',
+          status: 'ok',
+          detail: '@cuenta_de_demostracion',
+        },
+        {
+          id: 'media',
+          label: 'Lectura de publicaciones',
+          status: 'ok',
+          detail: `${this.media.length} de ejemplo.`,
+        },
+      ],
+    };
   }
   async testConnection(): Promise<ConnectionTest> {
     if (this.failWith) return { ok: false, error: this.failWith.message };

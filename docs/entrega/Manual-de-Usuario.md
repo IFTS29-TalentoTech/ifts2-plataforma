@@ -170,7 +170,7 @@ Hay dos casos: cargar una publicación de Instagram a mano (cuando la sincroniza
 **a) Publicación de Instagram cargada a mano**
 
 1. En **Publicaciones → De redes sociales**, tocá **Cargar publicación manualmente**.
-2. Completá **Enlace a la publicación**, **Leyenda**, **Dirección de la imagen** y **Fecha de publicación** (todos obligatorios).
+2. Pegá el **enlace de la publicación de Instagram** (o la dirección de una imagen de otro sitio). Si la cuenta de Instagram está conectada, la plataforma trae sola la imagen, la leyenda y la fecha; si no, escribí la **Leyenda** y, al aprobarla, subí la imagen desde tu equipo o publicá sin imagen. La **Fecha** es opcional.
 3. Tocá **Cargar publicación**. Queda como pendiente, igual que las detectadas, y se modera como en 5.1.
 
 ![Carga manual](../capturas/panel/17-publicaciones-carga-manual-1440.png)

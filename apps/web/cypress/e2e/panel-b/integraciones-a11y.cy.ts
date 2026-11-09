@@ -73,7 +73,10 @@ for (const vp of viewports) {
       // La ayuda cambia con la opción: ahora es la del token (5 pasos, enlace oficial), no la de OAuth.
       cy.get('[data-testid="ig-guide"]').should('have.attr', 'data-method', 'token');
       cy.get('[data-testid="ig-guide"] summary').should('contain', 'token de acceso').click();
-      cy.get('[data-testid="ig-guide"] ol li').should('have.length', 5);
+      // Dos vías con su propia guía (ADR-045): token de Instagram (5 pasos) y token de Facebook «EAA» (5 pasos).
+      cy.get('[data-testid="ig-guide-main"] ol li').should('have.length', 5);
+      cy.get('[data-testid="ig-guide-facebook"] ol li').should('have.length', 5);
+      cy.get('[data-testid="ig-guide-facebook"]').should('contain', 'EAA');
       cy.get('[data-testid="ig-guide"]').should('not.contain', 'redirección');
       cy.get('[data-testid="ig-guide"] a[href*="developers.facebook.com"]').should('exist');
       // Con el método token desaparece el formulario de App ID / Secret.

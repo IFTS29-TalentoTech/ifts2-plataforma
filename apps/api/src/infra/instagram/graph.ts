@@ -20,10 +20,13 @@
  */
 import { INSTAGRAM_REQUIRED_SCOPES } from '@ifts2/shared';
 import { captionHasHashtag } from './hashtag';
+import { samePermalink } from './permalink';
 import {
   InstagramApiError,
   InstagramNotConfiguredError,
+  type ConnectionDiagnosis,
   type ConnectionTest,
+  type DiagnosticStep,
   type FetchMediaOptions,
   type InstagramClient,
   type InstagramMedia,
@@ -36,21 +39,25 @@ export interface GraphOptions {
   appSecret?: string;
   accessToken?: string;
   fetchFn?: typeof fetch;
+  /** Id de la cuenta de Instagram a usar con un token de Facebook que ve varias (por defecto, la primera). */
+  igUserId?: string;
   /** Tope de páginas a recorrer por sincronización (evita bucles y consumo excesivo). */
   maxPages?: number;
 }
 
 export const GRAPH_BASE = 'https://graph.instagram.com';
+/** Facebook Login (tokens EAA…): host y versión de la Graph API (ADR-045). */
+export const FB_BASE = 'https://graph.facebook.com/v23.0';
 const OAUTH_BASE = 'https://api.instagram.com';
-const GRAPH_HOST = new URL(GRAPH_BASE).hostname;
+const GRAPH_HOSTS = new Set([new URL(GRAPH_BASE).hostname, new URL(FB_BASE).hostname]);
 const PAGE_SIZE = 50;
 const DEFAULT_MAX_PAGES = 6;
+/** Páginas (de 50) que se revisan buscando una publicación por su enlace: unas 500 publicaciones. */
+const FIND_MAX_PAGES = 10;
 const REQUEST_TIMEOUT_MS = 15_000;
 const MEDIA_FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
-
-/** El token pegado parece de Facebook (EAA...), no de «Instagram con inicio de sesión de Instagram». */
-export const FACEBOOK_TOKEN_MESSAGE =
-  'Ese token parece de Facebook (empieza con EAA) y esta conexión necesita el token de Instagram con inicio de sesión de Instagram. Generalo de nuevo desde el panel de la app de Meta (Instagram > Configuración de la API con inicio de sesión de Instagram).';
+/** `recent_media` de un hashtag no admite `thumbnail_url`. */
+const HASHTAG_MEDIA_FIELDS = 'id,caption,media_type,media_url,permalink,timestamp';
 
 /** Texto que ve el cliente cuando el token ya no sirve (vencido, revocado, contraseña cambiada). */
 export const TOKEN_INVALID_MESSAGE =
@@ -164,6 +171,11 @@ async function callGraph<T>(fetchFn: typeof fetch, url: string, init?: RequestIn
   return body as T;
 }
 
+/** `/me` puede responder el objeto plano o dentro de `data` (según la versión de la API). */
+type MeRecord = { id?: string; user_id?: string; username?: string; account_type?: string };
+type MeResponse = MeRecord & { data?: MeRecord[] };
+const meRecord = (r: MeResponse): MeRecord => r.data?.[0] ?? r;
+
 interface RawMedia {
   id: string;
   caption?: string;
@@ -187,32 +199,52 @@ function toMedia(m: RawMedia): InstagramMedia | null {
   };
 }
 
+/** Qué API habla el token (ADR-045): `instagram` = inicio de sesión de Instagram; `facebook` = Facebook Login. */
+export type GraphFlavor = 'instagram' | 'facebook';
+
+/**
+ * Tipo de token por su prefijo. `EAA…` es de Facebook Login (graph.facebook.com); `IG…` (IGAA, IGQ…) es de
+ * «Instagram con inicio de sesión de Instagram» (graph.instagram.com). Otro prefijo no es concluyente: se
+ * prueba primero el host de Instagram y, si Meta no entiende el token, el de Facebook.
+ */
+export function detectTokenFlavor(token: string): GraphFlavor | null {
+  if (token.startsWith('EAA')) return 'facebook';
+  if (/^IG/.test(token)) return 'instagram';
+  return null;
+}
+
+const baseOf = (f: GraphFlavor) => (f === 'facebook' ? FB_BASE : GRAPH_BASE);
+
+interface PageNode {
+  id?: string;
+  name?: string;
+  instagram_business_account?: { id?: string; username?: string };
+}
+
+/** Cuenta de Instagram resuelta para un token de Facebook (ver `igUser`). */
+interface IgUser {
+  id: string;
+  username?: string;
+  pageName?: string;
+  /** Otras cuentas de Instagram que también ve el token (se usa la primera). */
+  others: string[];
+}
+
 export class GraphInstagramClient implements InstagramClient {
   readonly kind = 'graph' as const;
   private readonly fetchFn: typeof fetch;
+  /** API elegida; se confirma con el primer pedido exitoso. */
+  private flavor: GraphFlavor | null = null;
+  private flavorConfirmed = false;
+  private igCache: IgUser | null = null;
 
   constructor(private readonly opts: GraphOptions) {
     this.fetchFn = opts.fetchFn ?? defaultFetch;
   }
 
-  /**
-   * GET a Graph con el token. Si el token es inválido y tiene la forma de un token de Facebook (`EAA...`),
-   * se agrega la pista: este cliente habla con graph.instagram.com (inicio de sesión de Instagram) y ahí
-   * un token de Facebook/Páginas se rechaza con el mismo error 190 que un token vencido.
-   */
-  private async get<T>(url: string): Promise<T> {
-    try {
-      return await callGraph<T>(this.fetchFn, url);
-    } catch (e) {
-      if (
-        e instanceof InstagramApiError &&
-        e.tokenInvalid &&
-        this.opts.accessToken?.startsWith('EAA')
-      ) {
-        throw new InstagramApiError(FACEBOOK_TOKEN_MESSAGE, e.opts);
-      }
-      throw e;
-    }
+  /** GET a Graph. Los errores ya vienen traducidos (sin token) por `callGraph`. */
+  private get<T>(url: string): Promise<T> {
+    return callGraph<T>(this.fetchFn, url);
   }
 
   private requireToken(): string {
@@ -230,18 +262,105 @@ export class GraphInstagramClient implements InstagramClient {
   }
 
   /**
-   * Recorre `/me/media` (más nuevas primero) hasta juntar `limit` publicaciones que cumplan el filtro,
-   * agotar las páginas / el tope `maxPages` o, en modo incremental (`since`), llegar a una publicación
-   * más vieja que `since`.
+   * Ejecuta `fn` contra la API que corresponde al token. Si el prefijo no es concluyente y Meta no entiende
+   * el token en el host elegido (190 «Cannot parse access token» o 400), se reintenta UNA vez contra el otro
+   * host antes de fallar; el primero que responde bien queda como el de este cliente.
+   */
+  private async run<T>(fn: (flavor: GraphFlavor, token: string) => Promise<T>): Promise<T> {
+    const token = this.requireToken();
+    const first = this.flavor ?? detectTokenFlavor(token) ?? 'instagram';
+    try {
+      const out = await fn(first, token);
+      this.flavor = first;
+      this.flavorConfirmed = true;
+      return out;
+    } catch (e) {
+      const unsure = !this.flavorConfirmed && detectTokenFlavor(token) === null;
+      const retriable =
+        e instanceof InstagramApiError && (e.opts.code === 190 || e.opts.status === 400);
+      if (!unsure || !retriable) throw e;
+      const other: GraphFlavor = first === 'instagram' ? 'facebook' : 'instagram';
+      try {
+        const out = await fn(other, token);
+        this.flavor = other;
+        this.flavorConfirmed = true;
+        return out;
+      } catch {
+        throw e; // se informa el error del host esperado
+      }
+    }
+  }
+
+  /**
+   * Cuenta de Instagram profesional que ve un token de Facebook. Con token de usuario se lee `/me/accounts`
+   * (Páginas con su cuenta de Instagram vinculada); con token de Página, `/me` ya es la Página. Si hay
+   * varias cuentas se usa la primera (o la indicada en `igUserId`) y las demás se informan.
+   */
+  private async igUser(token: string): Promise<IgUser> {
+    if (this.igCache) return this.igCache;
+    const t = encodeURIComponent(token);
+    const fields = 'id,name,instagram_business_account{id,username}';
+    if (this.opts.igUserId) {
+      return (this.igCache = { id: this.opts.igUserId, others: [] });
+    }
+    let pages: PageNode[] = [];
+    try {
+      const j = await this.get<{ data?: PageNode[] }>(
+        `${FB_BASE}/me/accounts?fields=${fields}&limit=100&access_token=${t}`,
+      );
+      pages = j.data ?? [];
+    } catch (e) {
+      if (!(e instanceof InstagramApiError) || e.tokenInvalid) throw e;
+    }
+    let linked = pages.filter((p) => p.instagram_business_account?.id);
+    if (linked.length === 0) {
+      // Token de Página: `/me` es la Página.
+      try {
+        const page = await this.get<PageNode>(`${FB_BASE}/me?fields=${fields}&access_token=${t}`);
+        if (page.instagram_business_account?.id) linked = [page];
+      } catch (e) {
+        if (e instanceof InstagramApiError && e.tokenInvalid) throw e;
+      }
+    }
+    const first = linked[0];
+    if (!first?.instagram_business_account?.id) {
+      throw new InstagramApiError(
+        'Este token no ve ninguna cuenta de Instagram profesional vinculada a una Página de Facebook. Vinculá la cuenta a una Página y generá el token con los permisos instagram_basic y pages_show_list.',
+        { status: 400 },
+      );
+    }
+    return (this.igCache = {
+      id: first.instagram_business_account.id,
+      username: first.instagram_business_account.username,
+      pageName: first.name,
+      others: linked
+        .slice(1)
+        .map(
+          (p) => `@${p.instagram_business_account?.username ?? p.instagram_business_account?.id}`,
+        ),
+    });
+  }
+
+  /** Dirección de la primera página de publicaciones propias (según el tipo de token). */
+  private async mediaUrl(f: GraphFlavor, token: string, limit: number): Promise<string> {
+    const t = encodeURIComponent(token);
+    const path = f === 'facebook' ? `/${(await this.igUser(token)).id}/media` : '/me/media';
+    return `${baseOf(f)}${path}?fields=${MEDIA_FIELDS}&limit=${limit}&access_token=${t}`;
+  }
+
+  /**
+   * Recorre las publicaciones propias (más nuevas primero) hasta juntar `limit` que cumplan el filtro,
+   * agotar las páginas / el tope `maxPages` o, en modo incremental (`since`), llegar a una más vieja que `since`.
    *
-   * Por qué se corta del lado nuestro y no con el parámetro `since` de la Graph API: ese parámetro
-   * (paginación por tiempo) está documentado para el borde de medios de Instagram, pero no pudimos
-   * verificar que `graph.instagram.com` (inicio de sesión de Instagram) lo respete y no hay cuenta de
-   * Meta para probarlo. Cortar al ver una publicación vieja funciona igual en ambos casos y se prueba
-   * con el servidor simulado.
+   * Por qué se corta del lado nuestro y no con el parámetro `since` de la Graph API: no pudimos verificar
+   * que todas las variantes lo respeten y no hay cuenta de Meta para probarlo. Cortar al ver una publicación
+   * vieja funciona igual en ambos casos y se prueba con el servidor simulado.
+   *
+   * Con token de Facebook y hashtag se suma, como mejora opcional, la búsqueda pública de hashtags
+   * (`ig_hashtag_search`): si falla (por ejemplo falta «Instagram Public Content Access») se avisa por
+   * `onWarning` y la sincronización de la cuenta sigue igual.
    */
   async fetchRecentMedia(opts?: FetchMediaOptions): Promise<InstagramMedia[]> {
-    const token = this.requireToken();
     const limit = opts?.limit ?? 50;
     const maxPages = this.opts.maxPages ?? DEFAULT_MAX_PAGES;
     const sinceMs = opts?.since ? new Date(opts.since).getTime() : null;
@@ -250,11 +369,12 @@ export class GraphInstagramClient implements InstagramClient {
     let reachedCutoff = false;
     let stoppedByLimit = false;
 
-    let url: string | null =
-      `${GRAPH_BASE}/me/media?fields=${MEDIA_FIELDS}&limit=${PAGE_SIZE}` +
-      `&access_token=${encodeURIComponent(token)}`;
-    for (let page = 0; url && page < maxPages && !stoppedByLimit && !reachedCutoff; page++) {
-      const json: { data?: RawMedia[]; paging?: { next?: string } } = await this.get(url);
+    type Page = { data?: RawMedia[]; paging?: { next?: string } };
+    let json: Page = await this.run((f, token) =>
+      this.mediaUrl(f, token, PAGE_SIZE).then((u) => this.get<Page>(u)),
+    );
+    let url: string | null = null;
+    for (let page = 0; page < maxPages && !stoppedByLimit && !reachedCutoff; page++) {
       for (const raw of json.data ?? []) {
         const media = toMedia(raw);
         if (!media) continue;
@@ -273,31 +393,279 @@ export class GraphInstagramClient implements InstagramClient {
         }
       }
       url = safeNext(json.paging?.next);
+      if (!url || stoppedByLimit || reachedCutoff || page + 1 >= maxPages) break;
+      json = await this.get<Page>(url);
     }
     opts?.onCoverage?.({
       // Completo = se llegó al final del listado o al corte; no si frenó el límite o el tope de páginas.
       complete: !stoppedByLimit && (reachedCutoff || url === null),
       oldestScanned: oldestMs === null ? null : new Date(oldestMs).toISOString(),
     });
+
+    if (opts?.hashtag && this.flavor === 'facebook' && out.length < limit) {
+      await this.addHashtagMedia(out, opts, limit, sinceMs);
+    }
     return out;
   }
 
+  /** Publicaciones públicas con el hashtag (Facebook Login). Nunca lanza: informa por `onWarning`. */
+  private async addHashtagMedia(
+    out: InstagramMedia[],
+    opts: FetchMediaOptions,
+    limit: number,
+    sinceMs: number | null,
+  ) {
+    try {
+      const token = this.requireToken();
+      const t = encodeURIComponent(token);
+      const ig = await this.igUser(token);
+      const bare = (opts.hashtag ?? '').replace(/^[#＃]+/, '').trim();
+      if (!bare) return;
+      const found = await this.get<{ data?: Array<{ id?: string }> }>(
+        `${FB_BASE}/ig_hashtag_search?user_id=${ig.id}&q=${encodeURIComponent(bare)}&access_token=${t}`,
+      );
+      const hashtagId = found.data?.[0]?.id;
+      if (!hashtagId) return;
+      const recent = await this.get<{ data?: RawMedia[] }>(
+        `${FB_BASE}/${hashtagId}/recent_media?user_id=${ig.id}&fields=${HASHTAG_MEDIA_FIELDS}&limit=${PAGE_SIZE}&access_token=${t}`,
+      );
+      const seen = new Set(out.map((m) => m.id));
+      for (const raw of recent.data ?? []) {
+        const media = toMedia(raw);
+        if (!media || seen.has(media.id)) continue;
+        if (sinceMs !== null && Date.parse(media.timestamp) < sinceMs) continue;
+        out.push(media);
+        seen.add(media.id);
+        if (out.length >= limit) break;
+      }
+    } catch (e) {
+      const permission =
+        e instanceof InstagramApiError &&
+        e.opts.code !== undefined &&
+        (e.opts.code === 10 || (e.opts.code >= 200 && e.opts.code <= 299));
+      opts.onWarning?.(
+        permission
+          ? 'La búsqueda pública del hashtag no está disponible: falta el permiso «Instagram Public Content Access» en la app de Meta. Se sincronizaron solo las publicaciones de la cuenta.'
+          : `No se pudo buscar el hashtag público (${e instanceof InstagramApiError ? (e.detail ?? e.message) : 'error desconocido'}). Se sincronizaron solo las publicaciones de la cuenta.`,
+      );
+    }
+  }
+
+  /** Id de la cuenta de Instagram conectada (sirve para detectar un cambio de cuenta, ADR-038). */
   async getAccountId(): Promise<string> {
-    const token = this.requireToken();
-    const json = await this.get<{ id?: string }>(
-      `${GRAPH_BASE}/me?fields=id&access_token=${encodeURIComponent(token)}`,
+    const id = await this.run(async (f, token) => {
+      if (f === 'facebook') return (await this.igUser(token)).id;
+      const json = await this.get<MeResponse>(
+        `${GRAPH_BASE}/me?fields=id&access_token=${encodeURIComponent(token)}`,
+      );
+      return meRecord(json).id;
+    });
+    if (!id) throw new InstagramApiError('Instagram no informó la cuenta conectada.');
+    return String(id);
+  }
+
+  /**
+   * Busca una publicación por su enlace entre las más recientes de la cuenta (hasta ~500). Se compara por el
+   * código corto del enlace, así que da igual si pegaron `/p/` o `/reel/`, con `?igsh=` o sin barra final.
+   * Si la publicación es un carrusel o un video sin `media_url`, se completa con el primer hijo con imagen.
+   * No se raspa instagram.com (muro de inicio de sesión y términos de uso): solo la API oficial.
+   */
+  async findMediaByPermalink(permalink: string): Promise<InstagramMedia | null> {
+    type Page = { data?: RawMedia[]; paging?: { next?: string } };
+    let json: Page = await this.run((f, token) =>
+      this.mediaUrl(f, token, PAGE_SIZE).then((u) => this.get<Page>(u)),
     );
-    if (!json.id) throw new InstagramApiError('Instagram no informó la cuenta conectada.');
-    return String(json.id);
+    const token = this.requireToken();
+    for (let page = 0; page < FIND_MAX_PAGES; page++) {
+      for (const raw of json.data ?? []) {
+        if (!raw.permalink || !samePermalink(raw.permalink, permalink)) continue;
+        const media = toMedia(raw);
+        if (!media) return null;
+        if (!media.mediaUrl) media.mediaUrl = await this.firstChildImage(raw.id, token);
+        return media;
+      }
+      const next = safeNext(json.paging?.next);
+      if (!next) return null;
+      json = await this.get<Page>(next);
+    }
+    return null;
+  }
+
+  /** Imagen del primer hijo de un carrusel (o `''` si no hay): la portada del álbum puede venir sin `media_url`. */
+  private async firstChildImage(mediaId: string, token: string): Promise<string> {
+    try {
+      const base = baseOf(this.flavor ?? detectTokenFlavor(token) ?? 'instagram');
+      const json = await this.get<{ data?: Array<{ media_type?: string; media_url?: string }> }>(
+        `${base}/${encodeURIComponent(mediaId)}/children?fields=media_type,media_url&access_token=${encodeURIComponent(token)}`,
+      );
+      return json.data?.find((c) => c.media_url && c.media_type !== 'VIDEO')?.media_url ?? '';
+    } catch {
+      return ''; // sin hijos legibles: la imagen se sube a mano o se publica sin imagen
+    }
+  }
+
+  /**
+   * "Probar conexión", paso a paso (ADR-045). Cada paso dice qué falló y con qué respuesta de Meta, sin el
+   * token. Se corta en el primer fallo (los pasos siguientes quedan "sin probar"). El hashtag es informativo:
+   * se cuenta en las publicaciones propias y, con token de Facebook, se prueba además la búsqueda pública.
+   */
+  async diagnose(hashtag?: string | null): Promise<ConnectionDiagnosis> {
+    const steps: DiagnosticStep[] = [];
+    const fail = (id: DiagnosticStep['id'], label: string, e: unknown) => {
+      const base = e instanceof Error ? e.message : 'Error desconocido.';
+      const detail = e instanceof InstagramApiError && e.detail ? `${base} (${e.detail})` : base;
+      steps.push({ id, label, status: 'fail', detail });
+    };
+    const finish = (username?: string): ConnectionDiagnosis => {
+      const all: Array<[DiagnosticStep['id'], string]> = [
+        ['token', 'Token de acceso'],
+        ['identity', 'Cuenta conectada'],
+        ['media', 'Lectura de publicaciones'],
+      ];
+      if (hashtag) all.push(['hashtag', 'Hashtag en las publicaciones']);
+      for (const [id, label] of all) {
+        if (!steps.some((x) => x.id === id)) steps.push({ id, label, status: 'skipped' });
+      }
+      return { ok: !steps.some((x) => x.status === 'fail'), username, steps };
+    };
+
+    // 1) Token cargado y bien pegado.
+    let token: string;
+    try {
+      token = this.requireToken();
+    } catch (e) {
+      fail('token', 'Token de acceso', e);
+      return finish();
+    }
+    if (/\s/.test(token)) {
+      steps.push({
+        id: 'token',
+        label: 'Token de acceso',
+        status: 'fail',
+        detail: 'El token tiene espacios o saltos de línea: pegalo de nuevo sin ellos.',
+      });
+      return finish();
+    }
+
+    // 2) Identidad (y confirmación del tipo de token / host).
+    let username: string | undefined;
+    try {
+      const who = await this.run(async (f, tk) => {
+        if (f === 'facebook') {
+          const ig = await this.igUser(tk);
+          return { f, username: ig.username, note: ig };
+        }
+        // Se pide también el tipo de cuenta; si ese campo no existiera en la versión de la API se reintenta
+        // sin él (un campo inválido tira abajo toda la consulta con el código 100).
+        let me: MeResponse;
+        try {
+          me = await this.get<MeResponse>(
+            `${GRAPH_BASE}/me?fields=id,username,account_type&access_token=${encodeURIComponent(tk)}`,
+          );
+        } catch (e) {
+          if (e instanceof InstagramApiError && !e.tokenInvalid && e.status === 400) {
+            me = await this.get<MeResponse>(
+              `${GRAPH_BASE}/me?fields=id,username&access_token=${encodeURIComponent(tk)}`,
+            );
+          } else throw e;
+        }
+        return { f, username: meRecord(me).username, type: meRecord(me).account_type };
+      });
+      username = who.username;
+      steps.push({
+        id: 'token',
+        label: 'Token de acceso',
+        status: 'ok',
+        detail:
+          who.f === 'facebook'
+            ? 'Token de Facebook (empieza con EAA): se consulta graph.facebook.com.'
+            : 'Token de Instagram (inicio de sesión de Instagram): se consulta graph.instagram.com.',
+      });
+      if (who.f === 'facebook') {
+        const ig = who.note as IgUser;
+        steps.push({
+          id: 'identity',
+          label: 'Cuenta conectada',
+          status: ig.others.length ? 'warn' : 'ok',
+          detail:
+            `@${ig.username ?? ig.id}${ig.pageName ? ` (vinculada a la Página «${ig.pageName}»)` : ''}` +
+            (ig.others.length
+              ? `. El token ve más cuentas (${ig.others.join(', ')}); se usa la primera.`
+              : ''),
+        });
+      } else {
+        const type = (who as { type?: string }).type;
+        const personal = type !== undefined && !['BUSINESS', 'MEDIA_CREATOR'].includes(type);
+        steps.push({
+          id: 'identity',
+          label: 'Cuenta conectada',
+          status: personal ? 'warn' : 'ok',
+          detail: personal
+            ? `@${username ?? '?'} es una cuenta personal (${type}): la API solo funciona con cuentas profesionales (empresa o creador). Cambiá el tipo de cuenta en Instagram.`
+            : `@${username ?? 'cuenta'}${type ? ` (${type})` : ''}`,
+        });
+      }
+    } catch (e) {
+      fail('token', 'Token de acceso', e);
+      return finish();
+    }
+
+    // 3) Lectura de publicaciones propias, con los mismos campos que la sincronización.
+    let recent: RawMedia[];
+    try {
+      const json = await this.run((f, tk) =>
+        this.mediaUrl(f, tk, PAGE_SIZE).then((u) => this.get<{ data?: RawMedia[] }>(u)),
+      );
+      recent = json.data ?? [];
+      steps.push({
+        id: 'media',
+        label: 'Lectura de publicaciones',
+        status: 'ok',
+        detail: recent.length
+          ? `Se leyeron ${recent.length} publicaciones recientes.`
+          : 'La cuenta no tiene publicaciones todavía.',
+      });
+    } catch (e) {
+      fail('media', 'Lectura de publicaciones', e);
+      return finish(username);
+    }
+
+    // 4) Hashtag (informativo, nunca falla la conexión).
+    if (hashtag) {
+      const n = recent.filter((m) => captionHasHashtag(m.caption, hashtag)).length;
+      let extra = '';
+      let status: DiagnosticStep['status'] = n > 0 ? 'ok' : 'warn';
+      if (this.flavor === 'facebook') {
+        const warnings: string[] = [];
+        await this.addHashtagMedia([], { hashtag, onWarning: (w) => warnings.push(w) }, 1, null);
+        extra = warnings.length
+          ? ` Búsqueda pública: ${warnings[0]}`
+          : ' La búsqueda pública del hashtag está disponible.';
+        if (warnings.length && n > 0) status = 'warn';
+      }
+      steps.push({
+        id: 'hashtag',
+        label: 'Hashtag en las publicaciones',
+        status,
+        detail:
+          (n > 0
+            ? `${n} de las últimas ${recent.length} llevan ${hashtag}.`
+            : `Ninguna de las últimas ${recent.length} lleva ${hashtag} en la leyenda.`) + extra,
+      });
+    }
+    return finish(username);
   }
 
   async testConnection(): Promise<ConnectionTest> {
     try {
-      const token = this.requireToken();
-      const json = await this.get<{ username?: string }>(
-        `${GRAPH_BASE}/me?fields=username&access_token=${encodeURIComponent(token)}`,
-      );
-      return { ok: true, username: json.username };
+      const username = await this.run(async (f, token) => {
+        if (f === 'facebook') return (await this.igUser(token)).username;
+        const json = await this.get<MeResponse>(
+          `${GRAPH_BASE}/me?fields=username&access_token=${encodeURIComponent(token)}`,
+        );
+        return meRecord(json).username;
+      });
+      return { ok: true, username };
     } catch (e) {
       const detail = e instanceof InstagramApiError && e.detail ? ` (${e.detail})` : '';
       return {
@@ -308,12 +676,12 @@ export class GraphInstagramClient implements InstagramClient {
   }
 }
 
-/** Solo seguimos `paging.next` si apunta a graph.instagram.com por https (no se filtra el token). */
+/** Solo seguimos `paging.next` si apunta a graph.instagram.com o graph.facebook.com por https (no se filtra el token). */
 function safeNext(next: string | undefined): string | null {
   if (!next) return null;
   try {
     const u = new URL(next);
-    return u.protocol === 'https:' && u.hostname === GRAPH_HOST ? next : null;
+    return u.protocol === 'https:' && GRAPH_HOSTS.has(u.hostname) ? next : null;
   } catch {
     return null;
   }
@@ -403,6 +771,23 @@ export async function refreshLongLivedToken(
   const json = await callGraph<LongLived>(
     fetchFn,
     `${GRAPH_BASE}/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(accessToken)}`,
+  );
+  return toGrant(json, now());
+}
+
+/**
+ * Renueva un token de USUARIO de Facebook de larga duración (`fb_exchange_token`, ~60 días): hace falta el
+ * App ID y el App Secret de la app. Los tokens de Página derivados de un token de larga duración no vencen.
+ */
+export async function refreshFacebookToken(
+  p: { appId: string; appSecret: string; accessToken: string },
+  fetchFn: typeof fetch = defaultFetch,
+  now: () => number = Date.now,
+): Promise<TokenGrant> {
+  const json = await callGraph<LongLived>(
+    fetchFn,
+    `${FB_BASE}/oauth/access_token?grant_type=fb_exchange_token&client_id=${encodeURIComponent(p.appId)}` +
+      `&client_secret=${encodeURIComponent(p.appSecret)}&fb_exchange_token=${encodeURIComponent(p.accessToken)}`,
   );
   return toGrant(json, now());
 }
