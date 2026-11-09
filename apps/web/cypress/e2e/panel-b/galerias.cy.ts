@@ -48,7 +48,7 @@ for (const vp of viewports) {
         cy.byLabel('Nombre de la galería').type(name);
         cy.contains('button', 'Guardar').click();
       });
-      cy.contains(card(name), 'Todavía no se muestra en ninguna página').should('exist');
+      cy.contains(card(name), 'Todavía no se ve en ninguna página').should('exist');
 
       // Agregar una foto: el archivo es obligatorio.
       cy.get(`${card(name)} button[aria-label^="Agregar foto"]`).click();
