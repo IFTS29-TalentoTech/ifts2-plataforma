@@ -153,7 +153,7 @@ export function ContentEditor({ perms }: { perms: PermissionList }) {
   return (
     <section aria-labelledby="pages-choose" className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <h2 id="pages-choose" className="font-display text-xl font-bold text-accent-3">
+        <h2 id="pages-choose" className="font-display text-lg font-bold text-accent-3">
           ¿Qué página querés cambiar?
         </h2>
         <div role="group" aria-labelledby="pages-choose" className="flex flex-wrap gap-2">
@@ -173,7 +173,7 @@ export function ContentEditor({ perms }: { perms: PermissionList }) {
 
       <div className="flex flex-col gap-4 rounded-xl border border-accent-2 bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-2xl">
-          <p className="font-display text-xl font-bold text-accent-3">
+          <p className="font-display text-lg font-bold text-accent-3">
             Página «{SITE_PAGE_LABELS[page]}»
           </p>
           <p className="text-md text-font-strong">
@@ -329,12 +329,12 @@ function CardHead({
     <div className="flex min-w-0 flex-1 gap-4">
       <span
         aria-hidden="true"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill bg-accent-2 font-display text-lg font-bold text-accent-3"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill bg-accent-2 font-display text-sm font-bold text-accent-3"
       >
         {position}
       </span>
       <div className="min-w-0">
-        <p className="flex flex-wrap items-center gap-2 font-display text-xl font-bold text-accent-3">
+        <p className="flex flex-wrap items-center gap-2 font-display text-lg font-bold text-accent-3">
           <span className="sr-only">Parte {position}: </span>
           {name}
         </p>
@@ -699,7 +699,7 @@ function SectionDialog({
                       : 'border-accent-2 bg-surface',
                   )}
                 >
-                  <span className="flex items-center gap-2 text-lg font-bold text-accent-3">
+                  <span className="flex items-center gap-2 text-sm font-bold text-accent-3">
                     <input
                       type="radio"
                       name="section-kind"

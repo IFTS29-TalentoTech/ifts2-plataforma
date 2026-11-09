@@ -451,12 +451,25 @@ export const socialApproveInput = z
   .superRefine(windowRefine);
 export type SocialApproveInput = z.infer<typeof socialApproveInput>;
 
-/** Carga manual de una publicación de redes (contingencia, mismo flujo de moderación). */
+/**
+ * Carga manual de una publicación de redes (contingencia, mismo flujo de moderación). Alcanza con el ENLACE
+ * de la publicación (Instagram no deja copiar la dirección de la imagen, ADR-045): si la cuenta está
+ * conectada, la API busca la publicación y trae sola la leyenda, la fecha y la imagen. Los demás datos son
+ * opcionales: sin cuenta conectada se completan a mano y la imagen se sube desde el equipo al aprobar.
+ */
 export const socialManualInput = z.object({
   permalink: url('El enlace a la publicación'),
-  caption: text('La leyenda', 2200),
-  mediaUrl: url('La dirección de la imagen'),
-  postedAt: dateTime('La fecha de publicación', 'start'),
+  caption: z
+    .string({ invalid_type_error: 'La leyenda no es válida.' })
+    .trim()
+    .max(2200, 'La leyenda es demasiado larga.')
+    .optional(),
+  /** Dirección directa de una imagen, si alguien la tiene (opcional). */
+  mediaUrl: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    url('La dirección de la imagen').optional(),
+  ),
+  postedAt: optionalDate('La fecha de publicación', 'start'),
 });
 export type SocialManualInput = z.infer<typeof socialManualInput>;
 

@@ -90,3 +90,46 @@ export const INSTAGRAM_TOKEN_GUIDE: {
     'https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login',
   note: 'Si algún botón de Meta se llama distinto, seguí la guía oficial de Meta (enlace de arriba). Para pedir ayuda al equipo, no mandes el token por mensaje: es como una contraseña.',
 };
+
+/**
+ * Guía de la tercera vía (ADR-045): token de FACEBOOK LOGIN (empieza con «EAA»). La plataforma acepta los dos
+ * tipos de token y elige sola a qué servidor de Meta consultar. Esta vía permite además buscar publicaciones
+ * públicas por hashtag (si Meta aprobó el permiso de contenido público). Nombres de botones y permisos según la
+ * documentación oficial de Meta; si algo cambió, vale la guía oficial.
+ */
+export const INSTAGRAM_FACEBOOK_TOKEN_GUIDE: {
+  title: string;
+  intro: string;
+  steps: SetupStep[];
+  officialUrl: string;
+  note: string;
+} = {
+  title: 'Si tu token empieza con «EAA» (Facebook)',
+  intro:
+    'Es el token que se genera con «Instagram API con inicio de sesión de Facebook». También sirve: pegalo igual en «Token de acceso» y la plataforma lo usa solo.',
+  steps: [
+    {
+      title: 'Vinculá la cuenta a una Página de Facebook',
+      body: 'La cuenta de Instagram del instituto tiene que ser profesional y estar vinculada a una Página de Facebook (en la Página: Configuración > Cuentas vinculadas > Instagram).',
+    },
+    {
+      title: 'Abrí el Explorador de la API Graph',
+      body: 'Entrá a developers.facebook.com/tools/explorer con la cuenta de Facebook que administra la Página y elegí en «Aplicación de Meta» la app del instituto.',
+    },
+    {
+      title: 'Pedí los permisos',
+      body: 'En «Permisos» agregá instagram_basic, pages_show_list y pages_read_engagement. Para buscar publicaciones públicas por hashtag hace falta además instagram_public_content_access (Meta lo revisa aparte). Después tocá «Generate Access Token» y aceptá.',
+    },
+    {
+      title: 'Hacé que dure más',
+      body: 'El token recién generado dura pocas horas. En developers.facebook.com/tools/debug/accesstoken pegalo y tocá «Extend Access Token» para que dure unos 60 días. Copiá el token nuevo completo (empieza con EAA).',
+    },
+    {
+      title: 'Pegalo acá y probá',
+      body: 'Volvé a esta pantalla, pegalo en «Token de acceso», tocá «Guardar y conectar» y después «Probar conexión». Si el token vence, repetí estos pasos: sin el App ID y el App Secret la plataforma no puede renovarlo sola.',
+    },
+  ],
+  officialUrl:
+    'https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login',
+  note: 'Si algún botón de Meta se llama distinto, seguí la guía oficial de Meta.',
+};

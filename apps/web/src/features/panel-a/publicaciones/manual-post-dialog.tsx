@@ -2,14 +2,14 @@
 
 /**
  * Carga manual de una publicación de redes (RNF03, E2E-05): contingencia para cuando la sincronización con
- * Instagram falla o el token venció. POST /social/manual { permalink, caption, mediaUrl, postedAt } -> 201:
+ * Instagram falla o el token venció. POST /social/manual { permalink, caption?, postedAt? } -> 201 (un solo campo: enlace de
+ * la publicación de Instagram o dirección de una imagen de otro sitio, ADR-045):
  * la publicación queda PENDIENTE y sigue el mismo flujo de moderación (aprobación humana, consentimiento).
  * 409 = ese enlace ya está cargado. La imagen se copia al almacenamiento propio recién al aprobar.
  */
 import { useState, type FormEvent } from 'react';
 import { Button, Dialog, Input, Textarea, useToast } from '@/components/ui';
 import { ApiError, api } from '@/lib/api';
-import { todayBA } from '../lib/dates';
 import { fieldMessages, humanError } from '../lib/errors';
 
 export function ManualPostDialog({
@@ -35,8 +35,7 @@ function Form({
   const { toast } = useToast();
   const [permalink, setPermalink] = useState('');
   const [caption, setCaption] = useState('');
-  const [mediaUrl, setMediaUrl] = useState('');
-  const [postedAt, setPostedAt] = useState(todayBA());
+  const [postedAt, setPostedAt] = useState('');
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,10 +46,22 @@ function Form({
     setFormError(null);
     setLoading(true);
     try {
-      await api.post('/social/manual', { permalink, caption, mediaUrl, postedAt });
+      const out = await api.post<{
+        resolution?: { source: 'instagram' | 'none'; imageFound: boolean; reason?: string };
+      }>('/social/manual', {
+        permalink,
+        ...(caption.trim() ? { caption } : {}),
+        ...(postedAt ? { postedAt } : {}),
+      });
+      const r = out.resolution;
       toast({
         title: 'Publicación cargada',
-        description: 'Quedó pendiente: moderala para publicarla en el sitio.',
+        description:
+          r?.source === 'instagram'
+            ? 'La encontramos en Instagram y trajimos la imagen y el texto. Quedó pendiente: moderala para publicarla.'
+            : r?.reason
+              ? `Quedó pendiente. ${r.reason} Al aprobarla vas a poder subir la imagen desde tu equipo.`
+              : 'Quedó pendiente: moderala para publicarla en el sitio.',
         tone: 'success',
       });
       onCreated();
@@ -88,9 +99,10 @@ function Form({
           </p>
         )}
         <Input
-          label="Enlace a la publicación"
+          label="Enlace de la publicación o dirección de la imagen"
           type="url"
           required
+          hint="Pegá el enlace de la publicación de Instagram, o la dirección de una imagen de otro sitio. De Instagram solo se puede copiar el enlace de la publicación: si la cuenta está conectada, traemos sola la imagen, la leyenda y la fecha."
           placeholder="https://www.instagram.com/p/…"
           value={permalink}
           onChange={(e) => setPermalink(e.target.value)}
@@ -98,7 +110,7 @@ function Form({
         />
         <Textarea
           label="Leyenda (texto de la publicación)"
-          required
+          hint="Se trae sola si la cuenta de Instagram está conectada. Si no, escribila o pegala acá."
           rows={4}
           maxLength={2200}
           value={caption}
@@ -106,19 +118,9 @@ function Form({
           error={errs.caption}
         />
         <Input
-          label="Dirección de la imagen"
-          type="url"
-          required
-          hint="Dirección de la IMAGEN, no de la publicación: clic derecho sobre la foto y «Copiar dirección de la imagen». Si falla, igual podés publicar sin imagen."
-          placeholder="https://…"
-          value={mediaUrl}
-          onChange={(e) => setMediaUrl(e.target.value)}
-          error={errs.mediaUrl}
-        />
-        <Input
-          label="Fecha de publicación"
+          label="Fecha de publicación (opcional)"
           type="date"
-          required
+          hint="Si la dejás vacía se usa la de Instagram o la de hoy."
           value={postedAt}
           onChange={(e) => setPostedAt(e.target.value)}
           error={errs.postedAt}

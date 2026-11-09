@@ -361,7 +361,7 @@ export function ConfiguracionScreen({
       {can(perms, 'content:manage') && (
         <Card className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-2xl">
-            <h2 className="font-display text-xl font-bold text-accent-3">Páginas del sitio</h2>
+            <h2 className="font-display text-lg font-bold text-accent-3">Páginas del sitio</h2>
             <p className="text-sm text-font-strong">
               Cambiá los textos, las imágenes y las galerías de Inicio, Institucional, La carrera,
               Estudiantes, Ingreso e Inscripciones.

@@ -232,12 +232,22 @@ describe('mensajes de validación: concordancia de género y número', () => {
     expect(first(url('El enlace').safeParse(''))).toBe('El enlace es obligatorio.');
     expect(first(url('La dirección').safeParse(''))).toBe('La dirección es obligatoria.');
   });
-  it('esquemas reales: leyenda y fecha de publicación', () => {
-    const r = socialManualInput.safeParse({ caption: '' });
+  it('esquemas reales: enlace de la publicación (la leyenda y la fecha son opcionales, ADR-045)', () => {
+    const r = socialManualInput.safeParse({});
     const m = (r as { error?: { issues: { message: string }[] } }).error?.issues.map(
       (i) => i.message,
     );
-    expect(m).toContain('La leyenda es obligatoria.');
-    expect(m).not.toContain('La leyenda es obligatorio.');
+    expect(m).toContain('El enlace a la publicación es obligatorio.');
+    expect(m).not.toContain('El enlace a la publicación es obligatoria.');
+    // Solo con el enlace alcanza: la leyenda y la imagen se resuelven con la API o se completan después.
+    expect(
+      socialManualInput.safeParse({ permalink: 'https://www.instagram.com/p/AbCdE12/' }).success,
+    ).toBe(true);
+    expect(
+      socialManualInput.safeParse({
+        permalink: 'https://www.instagram.com/p/AbCdE12/',
+        mediaUrl: '',
+      }).success,
+    ).toBe(true);
   });
 });

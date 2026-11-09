@@ -70,7 +70,7 @@ export function LinksEditor({ perms }: { perms: PermissionList }) {
     <section aria-labelledby="links-title" className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 id="links-title" className="font-display text-xl font-bold text-accent-3">
+          <h2 id="links-title" className="font-display text-lg font-bold text-accent-3">
             Enlaces de interés
           </h2>
           <p className="text-sm text-font-strong">
@@ -106,7 +106,7 @@ export function LinksEditor({ perms }: { perms: PermissionList }) {
               className="flex flex-col gap-2 sm:flex-row sm:items-center"
             >
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 text-lg font-semibold text-accent-3">
+                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-accent-3">
                   {l.title}
                   <Badge tone={l.visible ? 'success' : 'neutral'}>
                     {l.visible ? 'Se muestra en el sitio' : 'Oculto: no se muestra'}
@@ -298,7 +298,7 @@ function LinkDialog({
           error={errors.description}
         />
         <fieldset className="flex flex-col gap-3 rounded-lg border border-accent-2 p-4">
-          <legend className="px-1 text-lg font-semibold text-accent-3">
+          <legend className="px-1 text-sm font-semibold text-accent-3">
             ¿Dónde se muestra este enlace?
           </legend>
           <p className="text-font-strong">Podés marcar más de un lugar.</p>

@@ -20,6 +20,7 @@
 
 import {
   INSTAGRAM_SETUP_GUIDE,
+  INSTAGRAM_FACEBOOK_TOKEN_GUIDE,
   INSTAGRAM_TOKEN_GUIDE,
   formatDateTimeAR,
   type SetupStep,
@@ -91,6 +92,8 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<'connect' | 'test' | 'token' | null>(null);
   const [probe, setProbe] = useState<string | null>(null);
+  /** Resultado de «Probar conexión» paso a paso (ADR-045). */
+  const [steps, setSteps] = useState<ProbeStep[]>([]);
   const [disconnectOpen, setDisconnectOpen] = useState(false);
 
   const v = view.data;
@@ -149,13 +152,16 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
   async function test() {
     setBusy('test');
     setProbe(null);
+    setSteps([]);
     try {
       const r = await api.post<{
         ok: boolean;
         demo: boolean;
         username: string | null;
         error: string | null;
+        steps?: ProbeStep[];
       }>('/integrations/instagram/test');
+      setSteps(r.steps ?? []);
       setProbe(
         r.ok
           ? r.demo
@@ -457,6 +463,7 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
                     {probe}
                   </p>
                 )}
+                {steps.length > 0 && <ProbeSteps steps={steps} />}
               </form>
             </>
           ) : null}
@@ -521,6 +528,7 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
                   {probe}
                 </p>
               )}
+              {steps.length > 0 && <ProbeSteps steps={steps} />}
             </form>
           )}
 
@@ -561,17 +569,41 @@ function SetupGuide({ method }: { method: 'oauth' | 'token' }) {
       data-testid="ig-guide"
       data-method={method}
     >
-      <summary className="cursor-pointer text-lg font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus">
+      <summary className="cursor-pointer text-sm font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus">
         {isToken
           ? 'Ayuda: cómo conseguir el token de acceso'
           : 'Ayuda: cómo conseguir el App ID y el App Secret'}
       </summary>
       <div className="mt-3">
-        <h4 className="font-display text-xl font-bold text-accent-3">{guide.title}</h4>
-        <p className="mt-1 text-lg leading-relaxed text-font-strong">{guide.intro}</p>
-        <GuideSteps steps={guide.steps} />
+        <h4 className="font-display text-lg font-bold text-accent-3">{guide.title}</h4>
+        <p className="mt-1 text-sm leading-relaxed text-font-strong">{guide.intro}</p>
+        <div data-testid="ig-guide-main">
+          <GuideSteps steps={guide.steps} />
+        </div>
+        {isToken && (
+          <div data-testid="ig-guide-facebook" className="mt-6 border-t border-accent-2 pt-4">
+            <h5 className="font-display text-lg font-bold text-accent-3">
+              {INSTAGRAM_FACEBOOK_TOKEN_GUIDE.title}
+            </h5>
+            <p className="mt-1 text-sm leading-relaxed text-font-strong">
+              {INSTAGRAM_FACEBOOK_TOKEN_GUIDE.intro}
+            </p>
+            <GuideSteps steps={INSTAGRAM_FACEBOOK_TOKEN_GUIDE.steps} />
+            <p className="mt-4 text-sm leading-relaxed text-font-strong">
+              {INSTAGRAM_FACEBOOK_TOKEN_GUIDE.note}{' '}
+              <a
+                href={INSTAGRAM_FACEBOOK_TOKEN_GUIDE.officialUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-accent underline focus-visible:outline-none focus-visible:shadow-focus"
+              >
+                Guía oficial de Meta (se abre en otra pestaña)
+              </a>
+            </p>
+          </div>
+        )}
         {isToken ? (
-          <p className="mt-4 text-lg leading-relaxed text-font-strong">
+          <p className="mt-4 text-sm leading-relaxed text-font-strong">
             {INSTAGRAM_TOKEN_GUIDE.note}{' '}
             <a
               href={INSTAGRAM_TOKEN_GUIDE.officialUrl}
@@ -583,7 +615,7 @@ function SetupGuide({ method }: { method: 'oauth' | 'token' }) {
             </a>
           </p>
         ) : (
-          <p className="mt-4 text-lg leading-relaxed text-font-strong">
+          <p className="mt-4 text-sm leading-relaxed text-font-strong">
             {INSTAGRAM_SETUP_GUIDE.manualTokenNote}
           </p>
         )}
@@ -599,7 +631,7 @@ function GuideSteps({ steps }: { steps: SetupStep[] }) {
         <li key={s.title} className="flex gap-3">
           <span
             aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-primary-strong text-lg font-bold text-surface"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-primary-strong text-sm font-bold text-surface"
           >
             {i + 1}
           </span>
@@ -730,5 +762,38 @@ function MethodOption({
         </span>
       </span>
     </div>
+  );
+}
+
+type ProbeStep = {
+  id: string;
+  label: string;
+  status: 'ok' | 'warn' | 'fail' | 'skipped';
+  detail?: string;
+};
+
+const STEP_STATE: Record<ProbeStep['status'], string> = {
+  ok: 'Correcto',
+  warn: 'Con aviso',
+  fail: 'Falló',
+  skipped: 'Sin probar',
+};
+
+/**
+ * Resultado de «Probar conexión» paso a paso: dice en cuál falló y con qué respuesta de Meta (código y mensaje,
+ * sin el token), así el equipo encuentra el error de fondo sin mirar los registros.
+ */
+function ProbeSteps({ steps }: { steps: ProbeStep[] }) {
+  return (
+    <ol data-testid="ig-probe-steps" className="mt-2 flex flex-col gap-2">
+      {steps.map((st) => (
+        <li key={st.id} className="rounded-md border border-accent-2 bg-base px-3 py-2 text-sm">
+          <p className="font-semibold text-accent-3">
+            {st.label}: <span>{STEP_STATE[st.status]}</span>
+          </p>
+          {st.detail && <p className="text-font-strong">{st.detail}</p>}
+        </li>
+      ))}
+    </ol>
   );
 }

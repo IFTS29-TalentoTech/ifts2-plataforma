@@ -81,6 +81,8 @@ export interface SyncResultDto {
   /** `incremental` (solo lo posterior al último fetch exitoso) o `full` (carga completa). */
   mode: 'incremental' | 'full';
   lastFetchAt: string;
+  /** Avisos de partes opcionales que fallaron sin impedir la sincronización. */
+  warnings?: string[];
 }
 
 /** Elemento de GET /publications. */
