@@ -637,14 +637,17 @@ Texto editable de las páginas estáticas (Institucional, La carrera, Ingreso).
 | Campo | Tipo | Restricciones | Significado |
 |---|---|---|---|
 | `id` | String | PK, obligatorio, por defecto uuid() | Identificador único (UUID generado por la aplicación). |
-| `page` | String | obligatorio | Página a la que pertenece: institucional, carrera o ingreso. |
+| `page` | String | obligatorio | Página a la que pertenece: institucional, carrera, estudiantes, ingreso o inscripciones. |
 | `slug` | String | obligatorio | Identificador corto de la sección dentro de la página. (página, slug) no se repite. |
 | `title` | String | obligatorio | Título de la sección. |
 | `body` | String | obligatorio | Texto en Markdown acotado, sanitizado al mostrarlo. |
 | `order` | Int | obligatorio, por defecto 0 | Posición dentro de la página. |
 | `visible` | Boolean | obligatorio, por defecto true | Si se muestra en el sitio. |
+| `kind` | String | obligatorio, por defecto "TEXT" | Tipo de sección: TEXT (título y texto) o GALLERY (muestra una galería). |
+| `galleryId` | String | opcional, FK → Gallery.id (SetNull) | Galería que se muestra cuando la sección es de tipo GALLERY. |
+| `gallery` | Gallery | (no es columna) | [completar] |
 
-Restricciones e índices de la tabla: `@@unique([page, slug])`.
+Restricciones e índices de la tabla: `@@unique([page, slug])`, `@@index([galleryId])`.
 
 #### ExternalLink
 
@@ -659,6 +662,8 @@ Enlaces de interés (SIU Guaraní, Aulas Virtuales, etc.).
 | `group` | String | obligatorio, por defecto "academico" | Grupo donde se agrupa (por defecto «academico»). |
 | `order` | Int | obligatorio, por defecto 0 | Posición dentro del grupo. |
 | `visible` | Boolean | obligatorio, por defecto true | Si se muestra en el sitio. |
+| `showHome` | Boolean | obligatorio, por defecto true | [completar] |
+| `showStudents` | Boolean | obligatorio, por defecto true | [completar] |
 | `enrollment` | Boolean | obligatorio, por defecto false | Si es el enlace donde se inscriben los alumnos (el único que muestra la página Inscripciones; A07). |
 
 #### ContactMessage
@@ -677,15 +682,30 @@ Consultas enviadas desde el formulario del sitio.
 | `receivedAt` | DateTime | obligatorio, por defecto now() | Cuándo llegó. |
 | `mailSent` | Boolean | obligatorio, por defecto false | Si el correo de aviso salió. El mensaje se guarda siempre, aunque el correo falle. |
 
-#### GalleryItem
+#### Gallery
 
-Diapositivas editables de los carruseles del sitio (Estudiantes y La carrera).
+Galerías de fotos con nombre; se agregan a cualquier página como sección.
 
 | Campo | Tipo | Restricciones | Significado |
 |---|---|---|---|
 | `id` | String | PK, obligatorio, por defecto uuid() | Identificador único (UUID generado por la aplicación). |
-| `area` | GalleryArea | obligatorio | Dónde se muestra: STUDENTS (carrusel de Estudiantes) o CAREER (La carrera). |
-| `order` | Int | obligatorio, por defecto 0 | Posición dentro del área (de menor a mayor). |
+| `name` | String | obligatorio | Nombre de la galería; se ve como título de la sección donde se muestra. |
+| `order` | Int | obligatorio, por defecto 0 | Posición de la galería en la lista del panel. |
+| `items` | GalleryItem[] | (no es columna) | [completar] |
+| `sections` | ContentSection[] | (no es columna) | [completar] |
+| `createdAt` | DateTime | obligatorio, por defecto now() | Fecha y hora de creación del registro. |
+| `updatedAt` | DateTime | obligatorio | Fecha y hora de la última modificación (la actualiza Prisma sola). |
+
+#### GalleryItem
+
+Fotos de una galería, con título, descripción y categoría.
+
+| Campo | Tipo | Restricciones | Significado |
+|---|---|---|---|
+| `id` | String | PK, obligatorio, por defecto uuid() | Identificador único (UUID generado por la aplicación). |
+| `galleryId` | String | obligatorio, FK → Gallery.id (Cascade) | Galería a la que pertenece la foto (se borra junto con ella). |
+| `gallery` | Gallery | (no es columna) | [completar] |
+| `order` | Int | obligatorio, por defecto 0 | Posición dentro de la galería (de menor a mayor). |
 | `title` | String | obligatorio, por defecto "" | Título de la diapositiva (opcional). |
 | `caption` | String | obligatorio, por defecto "" | Descripción visible debajo de la imagen (opcional). |
 | `alt` | String | obligatorio, por defecto "" | Texto alternativo de la imagen para lectores de pantalla. |
@@ -694,7 +714,7 @@ Diapositivas editables de los carruseles del sitio (Estudiantes y La carrera).
 | `createdAt` | DateTime | obligatorio, por defecto now() | Fecha y hora de creación del registro. |
 | `updatedAt` | DateTime | obligatorio | Fecha y hora de la última modificación (la actualiza Prisma sola). |
 
-Restricciones e índices de la tabla: `@@index([area, order])`.
+Restricciones e índices de la tabla: `@@index([galleryId, order])`.
 
 #### InstagramToken
 
@@ -774,7 +794,6 @@ Prisma no puede expresar este índice en el schema, por eso vive en `prisma/migr
 | `DocumentStatus` | `ACTIVE` (Activo); `ARCHIVED` (Archivado) | Estado de un documento. |
 | `TermKind` | `FIRST` (1.er cuatrimestre); `SECOND` (2.º cuatrimestre); `EXTRAORDINARY` (Extraordinario) | Tipo de ciclo. |
 | `MessageStatus` | `NEW` (Nuevo); `READ` (Leído); `ANSWERED` (Respondido) | Estado de un mensaje de contacto. |
-| `GalleryArea` | `STUDENTS` (Estudiantes); `CAREER` () |  |
 
 ### Relaciones entre tablas
 
@@ -791,6 +810,8 @@ Prisma no puede expresar este índice en el schema, por eso vive en `prisma/migr
 | `Document` → `Schedule` (por `documentId`) | 0..1 a N | Sin acción especial: la base impide borrar si hay hijos (o la API responde 409) |
 | `AcademicTerm` → `ExamCall` (por `termId`) | 1 a N | Sin acción especial: la base impide borrar si hay hijos (o la API responde 409) |
 | `Document` → `ExamCall` (por `documentId`) | 0..1 a N | Sin acción especial: la base impide borrar si hay hijos (o la API responde 409) |
+| `Gallery` → `ContentSection` (por `galleryId`) | 0..1 a N | Se deja vacío el campo (SetNull) |
+| `Gallery` → `GalleryItem` (por `galleryId`) | 1 a N | En cascada: se borran los hijos |
 | `User` → `AuditLog` (por `userId`) | 0..1 a N | Se deja vacío el campo (SetNull) |
 
 <!-- END:tablas -->

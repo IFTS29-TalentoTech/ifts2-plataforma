@@ -1,4 +1,4 @@
-import { VIEWPORTS } from '../../support/panel-a';
+import { openAccountMenu, VIEWPORTS } from '../../support/panel-a';
 
 for (const vp of VIEWPORTS) {
   describe(`Cierre de sesión confiable (A09) · ${vp.name}px`, () => {
@@ -23,6 +23,7 @@ for (const vp of VIEWPORTS) {
             body: { status: 500, code: 'internal', detail: 'Error interno.' },
           });
         }).as('failedLogout');
+        openAccountMenu();
         cy.contains('button', 'Cerrar sesión').filter(':visible').click();
         cy.wait('@failedLogout');
         cy.get('[role="alert"]:visible')
@@ -31,6 +32,7 @@ for (const vp of VIEWPORTS) {
         cy.location('pathname').should('eq', '/panel');
         cy.getCookie('ifts2_session').should('exist');
         cy.api('GET', '/auth/me').its('status').should('eq', 200);
+        openAccountMenu();
         cy.contains('button', 'Cerrar sesión').filter(':visible').should('be.enabled');
         cy.a11y();
 
@@ -38,6 +40,7 @@ for (const vp of VIEWPORTS) {
           failing = false;
         });
         cy.intercept('POST', '/api/v1/auth/logout').as('retryLogout');
+        openAccountMenu();
         cy.contains('button', 'Cerrar sesión').filter(':visible').click();
         cy.wait('@retryLogout').its('response.statusCode').should('eq', 204);
         cy.location('pathname').should('eq', '/panel/login');
@@ -52,7 +55,9 @@ for (const vp of VIEWPORTS) {
           res.setDelay(1000);
         });
       }).as('logout');
+      openAccountMenu();
       cy.contains('button', 'Cerrar sesión').filter(':visible').click();
+      openAccountMenu();
       cy.contains('button', 'Cerrar sesión')
         .filter(':visible')
         .should('be.disabled')

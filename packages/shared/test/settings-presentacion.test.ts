@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { GALLERY_MAX_ITEMS, SETTING_KEYS, parseGallery, settingsUpdateInput } from '../src';
+import { SETTING_IMAGE_KEYS, SETTING_KEYS, settingsUpdateInput } from '../src';
 
-/** Ajustes de presentación del sitio público: titular corto, logo, imágenes y galería. */
-describe('ajustes de presentación (titular, imágenes y galería)', () => {
+/** Ajustes de presentación del sitio público: titular corto, logo e imágenes. */
+describe('ajustes de presentación (titular e imágenes)', () => {
   it('las claves nuevas forman parte del catálogo de ajustes', () => {
     for (const k of [
       'hero_title',
@@ -12,10 +12,17 @@ describe('ajustes de presentación (titular, imágenes y galería)', () => {
       'hero_image_2',
       'career_image',
       'ingreso_image',
-      'student_gallery',
     ]) {
       expect(SETTING_KEYS).toContain(k);
     }
+  });
+
+  it('las imágenes que se suben como archivo son claves del catálogo y la galería de texto ya no existe', () => {
+    for (const k of SETTING_IMAGE_KEYS) expect(SETTING_KEYS).toContain(k);
+    expect(SETTING_KEYS).not.toContain('student_gallery');
+    expect(settingsUpdateInput.safeParse({ student_gallery: '/img/a.webp | T' }).success).toBe(
+      false,
+    );
   });
 
   it('acepta titular, rótulo, rutas del sitio y direcciones web', () => {
@@ -50,36 +57,5 @@ describe('ajustes de presentación (titular, imágenes y galería)', () => {
   it('rechaza un titular demasiado largo', () => {
     const r = settingsUpdateInput.safeParse({ hero_title: 'x'.repeat(121) });
     expect(r.success).toBe(false);
-  });
-
-  it('valida cada línea de la galería', () => {
-    expect(
-      settingsUpdateInput.safeParse({
-        student_gallery: '/img/a.webp | Título | Texto\n/img/b.webp',
-      }).success,
-    ).toBe(true);
-    expect(settingsUpdateInput.safeParse({ student_gallery: 'sin ruta | Título' }).success).toBe(
-      false,
-    );
-  });
-
-  describe('parseGallery', () => {
-    it('lee ruta, título y descripción por línea', () => {
-      expect(
-        parseGallery('/img/a.webp | Cocina | Equipo y aprendizaje\r\n/img/b.webp | Solo título'),
-      ).toEqual([
-        { src: '/img/a.webp', title: 'Cocina', description: 'Equipo y aprendizaje' },
-        { src: '/img/b.webp', title: 'Solo título', description: '' },
-      ]);
-    });
-
-    it('ignora líneas vacías o con ruta inválida y limita la cantidad', () => {
-      expect(parseGallery('\n  \nmal | x\n')).toEqual([]);
-      expect(parseGallery(null)).toEqual([]);
-      const many = Array.from({ length: GALLERY_MAX_ITEMS + 3 }, (_, i) => `/img/${i}.webp`).join(
-        '\n',
-      );
-      expect(parseGallery(many)).toHaveLength(GALLERY_MAX_ITEMS);
-    });
   });
 });

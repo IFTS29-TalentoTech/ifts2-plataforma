@@ -12,6 +12,7 @@
 import { z } from 'zod';
 import {
   CONTENT_PAGES,
+  type ContentSectionKind,
   MESSAGE_STATUSES,
   TERM_KIND_LABELS,
   type ContentPage,
@@ -341,6 +342,9 @@ export interface ContentSectionDto {
   body: string;
   order: number;
   visible: boolean;
+  /** 'TEXT' (título + Markdown) o 'GALLERY' (muestra la galería `galleryId`). */
+  kind: ContentSectionKind;
+  galleryId: string | null;
 }
 
 export interface LinkDto {
@@ -351,9 +355,31 @@ export interface LinkDto {
   group: string;
   order: number;
   visible: boolean;
+  /** ADR-039: lugares donde se muestra (Inicio, Estudiantes, Inscripciones). */
+  showHome: boolean;
+  showStudents: boolean;
   /** A07: enlace de inscripción de ALUMNOS (lo único que se ofrece en /inscripciones). */
   enrollment: boolean;
 }
+
+/** Lugares del sitio donde puede aparecer un enlace, con el texto que ve quien edita (ADR-039). */
+export const LINK_PLACES = [
+  {
+    key: 'showHome',
+    label: 'Inicio',
+    hint: 'Aparece en «Accesos académicos» de la primera página del sitio.',
+  },
+  {
+    key: 'showStudents',
+    label: 'Estudiantes',
+    hint: 'Aparece en «Accesos académicos» de la página Estudiantes.',
+  },
+  {
+    key: 'enrollment',
+    label: 'Inscripciones',
+    hint: 'Es el botón de la página Inscripciones. Elegí solo el sistema donde se inscriben los alumnos.',
+  },
+] as const;
 
 export interface ContactMessageDto {
   id: string;
@@ -461,10 +487,10 @@ export interface PublicPublicationsDto extends Page<PublicPublicationCardDto> {
   availableYears: number[];
 }
 
-/** Una diapositiva de una galería, como la ve el panel (GET /gallery). */
+/** Una foto de una galería, como la ve el panel (GET /gallery). */
 export interface GalleryItemDto {
   id: string;
-  area: 'STUDENTS' | 'CAREER';
+  galleryId: string;
   order: number;
   title: string;
   caption: string;
@@ -489,9 +515,22 @@ export interface PublicGalleryItemDto {
   category: string;
 }
 
-/** GET /public/gallery?area=STUDENTS|CAREER */
-export interface PublicGalleryDto {
-  area: 'STUDENTS' | 'CAREER';
+/** Una galería con nombre y sus fotos (GET /gallery). `pages` dice en qué páginas se muestra (ADR-041). */
+export interface GalleryDto {
+  id: string;
+  name: string;
+  order: number;
+  items: GalleryItemDto[];
+  /** Páginas donde hay una sección que muestra esta galería (ej. `estudiantes`). */
+  pages: ContentPage[];
+}
+
+/** Una sección de galería de una página pública: título, texto opcional y las fotos. */
+export interface PublicGallerySectionDto {
+  slug: string;
+  title: string;
+  body: string;
+  order: number;
   items: PublicGalleryItemDto[];
 }
 
@@ -536,11 +575,17 @@ export interface PublicStudentsDto {
   examCalls: PublicExamCallDto[];
   /** Urgentes primero y luego por inicio de vigencia descendente. */
   notices: PublicNoticeDto[];
+  /** Enlaces de la página Estudiantes (los marcados «Estudiantes»). */
   links: PublicQuickLinkDto[];
+  /** Enlaces de la página Inscripciones (los marcados «Inscripciones»; ADR-039). */
+  enrollmentLinks: PublicQuickLinkDto[];
 }
 
 /** GET /public/content/:page */
 export interface PublicContentDto {
   page: ContentPage;
+  /** Secciones de texto. */
   sections: { slug: string; title: string; body: string; order: number }[];
+  /** Secciones de galería con fotos (las sin fotos utilizables se omiten). */
+  galleries: PublicGallerySectionDto[];
 }

@@ -109,7 +109,7 @@ function Form({
           label="Dirección de la imagen"
           type="url"
           required
-          hint="Dirección web completa de la imagen (clic derecho sobre la foto > copiar dirección de imagen)."
+          hint="Dirección de la IMAGEN, no de la publicación: clic derecho sobre la foto y «Copiar dirección de la imagen». Si falla, igual podés publicar sin imagen."
           placeholder="https://…"
           value={mediaUrl}
           onChange={(e) => setMediaUrl(e.target.value)}

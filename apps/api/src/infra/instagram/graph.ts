@@ -48,12 +48,69 @@ const DEFAULT_MAX_PAGES = 6;
 const REQUEST_TIMEOUT_MS = 15_000;
 const MEDIA_FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
 
+/** El token pegado parece de Facebook (EAA...), no de «Instagram con inicio de sesión de Instagram». */
+export const FACEBOOK_TOKEN_MESSAGE =
+  'Ese token parece de Facebook (empieza con EAA) y esta conexión necesita el token de Instagram con inicio de sesión de Instagram. Generalo de nuevo desde el panel de la app de Meta (Instagram > Configuración de la API con inicio de sesión de Instagram).';
+
 /** Texto que ve el cliente cuando el token ya no sirve (vencido, revocado, contraseña cambiada). */
 export const TOKEN_INVALID_MESSAGE =
   'El acceso a Instagram venció o fue revocado. Volvé a conectar la cuenta desde Configuración.';
 
 interface GraphErrorBody {
-  error?: { message?: string; type?: string; code?: number };
+  error?: {
+    message?: string;
+    type?: string;
+    code?: number;
+    error_subcode?: number;
+    fbtrace_id?: string;
+  };
+}
+
+/** Qué clase de problema es una respuesta de error de Graph (decide el mensaje y si el token está vencido). */
+export type GraphErrorKind = 'token' | 'permission' | 'rate-limit' | 'bad-request' | 'server';
+
+/**
+ * Clasifica un error de Graph. IMPORTANTE: `type: "OAuthException"` NO significa "token vencido": Meta lo usa
+ * también para el código 100 (parámetro o endpoint inválido) y para los de permisos (10, 200-299). Solo se
+ * considera token inválido el 401 o los códigos 190 (token vencido/revocado/ilegible) y 102 (sesión inválida).
+ * Tratar todo OAuthException como "venció" hacía que cualquier error de consulta pidiera reconectar la cuenta.
+ */
+export function classifyGraphError(status: number, code?: number): GraphErrorKind {
+  if (status === 401 || code === 190 || code === 102) return 'token';
+  if (code === 10 || (code !== undefined && code >= 200 && code <= 299)) return 'permission';
+  if (
+    status === 429 ||
+    code === 4 ||
+    code === 17 ||
+    code === 32 ||
+    code === 613 ||
+    code === 80002
+  ) {
+    return 'rate-limit';
+  }
+  if (status >= 500 || code === 1 || code === 2) return 'server';
+  return 'bad-request';
+}
+
+/**
+ * Motivo técnico para el equipo (lo que respondió Meta), recortado y SIN el token: se muestra en el panel y
+ * se guarda en `lastError`/auditoría para poder diagnosticar sin acceso a los logs.
+ */
+export function describeGraphError(
+  status: number,
+  err: GraphErrorBody['error'] | undefined,
+): string {
+  const parts = [`Meta respondió HTTP ${status}`];
+  if (err?.code !== undefined) {
+    parts.push(
+      `código ${err.code}${err.error_subcode !== undefined ? `/${err.error_subcode}` : ''}`,
+    );
+  }
+  let text = [parts.join(', '), err?.message].filter(Boolean).join(': ');
+  // Nunca debería venir un token en el mensaje de Meta, pero se redacta cualquier `access_token=...` por las dudas.
+  text = text.replace(/access_token=[^&s"']+/gi, 'access_token=***');
+  if (err?.fbtrace_id) text += ` (rastreo Meta: ${err.fbtrace_id})`;
+  return text.length > 300 ? `${text.slice(0, 297)}...` : text;
 }
 
 const defaultFetch: typeof fetch = (input, init) => fetch(input, init);
@@ -72,29 +129,32 @@ async function callGraph<T>(fetchFn: typeof fetch, url: string, init?: RequestIn
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
     const err = (body as GraphErrorBody | null)?.error;
-    // code 190 = token inválido/vencido; 102 = sesión inválida; 401 = no autorizado.
-    const tokenInvalid =
-      res.status === 401 ||
-      err?.code === 190 ||
-      err?.code === 102 ||
-      err?.type === 'OAuthException';
-    if (tokenInvalid) {
-      throw new InstagramApiError(TOKEN_INVALID_MESSAGE, {
-        status: res.status,
-        code: err?.code,
-        tokenInvalid: true,
-      });
+    const detail = describeGraphError(res.status, err);
+    const base = { status: res.status, code: err?.code, detail };
+    switch (classifyGraphError(res.status, err?.code)) {
+      case 'token':
+        throw new InstagramApiError(TOKEN_INVALID_MESSAGE, { ...base, tokenInvalid: true });
+      case 'permission':
+        throw new InstagramApiError(
+          'Instagram no dio permiso para leer las publicaciones. Revisá que la cuenta sea profesional y que el acceso incluya el permiso de lectura de contenido.',
+          base,
+        );
+      case 'rate-limit':
+        throw new InstagramApiError(
+          'Instagram limitó temporalmente las consultas. Probá de nuevo en unos minutos.',
+          base,
+        );
+      case 'server':
+        throw new InstagramApiError(
+          `Instagram tuvo un problema temporal (${res.status}). Intentá de nuevo más tarde.`,
+          base,
+        );
+      default:
+        throw new InstagramApiError(
+          'Instagram rechazó la consulta. El acceso no está vencido; avisale al equipo técnico con el detalle de abajo.',
+          base,
+        );
     }
-    if (res.status === 429 || err?.code === 4 || err?.code === 32 || err?.code === 613) {
-      throw new InstagramApiError(
-        'Instagram limitó temporalmente las consultas. Probá de nuevo en unos minutos.',
-        { status: res.status, code: err?.code },
-      );
-    }
-    throw new InstagramApiError(
-      `Instagram respondió con un error (${res.status}). Intentá de nuevo más tarde.`,
-      { status: res.status, code: err?.code },
-    );
   }
   if (body === null || typeof body !== 'object') {
     throw new InstagramApiError('Instagram devolvió una respuesta que no pudimos interpretar.', {
@@ -133,6 +193,26 @@ export class GraphInstagramClient implements InstagramClient {
 
   constructor(private readonly opts: GraphOptions) {
     this.fetchFn = opts.fetchFn ?? defaultFetch;
+  }
+
+  /**
+   * GET a Graph con el token. Si el token es inválido y tiene la forma de un token de Facebook (`EAA...`),
+   * se agrega la pista: este cliente habla con graph.instagram.com (inicio de sesión de Instagram) y ahí
+   * un token de Facebook/Páginas se rechaza con el mismo error 190 que un token vencido.
+   */
+  private async get<T>(url: string): Promise<T> {
+    try {
+      return await callGraph<T>(this.fetchFn, url);
+    } catch (e) {
+      if (
+        e instanceof InstagramApiError &&
+        e.tokenInvalid &&
+        this.opts.accessToken?.startsWith('EAA')
+      ) {
+        throw new InstagramApiError(FACEBOOK_TOKEN_MESSAGE, e.opts);
+      }
+      throw e;
+    }
   }
 
   private requireToken(): string {
@@ -174,10 +254,7 @@ export class GraphInstagramClient implements InstagramClient {
       `${GRAPH_BASE}/me/media?fields=${MEDIA_FIELDS}&limit=${PAGE_SIZE}` +
       `&access_token=${encodeURIComponent(token)}`;
     for (let page = 0; url && page < maxPages && !stoppedByLimit && !reachedCutoff; page++) {
-      const json: { data?: RawMedia[]; paging?: { next?: string } } = await callGraph(
-        this.fetchFn,
-        url,
-      );
+      const json: { data?: RawMedia[]; paging?: { next?: string } } = await this.get(url);
       for (const raw of json.data ?? []) {
         const media = toMedia(raw);
         if (!media) continue;
@@ -207,8 +284,7 @@ export class GraphInstagramClient implements InstagramClient {
 
   async getAccountId(): Promise<string> {
     const token = this.requireToken();
-    const json = await callGraph<{ id?: string }>(
-      this.fetchFn,
+    const json = await this.get<{ id?: string }>(
       `${GRAPH_BASE}/me?fields=id&access_token=${encodeURIComponent(token)}`,
     );
     if (!json.id) throw new InstagramApiError('Instagram no informó la cuenta conectada.');
@@ -218,13 +294,16 @@ export class GraphInstagramClient implements InstagramClient {
   async testConnection(): Promise<ConnectionTest> {
     try {
       const token = this.requireToken();
-      const json = await callGraph<{ username?: string }>(
-        this.fetchFn,
+      const json = await this.get<{ username?: string }>(
         `${GRAPH_BASE}/me?fields=username&access_token=${encodeURIComponent(token)}`,
       );
       return { ok: true, username: json.username };
     } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : 'Error desconocido.' };
+      const detail = e instanceof InstagramApiError && e.detail ? ` (${e.detail})` : '';
+      return {
+        ok: false,
+        error: (e instanceof Error ? e.message : 'Error desconocido.') + detail,
+      };
     }
   }
 }

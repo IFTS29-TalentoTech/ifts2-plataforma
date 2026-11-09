@@ -17,7 +17,9 @@
  *  - El consentimiento de imágenes con estudiantes es OBLIGATORIO (`consentConfirmed`, RNF08).
  *  - La sección puede ser Inicio, Novedades o ambas (`section` HOME | NEWS | BOTH).
  *  - Errores: 409 (otra persona ya la resolvió), 422 (fecha o categoría inválida), 502/422 si no se pudo
- *    copiar la imagen (no se crea nada y la publicación sigue pendiente).
+ *    copiar la imagen (no se crea nada y la publicación sigue pendiente). Si falla la IMAGEN (la API
+ *    responde `imageProblem`), se explica la causa y se ofrece "Publicar sin imagen" (con confirmación):
+ *    la foto nunca bloquea la publicación (RNF03).
  */
 import { ExternalLink } from 'lucide-react';
 import { useState } from 'react';
@@ -113,6 +115,9 @@ function ReviewForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  /** Mensaje de la API cuando la imagen no se pudo usar; habilita "Publicar sin imagen". */
+  const [imageProblem, setImageProblem] = useState<string | null>(null);
+  const [withoutImage, setWithoutImage] = useState(false);
 
   /** Validación previa al diálogo de confirmación (la API repite las mismas reglas). */
   function validate(): boolean {
@@ -138,8 +143,14 @@ function ReviewForm({
         visibleFrom: orNull(visibleFrom),
         visibleUntil: orNull(visibleUntil),
         consentConfirmed: true,
+        ...(withoutImage ? { withoutImage: true } : {}),
       });
     } catch (e) {
+      if (e instanceof ApiError && typeof e.problem.imageProblem === 'string') {
+        // La foto no se pudo usar: se explica la causa y se ofrece publicar sin imagen.
+        setImageProblem(humanError(e));
+        return;
+      }
       if (
         e instanceof ApiError &&
         (e.status === 400 || e.status === 422) &&
@@ -216,6 +227,42 @@ function ReviewForm({
               className="rounded-md bg-danger-back px-3 py-2 text-sm text-danger-text"
             >
               {formError}
+            </p>
+          )}
+          {imageProblem && !withoutImage && (
+            <div
+              role="alert"
+              className="flex flex-col gap-3 rounded-md bg-danger-back px-4 py-3 text-base text-danger-text"
+            >
+              <p className="font-semibold">No se pudo usar la imagen</p>
+              <p>{imageProblem}</p>
+              <p>
+                Si es una publicación de Instagram, cargala de nuevo a mano con otra imagen. O
+                publicala igual, sin foto: después podés editarla en «Propias del sitio».
+              </p>
+              <Button
+                variant="secondary"
+                className="self-start"
+                onClick={() => {
+                  setWithoutImage(true);
+                  setImageProblem(null);
+                  if (validate()) setConfirmPublish(true);
+                }}
+              >
+                Publicar sin imagen
+              </Button>
+            </div>
+          )}
+          {withoutImage && (
+            <p className="rounded-md bg-surface px-3 py-2 text-sm text-accent-3">
+              Se va a publicar <strong>sin imagen</strong>.{' '}
+              <button
+                type="button"
+                className="font-semibold text-accent underline focus-visible:outline-none focus-visible:shadow-focus"
+                onClick={() => setWithoutImage(false)}
+              >
+                Volver a intentar con la imagen
+              </button>
             </p>
           )}
           <Input
@@ -305,6 +352,12 @@ function ReviewForm({
             <strong>{title.trim() || deriveTitle(post.caption)}</strong>
             <br />
             Destino: {toNews && toHome ? 'Novedades e Inicio' : toHome ? 'Inicio' : 'Novedades'}
+            {withoutImage && (
+              <>
+                <br />
+                Sin imagen
+              </>
+            )}
           </>
         }
         confirmLabel="Sí, publicar"

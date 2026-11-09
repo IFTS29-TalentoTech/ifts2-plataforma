@@ -7,6 +7,8 @@
  *   está escrito acá: si el cliente agrega o cambia una sección, se refleja sin tocar código.
  * - Contacto (sin diseño en el Figma, Q60): se resuelve en esta página, ancla `#contacto`, con los
  *   componentes del kit. Ver `features/public/contact-form.tsx`.
+ * - Franja de enlaces, plantel y contacto se pueden ocultar desde "Páginas del sitio" (`showBlock`,
+ *   ADR-042); el encabezado no.
  * - Plantel docente (RF10, sin diseño en el Figma): sección entre las tarjetas y Contacto. Se omite
  *   si no hay personas visibles o si la API falla (RNF03).
  */
@@ -15,11 +17,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Card } from '@/components/ui';
 import { ContactForm } from '@/features/public/contact-form';
+import { GallerySections } from '@/features/public/gallery-sections';
 import { loadContent, loadTeachers } from '@/features/public/data';
 import { Markdown } from '@/features/public/markdown';
 import { Container, PageHero, Section, SectionError } from '@/features/public/parts';
 import { TeachersSection } from '@/features/public/teachers-section';
-import { getSiteInfo } from '@/lib/site';
+import { getSiteInfo, showBlock } from '@/lib/site';
 
 export const metadata: Metadata = { title: 'Institucional' };
 // Debe ser un literal (Next lo analiza estáticamente); coincide con PUBLIC_REVALIDATE de data.ts.
@@ -50,32 +53,34 @@ export default async function Page() {
         }
       />
 
-      <Container className="pt-6">
-        <nav
-          aria-label="Enlaces relacionados"
-          className="flex flex-col gap-2 rounded-lg border border-accent-2 bg-surface px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-        >
-          <span className="text-font-strong">
-            ¿Buscás información sobre planes de estudio o inscripciones?
-          </span>
-          <span className="flex flex-col gap-2 sm:flex-row sm:gap-6">
-            <Link
-              href="/la-carrera"
-              className="inline-flex items-center gap-1 rounded-sm font-semibold text-accent focus-visible:outline-none focus-visible:shadow-focus"
-            >
-              Ver plan de estudios de la carrera{' '}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-            <Link
-              href="/ingreso"
-              className="inline-flex items-center gap-1 rounded-sm font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus"
-            >
-              Requisitos de ingreso para aspirantes{' '}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </span>
-        </nav>
-      </Container>
+      {showBlock(site, 'institucional.enlaces') && (
+        <Container className="pt-6">
+          <nav
+            aria-label="Enlaces relacionados"
+            className="flex flex-col gap-2 rounded-lg border border-accent-2 bg-surface px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+          >
+            <span className="text-font-strong">
+              ¿Buscás información sobre planes de estudio o inscripciones?
+            </span>
+            <span className="flex flex-col gap-2 sm:flex-row sm:gap-6">
+              <Link
+                href="/la-carrera"
+                className="inline-flex items-center gap-1 rounded-sm font-semibold text-accent focus-visible:outline-none focus-visible:shadow-focus"
+              >
+                Ver plan de estudios de la carrera{' '}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/ingreso"
+                className="inline-flex items-center gap-1 rounded-sm font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus"
+              >
+                Requisitos de ingreso para aspirantes{' '}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </span>
+          </nav>
+        </Container>
+      )}
 
       <Section>
         {!content.ok ? (
@@ -97,53 +102,59 @@ export default async function Page() {
         ) : null}
       </Section>
 
-      <TeachersSection teachers={teachers.ok ? teachers.data.items : []} />
+      <GallerySections galleries={content.ok ? (content.data.galleries ?? []) : []} />
 
-      <Section eyebrow="Escribinos" title="Contacto" id="contacto">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-          <Card className="flex flex-col gap-4 self-start">
-            <h3 className="font-display text-lg font-bold text-accent-3">Datos de la sede</h3>
-            <ul className="flex flex-col gap-3 text-sm text-font-strong">
-              {site.address && (
-                <li className="flex gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
-                  <span>{site.address}</span>
-                </li>
-              )}
-              {site.phone && (
-                <li className="flex gap-3">
-                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
-                  <a href={`tel:${site.phone.replace(/[^\d+]/g, '')}`} className="underline">
-                    {site.phone}
-                  </a>
-                </li>
-              )}
-              {site.emailInstitutional && (
-                <li className="flex gap-3">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
-                  <a href={`mailto:${site.emailInstitutional}`} className="break-all underline">
-                    {site.emailInstitutional}
-                  </a>
-                </li>
-              )}
-              {site.emailBedelia && (
-                <li className="flex gap-3">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
-                  <span>
-                    Bedelía:{' '}
-                    <a href={`mailto:${site.emailBedelia}`} className="break-all underline">
-                      {site.emailBedelia}
+      {showBlock(site, 'institucional.plantel') && (
+        <TeachersSection teachers={teachers.ok ? teachers.data.items : []} />
+      )}
+
+      {showBlock(site, 'institucional.contacto') && (
+        <Section eyebrow="Escribinos" title="Contacto" id="contacto">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+            <Card className="flex flex-col gap-4 self-start">
+              <h3 className="font-display text-lg font-bold text-accent-3">Datos de la sede</h3>
+              <ul className="flex flex-col gap-3 text-sm text-font-strong">
+                {site.address && (
+                  <li className="flex gap-3">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+                    <span>{site.address}</span>
+                  </li>
+                )}
+                {site.phone && (
+                  <li className="flex gap-3">
+                    <Phone className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+                    <a href={`tel:${site.phone.replace(/[^\d+]/g, '')}`} className="underline">
+                      {site.phone}
                     </a>
-                  </span>
-                </li>
-              )}
-            </ul>
-          </Card>
-          <Card>
-            <ContactForm />
-          </Card>
-        </div>
-      </Section>
+                  </li>
+                )}
+                {site.emailInstitutional && (
+                  <li className="flex gap-3">
+                    <Mail className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+                    <a href={`mailto:${site.emailInstitutional}`} className="break-all underline">
+                      {site.emailInstitutional}
+                    </a>
+                  </li>
+                )}
+                {site.emailBedelia && (
+                  <li className="flex gap-3">
+                    <Mail className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+                    <span>
+                      Bedelía:{' '}
+                      <a href={`mailto:${site.emailBedelia}`} className="break-all underline">
+                        {site.emailBedelia}
+                      </a>
+                    </span>
+                  </li>
+                )}
+              </ul>
+            </Card>
+            <Card>
+              <ContactForm />
+            </Card>
+          </div>
+        </Section>
+      )}
     </>
   );
 }

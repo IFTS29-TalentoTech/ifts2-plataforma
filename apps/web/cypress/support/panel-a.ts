@@ -169,3 +169,23 @@ export const VIEWPORTS = [
   { name: '390', width: 390, height: 844 },
   { name: '1440', width: 1440, height: 900 },
 ];
+
+/**
+ * Deja a la vista el botón "Cerrar sesión": en escritorio vive en el menú de cuenta de la cabecera y en
+ * móvil, dentro del menú hamburguesa. Si el menú ya está abierto no hace nada (es idempotente).
+ */
+export function openAccountMenu() {
+  cy.window().then((win) => {
+    if (win.innerWidth < 1024) {
+      cy.get('body').then(($body) => {
+        if ($body.find('#mobile-menu').length === 0) cy.openPanelNav();
+      });
+      return;
+    }
+    cy.get('button[aria-label^="Cuenta de"]:visible')
+      .first()
+      .then(($b) => {
+        if ($b.attr('aria-expanded') !== 'true') cy.wrap($b).click();
+      });
+  });
+}

@@ -8,9 +8,8 @@ import { requireSession } from '@/lib/session';
 export const metadata: Metadata = { title: 'Galerías' };
 
 /**
- * /panel/galerias (RF09, ADR-036). Permiso `gallery:manage` (ADMIN y EDITOR por defecto). Es una página
- * propia porque el rol EDITOR no tiene `settings:manage` y por lo tanto no entra a Configuración; la
- * misma pantalla también está como pestaña dentro de Configuración.
+ * /panel/galerias (RF09, ADR-036, ADR-041). Permiso `gallery:manage` (ADMIN y EDITOR por defecto). Es el
+ * único lugar donde se editan galerías (ya no hay pestaña en Configuración).
  */
 export default async function Page() {
   const session = await requireSession();
@@ -19,9 +18,9 @@ export default async function Page() {
     <>
       <PageHeader
         title="Galerías"
-        description="Elegí las fotos del carrusel de Estudiantes y de La carrera."
+        description="Creá galerías de fotos y subí las imágenes. Después elegí en qué página se muestran."
       />
-      <GalleryEditor />
+      <GalleryEditor canPages={can(session.permissions, 'content:manage')} />
     </>
   );
 }

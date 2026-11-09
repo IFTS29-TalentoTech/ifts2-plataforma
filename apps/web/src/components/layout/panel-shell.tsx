@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { PANEL_NAV, canAccessNav } from '@/lib/nav';
 import type { Session } from '@/lib/session';
 import type { SiteInfo } from '@/lib/site';
-import { LogoutButton } from './logout-button';
 import { PanelNav } from './panel-nav';
 import { SiteFooter } from './site-footer';
 import { SiteHeader } from './site-header';
@@ -56,8 +55,6 @@ export function PanelShell({ session, site, counts = {}, demoMode, children }: P
           <div className="text-xs text-accent-2">
             <p className="font-semibold text-base">{session.name}</p>
             <p className="mb-2">{session.roleName}</p>
-            <LogoutButton />
-            <p className="mt-3">Panel administrativo</p>
             <p>{site.short}</p>
           </div>
         </aside>

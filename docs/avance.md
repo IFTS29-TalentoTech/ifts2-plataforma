@@ -4,6 +4,12 @@ Registro de tareas completadas y pendientes, dificultades y soluciones. Un agent
 
 ## Completado
 
+### 2026-11-08 · Enlaces de interés claros (ADR-039, rama `feat/publico-fiel-al-figma`)
+
+- Cada enlace elige **dónde se muestra** con casillas (Inicio, Estudiantes, Inscripciones) en lugar del campo «Grupo»; «Visible» es un selector «Sí, se muestra / No, queda oculto»; el orden se cambia con Subir/Bajar (`PUT /links/order`).
+- La lista dice con palabras dónde se ve cada enlace y si está oculto. API pública: `/public/students.enrollmentLinks` nuevo; `quickLinks` y `links` filtran por lugar.
+- Migración `20261108120000_enlaces_lugares` (dos columnas con valor por defecto, no cambia lo publicado). Pruebas: `packages/shared/test/links.test.ts` y casos nuevos en `public.test.ts` y `settings-content-links.test.ts`.
+
 ### 2026-11-07 · Categorías de galería y plantel docente (RF09 completo, RF10, ADR-036 y ADR-037, rama `feat/publico-fiel-al-figma`)
 
 **Hecho.** (1) **RF09/US-30:** `GalleryItem.category` (migración aditiva `20261107120000_galeria_categoria`), esquema zod, API, campo con sugerencias en el panel y **filtro por categoría accesible en Estudiantes** (botones con `aria-pressed`, se muestra solo si hay categorías). (2) **RF10/US-29:** modelo `Teacher` y migración `20261107130000_plantel` (también concede `teachers:manage` a los ADMIN y EDITOR existentes), módulo de API `teachers` (alta, edición, foto, orden, baja lógica y eliminación manual solo de personas ocultas, 409 si siguen visibles, todo auditado), lectura pública `/public/teachers`, página `/panel/plantel` (y pestaña de Configuración) y sección **Plantel docente** en Institucional (no se dibuja si no hay personas visibles). (3) **Semilla demo:** 6 docentes **ficticios** (nombres inventados, ilustraciones en lugar de fotos, uno oculto) y categorías provisorias en la galería (Prácticas, Ingredientes, Platos, Perfil); producción deja el plantel vacío. Las bases que ya tenían las diapositivas provisorias reciben su categoría al volver a correr `pnpm db:seed` (solo si siguen sin categoría).
@@ -387,6 +393,15 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 
 `prisma/seed.ts` (`seedDemoExtras`) suma datos ficticios para que la demo muestre todo: publicaciones en todos los estados y años, publicaciones de redes detectada / aprobada / descartada, avisos para cada público y en cada estado, llamados pasados, próximos y sin publicar, mensajes en cada estado, una cuenta desactivada, un enlace oculto y auditoría de varias personas. Es idempotente y solo corre en modo demo. Lo único que carga el equipo a mano es el token de Instagram. Verificado en una base descartable: dos corridas seguidas sin duplicados.
 
+## Páginas del sitio y galerías con nombre (08/11/2026, ADR-041)
+
+Reorganización de la edición del contenido pensada para personas mayores: Configuración queda con dos pestañas (Integraciones, Enlaces de interés); los textos, las imágenes y las galerías de cada página (Inicio, Institucional, La carrera, Estudiantes, Ingreso, Inscripciones) se editan en la pantalla nueva «Páginas del sitio» (`/panel/paginas`); Galerías y Plantel docente viven solo en el menú lateral. Las imágenes del sitio se suben como archivo (ya no se escriben rutas) y el logo aparece también en el encabezado del login. Las galerías tienen nombre, pueden ser varias y se agregan a cualquier página como sección. Migración `20261108120000_galerias_con_nombre` (conserva las dos galerías anteriores). Se retiró el ajuste `student_gallery`. Pruebas: shared y web en verde; las de API (`gallery.test.ts`, `settings-images.test.ts`) y los E2E (`galerias.cy.ts`, `ajustes-pagina.cy.ts`, `delegated-capabilities.cy.ts`) quedan para correr con la base y los puertos propios.
+
+## Instagram: errores de Graph bien clasificados (08/11/2026, ADR-044)
+
+La sincronización con un token real siempre decía «venció o fue revocado»: `graph.ts` trataba todo `OAuthException` como token inválido (Meta lo usa también para el código 100 de parámetros y los de permisos) y el panel sumaba «No pudimos confirmar el resultado» a cualquier 502. Ahora solo 401/190/102 son token vencido; permisos, límite de uso, caída de Meta y consulta rechazada tienen su mensaje, y el 502 trae «Detalle para el equipo» con el código de Meta (sin token). La consulta de cuenta de ADR-038 ya no corta la sincronización si falla por otra causa (hace carga completa). Pruebas: 252 unitarias de la API en verde; los casos nuevos de `test/api/social.test.ts` quedan para correr con `ifts2_test`.
+**Qué probar a mano con el token real:** sincronizar y leer el «Detalle para el equipo» (código y mensaje de Meta). Si dice 190, el token no es de «Instagram con inicio de sesión de Instagram» o venció; si dice 100 o 10, falta un permiso o la cuenta no es profesional.
+
 ## Estado actual (08/11/2026)
 
 - **Hecho:** API completa (auth, usuarios, roles y permisos configurables, auditoría, integraciones, redes, publicaciones, avisos, horarios, llamados, ciclos, documentos, ajustes, contenido, enlaces, contacto, resumen y `/public/*`), sitio público (Inicio, Institucional con contacto, La carrera, Estudiantes, Ingreso, Inscripciones y Novedades), panel completo y responsive (login, Resumen, Publicaciones, Avisos, Mensajes, Horarios, Archivo, Configuración, Integraciones, Roles y permisos), semilla demo/prod, CI, evidencias, Manual Técnico, Manual de Usuario y PDF de entrega (del 30/10).
@@ -412,3 +427,11 @@ limitaciones en `docs/evidencias/2026-11-06-portadas-externas-a06.md`; decisión
 - **Variables CSS no admiten opacidad de Tailwind** (`bg-x/50`): se evita y se documentó.
 - **El menú móvil cerraba con un `setState` en un efecto** (regla de lint de React): se resolvió guardando la ruta en la que se abrió.
 - **`/ui-kit` quedaba prerenderizado y siempre devolvía 404 en producción**: se hizo dinámico (`ENABLE_UI_KIT`).
+
+### 2026-11-08 · Error de imagen al publicar (agente F)
+
+Aprobar una publicación mostraba siempre «La imagen de la publicación no se puede usar (formato no admitido o demasiado pesada)». Causa más probable: en la carga manual se pega el enlace de la publicación en vez de la dirección de la imagen y la descarga devuelve una página HTML. Ahora: (1) `storeUpload` acepta GIF/TIFF/AVIF/HEIC reconvirtiéndolos a WebP; (2) el descargador pide `image/*` con un `User-Agent` genérico; (3) cuatro causas con su mensaje (`imageProblem`: descarga, página web, formato, peso); (4) `withoutImage` en `/social/posts/:id/approve` y botón «Publicar sin imagen» con confirmación. ADR-043. Pruebas: `test/unit/upload-images.test.ts` (corrida, verde) y `test/api/social-imagen.test.ts` (escrita, sin correr).
+
+## 08/11/2026 · Páginas del sitio rediseñada (ADR-042)
+
+La pantalla «Páginas del sitio» ahora lista, para cada página (Inicio, Institucional, La carrera, Estudiantes, Ingreso e Inscripciones), sus **bloques en el orden real del sitio**, numerados y con nombre, explicación y etiqueta («Parte fija del sitio», «Agregada por vos», «Se carga en otra pantalla»). Cada bloque tiene el interruptor **«Mostrar en el sitio: Sí / No»**; lo fijo no se elimina (solo se oculta) y el encabezado siempre se muestra. Los bloques que vienen de otra pantalla (Avisos, Mesas, Novedades, Plantel, Enlaces de interés) llevan allí con un botón. «Agregar sección» pregunta Texto o Galería de fotos y funciona en cualquier página (Inicio incluida). Se quitó el título duplicado. La pantalla «Galerías» nombra las páginas donde se ve cada galería. Catálogo en `packages/shared/src/page-blocks.ts`; ocultos en el ajuste `hidden_blocks` (sin migración); la web pública respeta el catálogo (`showBlock`). Pruebas: shared (catálogo) y unit de la API (coherencia con la semilla) en verde; integración `content-blocks.test.ts` y E2E `paginas-sitio.cy.ts` (más ajustes de `galerias.cy.ts` y `ajustes-pagina.cy.ts`) escritos, a correr con base y puertos propios.

@@ -6,7 +6,7 @@
  * correo (5 intentos fallidos / 15 min) y dejaría bloqueado a todo el resto de la suite. El comportamiento
  * real del límite lo cubren las pruebas de la API (apps/api/test/api/auth.test.ts).
  */
-import { unique, VIEWPORTS } from '../../support/panel-a';
+import { openAccountMenu, unique, VIEWPORTS } from '../../support/panel-a';
 
 const problem = (status: number, title: string, detail: string) => ({
   statusCode: status,
@@ -110,6 +110,7 @@ for (const vp of VIEWPORTS) {
       cy.loginAs('editor');
       cy.visit('/panel');
       cy.openPanelNav();
+      openAccountMenu();
       cy.contains('button', 'Cerrar sesión').filter(':visible').click();
       cy.location('pathname').should('eq', '/panel/login');
       cy.visit('/panel');

@@ -291,6 +291,51 @@ describe('POST /social/sync con la API real simulada (GraphInstagramClient + ser
     expect(everything).not.toContain('secreto-de-la-app');
   });
 
+  it('un error de parámetros (100, OAuthException) NO se informa como token vencido y muestra el motivo de Meta', async () => {
+    mock.mediaError = {
+      status: 400,
+      body: { error: { message: 'Unsupported get request', type: 'OAuthException', code: 100 } },
+    };
+    const res = await sync();
+    expect(res.status).toBe(502);
+    expect(res.body.detail).not.toMatch(/venció|revocado/);
+    expect(res.body.detail).toMatch(/rechazó la consulta/);
+    expect(res.body.detail).toMatch(/Detalle para el equipo: Meta respondió HTTP 400, código 100/);
+    const dash = await request(t.app).get('/api/v1/dashboard').set('Cookie', cookie);
+    expect(dash.body.instagram).toMatchObject({ mode: 'real', ok: false });
+    expect(dash.body.instagram.error).not.toMatch(/venció/);
+    expect(JSON.stringify([res.body, dash.body])).not.toContain(TOKEN);
+  });
+
+  it('permisos insuficientes (10) y límite de uso (4) tienen su propio mensaje, no el del token', async () => {
+    mock.mediaError = { status: 400, body: { error: { message: 'sin permiso', code: 10 } } };
+    expect((await sync()).body.detail).toMatch(/no dio permiso/);
+    mock.mediaError = { status: 400, body: { error: { message: 'límite', code: 4 } } };
+    expect((await sync()).body.detail).toMatch(/limitó temporalmente/);
+  });
+
+  it('si falla SOLO la consulta liviana de la cuenta (no el token), igual sincroniza y hace carga completa', async () => {
+    mock.accountError = {
+      status: 400,
+      body: { error: { message: 'Unsupported get request', type: 'OAuthException', code: 100 } },
+    };
+    mock.media = [{ id: 'r1', caption: 'Primera #ifts2web' }];
+    const res = await sync();
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ created: 1, mode: 'full', fullReason: 'first' });
+    // Sin id de cuenta no se puede comparar: la siguiente también es completa (no se confía en lo guardado).
+    const second = await sync();
+    expect(second.status).toBe(200);
+    expect(second.body).toMatchObject({ mode: 'full', fullReason: 'account' });
+  });
+
+  it('si el token es inválido en la consulta de la cuenta, corta y pide reconectar', async () => {
+    mock.accountError = { status: 400, body: TOKEN_ERROR_BODY };
+    const res = await sync();
+    expect(res.status).toBe(502);
+    expect(res.body.detail).toMatch(/Volvé a conectar la cuenta/);
+  });
+
   it('antes de sincronizar renueva el token si le quedan 10 días o menos', async () => {
     await connectReal({ expiresInDays: 5 });
     mock.media = [{ id: 'r1', caption: '#ifts2web' }];

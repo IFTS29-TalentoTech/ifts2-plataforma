@@ -1,9 +1,10 @@
 import '../../support/panel-b';
 
 /**
- * Galerías editables (RF09, ADR-036): el EDITOR sube, edita, reordena y elimina una diapositiva con la
- * interfaz real (eliminar pide confirmación); quien no tiene `gallery:manage` no ve la opción y la API
- * responde 403. En 390 y 1440 px, con axe.
+ * Galerías con nombre (RF09, ADR-036, ADR-041): el EDITOR crea una galería, le sube fotos, las edita,
+ * las reordena y las elimina (con confirmación); el ADMIN la agrega a una página como sección y se ve en
+ * el sitio. Quien no tiene `gallery:manage` no ve la pantalla y la API responde 403. En 390 y 1440 px,
+ * con axe. La semilla trae "Vida en la cocina" (3 fotos, en Estudiantes) y "Fotos de La carrera" (1).
  */
 const viewports = [
   { name: 'móvil 390', width: 390, height: 844 },
@@ -19,77 +20,121 @@ const png = () => ({
   mimeType: 'image/png',
 });
 
-const students = '[data-testid="gallery-STUDENTS"]';
+const card = (name: string) => `[data-testid="gallery-card"][aria-label="Galería ${name}"]`;
+const row = '[data-testid="gallery-row"]';
+const seeded = 'Vida en la cocina';
 
 for (const vp of viewports) {
   describe(`Galerías · ${vp.name}`, () => {
     beforeEach(() => cy.viewport(vp.width, vp.height));
 
-    it('el EDITOR sube, edita, reordena y elimina una diapositiva (con confirmación)', () => {
-      const title = `Prueba ${vp.width}-${Date.now()}`;
+    it('el EDITOR crea una galería, sube, edita, reordena y elimina fotos y la galería (con confirmación)', () => {
+      const name = `Galería ${vp.width}-${Date.now()}`;
+      const title = `Foto ${vp.width}-${Date.now()}`;
       cy.loginAsApi('EDITOR');
       cy.visit('/panel/galerias');
       cy.contains('h1', 'Galerías').should('be.visible');
-      // Las 3 de la semilla (provisorias) para Estudiantes y 1 para La carrera.
-      cy.get(`${students} [data-testid="gallery-row"]`).should('have.length', 3);
-      cy.get('[data-testid="gallery-CAREER"] [data-testid="gallery-row"]').should('have.length', 1);
+      // Las de la semilla (provisorias): una con 3 fotos y otra con 1.
+      cy.get(`${card(seeded)} ${row}`).should('have.length', 3);
+      cy.get(`${card('Fotos de La carrera')} ${row}`).should('have.length', 1);
+      cy.get(`${card(seeded)} [data-testid="gallery-pages"]`).should('contain', 'Estudiantes');
       cy.a11y();
 
-      // Alta: la foto es obligatoria.
-      cy.get(`${students} button[aria-label^="Agregar diapositiva"]`).click();
+      // Crear la galería: el nombre es obligatorio.
+      cy.contains('button', 'Crear galería').click();
       cy.get('[role="dialog"]').within(() => {
-        cy.contains('button', 'Guardar diapositiva').click();
-        cy.contains('Elegí la foto de la diapositiva.').should('be.visible');
+        cy.contains('button', 'Guardar').click();
+        cy.contains('Escribí un nombre para la galería.').should('be.visible');
+        cy.byLabel('Nombre de la galería').type(name);
+        cy.contains('button', 'Guardar').click();
+      });
+      cy.contains(card(name), 'Todavía no se muestra en ninguna página').should('exist');
+
+      // Agregar una foto: el archivo es obligatorio.
+      cy.get(`${card(name)} button[aria-label^="Agregar foto"]`).click();
+      cy.get('[role="dialog"]').within(() => {
+        cy.contains('button', 'Guardar foto').click();
+        cy.contains('Elegí la foto.').should('be.visible');
         cy.get('[data-testid="file-input"]').selectFile(png(), { force: true });
         cy.byLabel('Título (opcional)').type(title);
         cy.byLabel('Descripción (opcional)').type('Texto de prueba');
-        cy.contains('button', 'Guardar diapositiva').click();
+        cy.contains('button', 'Guardar foto').click();
       });
-      cy.get(`${students} [data-testid="gallery-row"]`).should('have.length', 4);
-      cy.contains(`${students} [data-testid="gallery-row"]`, title).should(
-        'contain',
-        'Posición 4 de 4',
-      );
+      cy.contains(`${card(name)} ${row}`, title).should('contain', 'Foto 1 de 1');
+
+      // Una segunda foto y orden: "Subir" la nueva la pasa a la posición 1.
+      cy.get(`${card(name)} button[aria-label^="Agregar foto"]`).click();
+      cy.get('[role="dialog"]').within(() => {
+        cy.get('[data-testid="file-input"]').selectFile(png(), { force: true });
+        cy.byLabel('Título (opcional)').type('Segunda');
+        cy.contains('button', 'Guardar foto').click();
+      });
+      cy.contains(`${card(name)} ${row}`, 'Segunda').should('contain', 'Foto 2 de 2');
+      cy.contains(`${card(name)} ${row}`, 'Segunda')
+        .contains('button', 'Subir')
+        .click();
+      cy.contains(`${card(name)} ${row}`, 'Segunda').should('contain', 'Foto 1 de 2');
 
       // Edición de los textos.
-      cy.contains(`${students} [data-testid="gallery-row"]`, title)
+      cy.contains(`${card(name)} ${row}`, title)
         .contains('button', 'Editar')
         .click();
       cy.get('[role="dialog"]').within(() => {
         cy.byLabel('Título (opcional)').clear().type(`${title} (editada)`);
-        cy.contains('button', 'Guardar diapositiva').click();
+        cy.contains('button', 'Guardar foto').click();
       });
-      cy.contains(`${students} [data-testid="gallery-row"]`, `${title} (editada)`).should('exist');
+      cy.contains(`${card(name)} ${row}`, `${title} (editada)`).should('exist');
 
-      // Orden: "Subir" la nueva (última) la pasa a la posición 3.
-      cy.contains(`${students} [data-testid="gallery-row"]`, `${title} (editada)`)
-        .contains('button', 'Subir')
-        .click();
-      cy.contains(`${students} [data-testid="gallery-row"]`, `${title} (editada)`).should(
-        'contain',
-        'Posición 3 de 4',
-      );
-
-      // Eliminación: pide confirmación y queda como al principio.
-      cy.contains(`${students} [data-testid="gallery-row"]`, `${title} (editada)`)
+      // Eliminar una foto: pide confirmación.
+      cy.contains(`${card(name)} ${row}`, 'Segunda')
         .contains('button', 'Eliminar')
         .click();
       cy.get('[role="alertdialog"]').within(() => {
-        cy.contains('¿Eliminar esta diapositiva?').should('be.visible');
+        cy.contains('¿Eliminar esta foto?').should('be.visible');
         cy.contains('button', 'Cancelar').click();
       });
-      cy.get(`${students} [data-testid="gallery-row"]`).should('have.length', 4);
-      cy.contains(`${students} [data-testid="gallery-row"]`, `${title} (editada)`)
+      cy.get(`${card(name)} ${row}`).should('have.length', 2);
+      cy.contains(`${card(name)} ${row}`, 'Segunda')
         .contains('button', 'Eliminar')
         .click();
       cy.get('[role="alertdialog"]').within(() => cy.contains('button', 'Eliminar').click());
-      cy.get(`${students} [data-testid="gallery-row"]`).should('have.length', 3);
+      cy.get(`${card(name)} ${row}`).should('have.length', 1);
+
+      // Cambiar el nombre.
+      cy.get(`${card(name)} button[aria-label^="Cambiar nombre"]`).click();
+      cy.get('[role="dialog"]').within(() => {
+        cy.byLabel('Nombre de la galería').clear().type(`${name} B`);
+        cy.contains('button', 'Guardar').click();
+      });
+      cy.get(card(`${name} B`)).should('exist');
+
+      // Eliminar la galería: pide confirmación.
+      cy.get(`${card(`${name} B`)} button[aria-label^="Eliminar galería"]`).click();
+      cy.get('[role="alertdialog"]').within(() => {
+        cy.contains('¿Eliminar esta galería?').should('be.visible');
+        cy.contains('button', 'Eliminar galería').click();
+      });
+      cy.get(card(`${name} B`)).should('not.exist');
+      cy.get(card(seeded)).should('exist');
+    });
+
+    it('una galería que se muestra en una página no se puede eliminar hasta quitarla de ahí', () => {
+      cy.loginAsApi('EDITOR');
+      cy.visit('/panel/galerias');
+      cy.get(`${card(seeded)} button[aria-label^="Eliminar galería"]`).click();
+      cy.get('[role="alertdialog"]').contains('button', 'Eliminar galería').click();
+      // La API la rechaza (409) porque está en Estudiantes: la galería y sus fotos siguen ahí.
+      cy.get(card(seeded)).should('exist');
+      cy.get(`${card(seeded)} ${row}`).should('have.length', 3);
+      cy.api('GET', '/gallery')
+        .its('body.galleries')
+        .should('satisfy', (g: { name: string }[]) => g.some((x) => x.name === seeded));
     });
 
     it('rechaza archivos que no son imagen con un mensaje claro', () => {
       cy.loginAsApi('EDITOR');
       cy.visit('/panel/galerias');
-      cy.get(`${students} button[aria-label^="Agregar diapositiva"]`).click();
+      cy.get(`${card(seeded)} button[aria-label^="Agregar foto"]`).click();
       cy.get('[role="dialog"]').within(() => {
         cy.get('[data-testid="file-input"]').selectFile(
           {
@@ -102,14 +147,14 @@ for (const vp of viewports) {
         cy.contains('Subí una imagen (JPG, PNG o WebP).').should('be.visible');
         cy.contains('button', 'Cancelar').click();
       });
-      cy.get(`${students} [data-testid="gallery-row"]`).should('have.length', 3);
+      cy.get(`${card(seeded)} ${row}`).should('have.length', 3);
     });
 
     it('BEDELIA no ve Galerías y la API responde 403', () => {
       cy.loginAsApi('BEDELIA');
       cy.visit('/panel/galerias');
       cy.contains('Tu rol no tiene acceso a esta sección').should('be.visible');
-      cy.get(`${students}`).should('not.exist');
+      cy.get('[data-testid="gallery-card"]').should('not.exist');
       cy.api('GET', '/gallery').its('status').should('eq', 403);
       cy.api('DELETE', '/gallery/6b0a6a54-3d0c-4a38-8d26-3a8e7f2c1111')
         .its('status')
@@ -118,34 +163,86 @@ for (const vp of viewports) {
   });
 }
 
+/** El ADMIN agrega una galería a una página como sección y se ve en el sitio; quitarla no borra la galería. */
+describe('Galerías en las páginas del sitio', () => {
+  it('Páginas del sitio: agrega una galería a Inscripciones, se ve en el sitio y se quita', () => {
+    cy.viewport(1440, 900);
+    const sectionTitle = `Fotos ${Date.now()}`;
+    cy.loginAsApi('ADMIN');
+    cy.visit('/panel/paginas');
+    cy.contains('h1', 'Páginas del sitio').should('be.visible');
+    cy.contains('button', 'Inscripciones').click();
+    cy.contains('button', 'Agregar sección').click();
+    cy.get('[role="dialog"]').within(() => {
+      cy.contains('label', 'Galería de fotos').click();
+      cy.byLabel('Título de la sección').type(sectionTitle);
+      cy.byLabel('¿Qué galería querés mostrar?').click();
+    });
+    cy.contains('[role="option"]', seeded).click();
+    cy.get('[role="dialog"]').contains('button', 'Guardar sección').click();
+    cy.contains('[data-testid="content-row"]', sectionTitle)
+      .should('contain', 'Galería de fotos')
+      .and('contain', seeded);
+
+    // Se ve en el sitio (el contenido público se cachea 60 s: se consulta la API sin caché).
+    cy.api('GET', `/public/content/inscripciones?_=${Date.now()}`)
+      .its('body.galleries')
+      .should('satisfy', (g: { title: string }[]) => g.some((x) => x.title === sectionTitle));
+
+    // Quitar la sección: está visible, así que primero se oculta.
+    cy.contains('[data-testid="content-row"]', sectionTitle)
+      .find('[data-testid="show-switch"]')
+      .click();
+    cy.contains('[data-testid="content-row"]', sectionTitle).should(
+      'contain',
+      'Mostrar en el sitio: No',
+    );
+    cy.contains('[data-testid="content-row"]', sectionTitle).contains('button', 'Eliminar').click();
+    cy.get('[role="alertdialog"]').should('contain', 'La galería y sus fotos no se borran');
+    cy.get('[role="alertdialog"]').contains('button', 'Eliminar').click();
+    cy.contains('[data-testid="content-row"]', sectionTitle).should('not.exist');
+    // La galería sigue existiendo con sus fotos.
+    cy.api('GET', '/gallery')
+      .its('body.galleries')
+      .should('satisfy', (g: { name: string; items: unknown[] }[]) =>
+        g.some((x) => x.name === seeded && x.items.length === 3),
+      );
+  });
+
+  it('Estudiantes muestra "Vida en la cocina" desde su sección de galería', () => {
+    cy.viewport(1440, 900);
+    cy.visit('/estudiantes');
+    cy.get('[data-testid=galeria] [aria-roledescription=diapositiva]').should('have.length', 3);
+    cy.contains('h2', seeded).should('be.visible');
+  });
+});
+
 /** RF09/US-30: la categoría se edita desde el panel, sugiere las ya usadas y se muestra en la fila. */
 describe('Galerías · categoría', () => {
-  it('el EDITOR cambia la categoría de una diapositiva y el campo sugiere las existentes', () => {
+  it('el EDITOR cambia la categoría de una foto y el campo sugiere las existentes', () => {
     cy.viewport(1440, 900);
     cy.loginAsApi('EDITOR');
     cy.visit('/panel/galerias');
-    cy.get(`${students} [data-testid="gallery-row"]`).should('have.length.at.least', 3);
-    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos').should('exist');
-    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos')
+    cy.get(`${card(seeded)} ${row}`).should('have.length.at.least', 3);
+    cy.contains(`${card(seeded)} ${row}`, 'Categoría: Platos').should('exist');
+    cy.contains(`${card(seeded)} ${row}`, 'Categoría: Platos')
       .contains('button', 'Editar')
       .click();
     cy.get('[role="dialog"]').within(() => {
       cy.byLabel('Categoría (opcional)').should('have.value', 'Platos');
       cy.get('datalist#gallery-categories option').should('have.length.at.least', 3);
       cy.byLabel('Categoría (opcional)').clear().type('Platos finales');
-      cy.contains('button', 'Guardar diapositiva').click();
+      cy.contains('button', 'Guardar foto').click();
     });
-    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos finales').should(
-      'exist',
-    );
+    cy.contains(`${card(seeded)} ${row}`, 'Categoría: Platos finales').should('exist');
     // Se restaura para no alterar a las otras pruebas.
-    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos finales')
+    cy.contains(`${card(seeded)} ${row}`, 'Categoría: Platos finales')
       .contains('button', 'Editar')
       .click();
     cy.get('[role="dialog"]').within(() => {
       cy.byLabel('Categoría (opcional)').clear().type('Platos');
-      cy.contains('button', 'Guardar diapositiva').click();
+      cy.contains('button', 'Guardar foto').click();
     });
-    cy.contains(`${students} [data-testid="gallery-row"]`, 'Categoría: Platos ·').should('exist');
+    cy.contains(`${card(seeded)} ${row}`, 'Categoría: Platos ·').should('exist');
   });
 });

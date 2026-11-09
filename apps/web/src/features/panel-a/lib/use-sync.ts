@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useToast } from '@/components/ui';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { handleSessionExpired, humanError } from './errors';
 import type { SyncResultDto } from './types';
 
@@ -39,7 +39,13 @@ export function useInstagramSync(onFinished: () => void) {
         });
       } catch (e) {
         if (handleSessionExpired(e)) return;
-        toast({ title: 'No se pudo sincronizar', description: humanError(e), tone: 'error' });
+        // 502 = Instagram respondió y la API ya explica el motivo. La sincronización no cambia nada si falla,
+        // así que no corresponde el aviso genérico "No pudimos confirmar el resultado" de las mutaciones.
+        const reason =
+          e instanceof ApiError && e.status === 502 && typeof e.problem.detail === 'string'
+            ? e.problem.detail
+            : humanError(e);
+        toast({ title: 'No se pudo sincronizar', description: reason, tone: 'error' });
       } finally {
         setSyncing(false);
         onFinished();

@@ -45,8 +45,12 @@ erDiagram
     String termId FK
     String documentId FK
   }
+  Gallery {
+    String id PK
+  }
   GalleryItem {
     String id PK
+    String galleryId FK
   }
   Teacher {
     String id PK
@@ -60,4 +64,5 @@ erDiagram
   Document |o--o{ Schedule : "documentId"
   AcademicTerm ||--o{ ExamCall : "termId"
   Document |o--o{ ExamCall : "documentId"
+  Gallery ||--o{ GalleryItem : "galleryId"
   User |o--o{ AuditLog : "userId"

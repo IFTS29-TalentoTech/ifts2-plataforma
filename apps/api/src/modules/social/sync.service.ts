@@ -114,8 +114,21 @@ export async function syncInstagram(
   const startedAt = new Date(); // la marca nueva es el inicio del fetch: lo publicado durante él se verá después
   try {
     // Llamada liviana (`/me?fields=id`): si cambió la cuenta, lo guardado no sirve y se carga todo.
+    // Es una comprobación auxiliar: si falla por algo que NO es el token (permiso, parámetro, límite, caída
+    // temporal) no debe impedir la sincronización; se hace completa y el motivo queda en el registro. El token
+    // inválido y la falta de configuración sí cortan (la lectura de publicaciones fallaría igual).
+    let accountId = '';
+    try {
+      accountId = await client.getAccountId();
+    } catch (e) {
+      if (!(e instanceof InstagramApiError) || e.tokenInvalid) throw e;
+      ctx.logger.warn(
+        { detail: e.detail ?? e.message },
+        'no se pudo consultar la cuenta de Instagram; la sincronización será completa',
+      );
+    }
     identity = {
-      accountId: await client.getAccountId(),
+      accountId,
       hashtag: normalizeHashtag(hashtag) ?? hashtag.toLowerCase(),
       connection: client.kind === 'fake' ? 'demo' : (stored?.connectionMethod ?? 'oauth'),
     };
@@ -143,17 +156,26 @@ export async function syncInstagram(
       e instanceof InstagramApiError
         ? e.message
         : 'No pudimos sincronizar con Instagram. Intentá de nuevo en unos minutos.';
-    ctx.logger.warn({ message, trigger: opts.trigger }, 'falló la sincronización con Instagram');
-    await recordOutcome(ctx, false, message);
+    // Motivo técnico de Meta (código y mensaje, sin el token) para que el equipo pueda diagnosticar desde el panel.
+    const detail = e instanceof InstagramApiError ? e.detail : undefined;
+    const full = detail ? `${message} Detalle para el equipo: ${detail}.` : message;
+    ctx.logger.warn(
+      {
+        message,
+        detail,
+        tokenInvalid: e instanceof InstagramApiError && e.tokenInvalid,
+        trigger: opts.trigger,
+      },
+      'falló la sincronización con Instagram',
+    );
+    await recordOutcome(ctx, false, full);
     await audit.log(ctx.prisma, {
       userId: opts.userId ?? null,
       action: 'social.sync.failed',
       entity: 'SocialPost',
-      detail: { trigger: opts.trigger, error: message },
+      detail: { trigger: opts.trigger, error: message, ...(detail ? { meta: detail } : {}) },
     });
-    throw errors.badGateway(
-      `${message} Podés seguir usando el panel y cargar publicaciones a mano.`,
-    );
+    throw errors.badGateway(`${full} Podés seguir usando el panel y cargar publicaciones a mano.`);
   }
 
   // Defensa en profundidad: el cliente ya filtra, pero el servicio no confía en que lo haga.

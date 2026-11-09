@@ -88,8 +88,10 @@ const GENERIC = {
   updatedAt: 'Fecha y hora de la última modificación (la actualiza Prisma sola).',
 };
 const DESC = {
-  'GalleryItem.area': 'Dónde se muestra: STUDENTS (carrusel de Estudiantes) o CAREER (La carrera).',
-  'GalleryItem.order': 'Posición dentro del área (de menor a mayor).',
+  'Gallery.name': 'Nombre de la galería; se ve como título de la sección donde se muestra.',
+  'Gallery.order': 'Posición de la galería en la lista del panel.',
+  'GalleryItem.galleryId': 'Galería a la que pertenece la foto (se borra junto con ella).',
+  'GalleryItem.order': 'Posición dentro de la galería (de menor a mayor).',
   'GalleryItem.title': 'Título de la diapositiva (opcional).',
   'GalleryItem.caption': 'Descripción visible debajo de la imagen (opcional).',
   'GalleryItem.alt': 'Texto alternativo de la imagen para lectores de pantalla.',
@@ -243,7 +245,10 @@ const DESC = {
   'SiteSetting.key':
     'Nombre del ajuste (por ejemplo institution_name, address, instagram_hashtag).',
   'SiteSetting.value': 'Valor del ajuste, siempre texto.',
-  'ContentSection.page': 'Página a la que pertenece: institucional, carrera o ingreso.',
+  'ContentSection.page':
+    'Página a la que pertenece: institucional, carrera, estudiantes, ingreso o inscripciones.',
+  'ContentSection.kind': 'Tipo de sección: TEXT (título y texto) o GALLERY (muestra una galería).',
+  'ContentSection.galleryId': 'Galería que se muestra cuando la sección es de tipo GALLERY.',
   'ContentSection.slug':
     'Identificador corto de la sección dentro de la página. (página, slug) no se repite.',
   'ContentSection.title': 'Título de la sección.',
@@ -306,7 +311,8 @@ const ENTITY_DESC = {
   IntegrationConfig:
     'Configuración de integraciones cargada por el cliente desde el panel, cifrada.',
   AuditLog: 'Registro de auditoría: quién hizo qué y cuándo.',
-  GalleryItem: 'Diapositivas editables de los carruseles del sitio (Estudiantes y La carrera).',
+  Gallery: 'Galerías de fotos con nombre; se agregan a cualquier página como sección.',
+  GalleryItem: 'Fotos de una galería, con título, descripción y categoría.',
   Teacher: 'Plantel docente y materias a cargo (con baja lógica).',
 };
 const ENUM_DESC = {
@@ -376,6 +382,7 @@ const AREAS = {
       'AcademicTerm',
       'Schedule',
       'ExamCall',
+      'Gallery',
       'GalleryItem',
       'Teacher',
     ],
@@ -397,6 +404,7 @@ const AREAS = {
       'ContentSection',
       'ExternalLink',
       'ContactMessage',
+      'Gallery',
       'GalleryItem',
       'Teacher',
     ],

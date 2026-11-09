@@ -1,4 +1,4 @@
-import { parseGallery, type GalleryItem, type SettingKey } from '@ifts2/shared';
+import { isBlockVisible, parseHiddenBlocks, type SettingKey } from '@ifts2/shared';
 import { api } from './api';
 
 /**
@@ -28,8 +28,8 @@ export interface SiteInfo {
   heroImage2: string;
   careerImage: string;
   ingresoImage: string;
-  /** Galería "Vida en la cocina" de Estudiantes. */
-  gallery: GalleryItem[];
+  /** Bloques fijos ocultos desde "Páginas del sitio" (ADR-042). Usar `showBlock`. */
+  hiddenBlocks: string[];
 }
 
 /** Valores genéricos mientras no hay configuración (nunca texto de una institución concreta). */
@@ -52,7 +52,7 @@ const GENERIC: SiteInfo = {
   heroImage2: '',
   careerImage: '',
   ingresoImage: '',
-  gallery: [],
+  hiddenBlocks: [],
 };
 
 export function toSiteInfo(s: Partial<Record<SettingKey, string>>): SiteInfo {
@@ -76,7 +76,7 @@ export function toSiteInfo(s: Partial<Record<SettingKey, string>>): SiteInfo {
     heroImage2: s.hero_image_2 ?? '',
     careerImage: s.career_image ?? '',
     ingresoImage: s.ingreso_image ?? '',
-    gallery: parseGallery(s.student_gallery),
+    hiddenBlocks: parseHiddenBlocks(s.hidden_blocks),
   };
 }
 
@@ -91,3 +91,10 @@ export async function getSiteInfo(): Promise<SiteInfo> {
     return GENERIC;
   }
 }
+
+/**
+ * ¿Se muestra este bloque fijo de una página? (ADR-042). Se consulta al renderizar: ocultar un bloque
+ * en el panel lo saca del sitio en cuanto vence la caché (60 s), sin tareas programadas.
+ */
+export const showBlock = (site: SiteInfo, id: string): boolean =>
+  isBlockVisible(site.hiddenBlocks, id);

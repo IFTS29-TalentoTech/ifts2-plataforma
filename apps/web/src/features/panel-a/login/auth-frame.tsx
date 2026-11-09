@@ -2,11 +2,12 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { SiteFooter } from '@/components/layout/site-footer';
+import { SiteLogo } from '@/components/layout/site-logo';
 import type { SiteInfo } from '@/lib/site';
 
 /**
  * Marco de las pantallas de acceso (login y cambio obligatorio de contraseña), FUERA del shell del panel
- * (Figma 13-login y "Mobile · Login"): barra superior mínima con "Volver al portal institucional",
+ * (Figma 13-login y "Mobile · Login"): barra superior mínima, con el logo configurado (o las iniciales), con "Volver al portal institucional",
  * tarjeta centrada y el pie institucional. El nombre y los textos salen de la configuración del sitio
  * (ADR-22): nada institucional escrito en el código.
  */
@@ -19,12 +20,7 @@ export function AuthFrame({ site, children }: { site: SiteInfo; children: ReactN
             href="/"
             className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:shadow-focus"
           >
-            <span
-              aria-hidden="true"
-              className="flex h-10 w-10 items-center justify-center rounded-md bg-accent-3 font-display text-sm font-extrabold text-base"
-            >
-              {site.short.replace(/[^\p{L}\p{N}]/gu, '').slice(0, 4)}
-            </span>
+            <SiteLogo short={site.short} src={site.logoUrl || undefined} />
             <span className="font-display text-lg font-bold text-accent-3">{site.short}</span>
           </Link>
           <Link

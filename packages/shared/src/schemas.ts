@@ -3,7 +3,7 @@ import {
   CATEGORY_KINDS,
   CONTENT_PAGES,
   DOCUMENT_KINDS,
-  GALLERY_AREAS,
+  CONTENT_SECTION_KINDS,
   GALLERY_MAX_PER_AREA,
   NOTICE_AUDIENCES,
   NOTICE_VIEW_STATUSES,
@@ -15,6 +15,7 @@ import {
   SOCIAL_STATUSES,
   TERM_KINDS,
 } from './enums';
+import { HIDEABLE_BLOCK_IDS } from './page-blocks';
 import { ACTIONS, RESERVED_ACTIONS } from './permissions';
 import { endOfDayBA, startOfDayBA } from './time';
 
@@ -163,7 +164,6 @@ export const url = (label: string, gender?: Gender) => {
  * direcciones de un CDN o del almacenamiento del instituto.
  */
 export const IMAGE_REF_RE = /^(\/(?!\/)[^\s?#]+|https?:\/\/\S+)$/i;
-const LINE_BREAK = /\r?\n/;
 export const imageRef = (label: string, gender?: Gender) => {
   const w = agree(label, gender);
   return z
@@ -175,34 +175,6 @@ export const imageRef = (label: string, gender?: Gender) => {
       `${label} debe ser una ruta del sitio (que empiece con /) o una dirección web completa.`,
     );
 };
-
-/** Máximo de tarjetas de la galería "Vida en la cocina". */
-export const GALLERY_MAX_ITEMS = 6;
-
-/** Una tarjeta de la galería: imagen, título y descripción (los dos últimos opcionales). */
-export interface GalleryItem {
-  src: string;
-  title: string;
-  description: string;
-}
-
-/**
- * Galería de Estudiantes (`student_gallery`): una tarjeta por línea con el formato
- * `ruta | título | descripción`. Las líneas vacías o con una ruta inválida se ignoran.
- */
-export function parseGallery(raw: string | null | undefined): GalleryItem[] {
-  if (!raw) return [];
-  return raw
-    .split(LINE_BREAK)
-    .map((line) => line.split('|').map((part) => part.trim()))
-    .filter(([src]) => !!src && IMAGE_REF_RE.test(src))
-    .slice(0, GALLERY_MAX_ITEMS)
-    .map(([src, title, description]) => ({
-      src: src!,
-      title: title ?? '',
-      description: description ?? '',
-    }));
-}
 
 const password = (label = 'La contraseña') =>
   z
@@ -473,6 +445,8 @@ export const socialApproveInput = z
         message: 'Confirmá que existe consentimiento para publicar imágenes de estudiantes.',
       }),
     }),
+    /** Publicar sin portada cuando la imagen no se pudo usar (la foto no bloquea la publicación). */
+    withoutImage: z.boolean().optional(),
   })
   .superRefine(windowRefine);
 export type SocialApproveInput = z.infer<typeof socialApproveInput>;
@@ -671,19 +645,6 @@ export const settingsUpdateInput = z
     hero_image_2: imageRef('La segunda imagen de Inicio', 'f'),
     career_image: imageRef('La imagen de La carrera', 'f'),
     ingreso_image: imageRef('La imagen de Ingreso', 'f'),
-    student_gallery: z
-      .string({ invalid_type_error: 'La galería no es válida.' })
-      .trim()
-      .max(2000, 'La galería es demasiado larga.')
-      .refine(
-        (v) =>
-          v === '' ||
-          v
-            .split(LINE_BREAK)
-            .filter((l) => l.trim())
-            .every((l) => IMAGE_REF_RE.test((l.split('|')[0] ?? '').trim())),
-        'Cada línea de la galería debe empezar con una ruta del sitio (/...) o una dirección web, y luego título y descripción separados por |.',
-      ),
   })
   .partial()
   .strict('Hay ajustes que no existen.')
@@ -695,13 +656,24 @@ export const linkInput = z.object({
   title: text('El título del enlace', 160),
   url: url('La dirección del enlace'),
   description: optionalText('La descripción', 400),
+  /** Sin uso en el panel desde ADR-039 (se conserva por compatibilidad). */
   group: text('El grupo', 60).default('academico'),
   order: z.number().int().min(0).max(1000).default(0),
   visible: z.boolean().default(true),
+  /** ADR-039: se muestra en los accesos de Inicio. */
+  showHome: z.boolean().default(true),
+  /** ADR-039: se muestra en los accesos de Estudiantes. */
+  showStudents: z.boolean().default(true),
   /** A07: es el enlace donde los alumnos se inscriben (se muestra en /inscripciones). */
   enrollment: z.boolean().default(false),
 });
 export type LinkInput = z.infer<typeof linkInput>;
+
+/** Nuevo orden de los enlaces: ids de TODOS, en el orden deseado (ADR-039). */
+export const linkOrderInput = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(200),
+});
+export type LinkOrderInput = z.infer<typeof linkOrderInput>;
 
 export const linkUpdateInput = linkInput
   .partial()
@@ -725,25 +697,26 @@ export const galleryTextFields = z.object({
   category: galleryText('La categoría', 40).default(''),
 });
 
-/** Alta de una diapositiva: el archivo va aparte (campo `file`); acá el área y los textos. */
-export const galleryCreateFields = galleryTextFields.extend({
-  area: enumOf('El área', GALLERY_AREAS),
-});
+/** Alta de una foto: el archivo va aparte (campo `file`); acá solo los textos. La galería va en la ruta. */
+export const galleryCreateFields = galleryTextFields;
 export type GalleryCreateFields = z.infer<typeof galleryCreateFields>;
+
+/** Crear o renombrar una galería. El nombre se ve en el panel y como título de la sección en el sitio. */
+export const galleryNameInput = z.object({
+  name: galleryText('El nombre de la galería', 80).min(
+    1,
+    'El nombre de la galería es obligatorio.',
+  ),
+});
+export type GalleryNameInput = z.infer<typeof galleryNameInput>;
 
 export const galleryUpdateInput = galleryTextFields
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'No hay cambios para guardar.' });
 export type GalleryUpdateInput = z.infer<typeof galleryUpdateInput>;
 
-/** GET /public/gallery: el área es obligatoria. */
-export const publicGalleryQuery = z.object({ area: enumOf('El área', GALLERY_AREAS) });
-
-export const galleryListQuery = z.object({ area: enumOf('El área', GALLERY_AREAS).optional() });
-
 /** Nuevo orden de una galería: los ids de TODAS sus diapositivas, en el orden deseado. */
 export const galleryOrderInput = z.object({
-  area: enumOf('El área', GALLERY_AREAS),
   ids: z
     .array(uuid('El identificador'))
     .min(1, 'Indicá el orden de las diapositivas.')
@@ -813,15 +786,59 @@ export type TeacherOrderInput = z.infer<typeof teacherOrderInput>;
 
 export const contentPageParam = enumOf('La página', CONTENT_PAGES);
 
-export const contentSectionInput = z.object({
-  title: text('El título de la sección', 160),
-  body: z
-    .string({ required_error: 'El texto es obligatorio.' })
-    .max(50000, 'El texto es demasiado largo.'),
-  order: z.number().int().min(0).max(1000).default(0),
-  visible: z.boolean().default(true),
-});
+export const contentSectionInput = z
+  .object({
+    title: text('El título de la sección', 160),
+    body: z
+      .string({ required_error: 'El texto es obligatorio.' })
+      .max(50000, 'El texto es demasiado largo.')
+      .default(''),
+    order: z.number().int().min(0).max(1000).default(0),
+    visible: z.boolean().default(true),
+    /** Texto (por defecto) o galería: la galería se elige con `galleryId` (ADR-041). */
+    kind: enumOf('El tipo de sección', CONTENT_SECTION_KINDS).default('TEXT'),
+    galleryId: uuid('La galería').nullish(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.kind === 'GALLERY' && !v.galleryId) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['galleryId'],
+        message: 'Elegí qué galería querés mostrar en esta sección.',
+      });
+    }
+    if (v.kind === 'TEXT' && !v.body.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['body'], message: 'El texto es obligatorio.' });
+    }
+  });
 export type ContentSectionInput = z.infer<typeof contentSectionInput>;
+
+/** Mostrar u ocultar una sección o un bloque fijo (PATCH /content/:page/:slug, PUT /content/blocks/:id). */
+export const contentVisibleInput = z.object({
+  visible: z.boolean({ required_error: 'Indicá si se muestra o no.' }),
+});
+export type ContentVisibleInput = z.infer<typeof contentVisibleInput>;
+
+/**
+ * Nuevo orden de un grupo de secciones de una página (PUT /content/:page/order): los identificadores del
+ * grupo en el orden deseado. La API reparte entre ellas los mismos números de posición que ya tenían.
+ */
+export const contentOrderInput = z.object({
+  slugs: z
+    .array(z.string().trim().min(1).max(60))
+    .min(2, 'Hacen falta al menos dos secciones para ordenar.')
+    .max(200),
+});
+export type ContentOrderInput = z.infer<typeof contentOrderInput>;
+
+/** Identificador de un bloque fijo (ver `PAGE_LAYOUT`). */
+export const blockIdParams = z.object({
+  blockId: z
+    .string()
+    .trim()
+    .max(80)
+    .refine((v) => HIDEABLE_BLOCK_IDS.includes(v), 'Ese bloque no se puede ocultar o no existe.'),
+});
 
 // ---------- contacto ----------
 

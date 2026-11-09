@@ -172,7 +172,12 @@ export async function downloadImage(
         autoSelectFamily: true,
         lookup: publicLookup(controller.signal),
         signal: controller.signal,
-        headers: { 'accept-encoding': 'identity' },
+        headers: {
+          'accept-encoding': 'identity',
+          // Algunas CDN devuelven una página (HTML) si el pedido no parece de un navegador o no pide imagen.
+          accept: 'image/jpeg,image/png,image/webp,image/*;q=0.8,*/*;q=0.5',
+          'user-agent': 'Mozilla/5.0 (compatible; sitio-institucional-imagenes/1.0)',
+        },
       };
       const outgoing = request(current, options);
       req = outgoing;

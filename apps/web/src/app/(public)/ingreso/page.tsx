@@ -10,6 +10,7 @@
  * - Una sección cuyo Markdown tiene una LISTA NUMERADA se dibuja como pasos (tarjetas "1 · ...").
  * - El resto de su texto (por ejemplo "Fechas sujetas a confirmación") va en "Próxima convocatoria".
  * - Las demás secciones (p. ej. "Material de consulta") se dibujan como tarjetas.
+ * Los avisos y la franja de dudas se pueden ocultar desde "Páginas del sitio" (`showBlock`, ADR-042).
  * Del ingreso solo está documentado el requisito de secundario completo; fechas y documentación quedan
  * como [a confirmar con el cliente] (Q122).
  */
@@ -17,11 +18,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button, Card } from '@/components/ui';
 import { NoticeCard } from '@/features/public/academic-parts';
+import { GallerySections } from '@/features/public/gallery-sections';
 import { loadContent, loadStudents } from '@/features/public/data';
 import { MarkdownBlocks, parseMarkdown, renderInline } from '@/features/public/markdown';
 import { HeroImage, PageHero, Section, SectionError } from '@/features/public/parts';
 import { cn } from '@/lib/cn';
-import { getSiteInfo } from '@/lib/site';
+import { getSiteInfo, showBlock } from '@/lib/site';
 
 export const metadata: Metadata = { title: 'Ingreso' };
 // Debe ser un literal (Next lo analiza estáticamente); coincide con PUBLIC_REVALIDATE de data.ts.
@@ -126,7 +128,9 @@ export default async function Page() {
         </>
       )}
 
-      {notices.length > 0 && (
+      <GallerySections galleries={content.ok ? (content.data.galleries ?? []) : []} />
+
+      {showBlock(site, 'ingreso.avisos') && notices.length > 0 && (
         <Section eyebrow="Cartelera" title="Avisos para aspirantes" id="avisos">
           <ul className="grid gap-4 md:grid-cols-2">
             {notices.map((n) => (
@@ -138,17 +142,19 @@ export default async function Page() {
         </Section>
       )}
 
-      <Section>
-        <div className="flex flex-col items-start justify-between gap-4 rounded-lg bg-primary-strong p-6 text-surface sm:flex-row sm:items-center">
-          <div>
-            <h2 className="font-display text-xl font-bold">¿Tenés dudas sobre el ingreso?</h2>
-            <p className="mt-1 text-sm">Escribinos y te respondemos a la brevedad.</p>
+      {showBlock(site, 'ingreso.consultas') && (
+        <Section>
+          <div className="flex flex-col items-start justify-between gap-4 rounded-lg bg-primary-strong p-6 text-surface sm:flex-row sm:items-center">
+            <div>
+              <h2 className="font-display text-xl font-bold">¿Tenés dudas sobre el ingreso?</h2>
+              <p className="mt-1 text-sm">Escribinos y te respondemos a la brevedad.</p>
+            </div>
+            <Button asChild variant="secondary">
+              <Link href="/institucional#contacto">Ir a contacto</Link>
+            </Button>
           </div>
-          <Button asChild variant="secondary">
-            <Link href="/institucional#contacto">Ir a contacto</Link>
-          </Button>
-        </div>
-      </Section>
+        </Section>
+      )}
     </>
   );
 }

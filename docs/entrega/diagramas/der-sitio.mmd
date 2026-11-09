@@ -14,6 +14,8 @@ erDiagram
     String body
     Int order
     Boolean visible
+    String kind
+    String galleryId FK
   }
   ExternalLink {
     String id PK
@@ -23,6 +25,8 @@ erDiagram
     String group
     Int order
     Boolean visible
+    Boolean showHome
+    Boolean showStudents
     Boolean enrollment
   }
   ContactMessage {
@@ -36,9 +40,16 @@ erDiagram
     DateTime receivedAt
     Boolean mailSent
   }
+  Gallery {
+    String id PK
+    String name
+    Int order
+    DateTime createdAt
+    DateTime updatedAt
+  }
   GalleryItem {
     String id PK
-    GalleryArea area
+    String galleryId FK
     Int order
     String title
     String caption
@@ -59,3 +70,5 @@ erDiagram
     DateTime createdAt
     DateTime updatedAt
   }
+  Gallery |o--o{ ContentSection : "galleryId"
+  Gallery ||--o{ GalleryItem : "galleryId"

@@ -1,13 +1,7 @@
 import { can, type Action, type PermissionList } from '@ifts2/shared';
 
 export const PANEL_CAPABILITIES = {
-  configuration: [
-    'settings:manage',
-    'users:manage',
-    'content:manage',
-    'links:manage',
-    'integrations:manage',
-  ],
+  configuration: ['settings:manage', 'users:manage', 'links:manage', 'integrations:manage'],
   schedules: ['schedules:manage', 'examCalls:manage', 'terms:manage', 'terms:setPublic'],
   publications: ['publications:manage', 'social:moderate'],
 } as const satisfies Record<string, readonly Action[]>;
@@ -66,7 +60,9 @@ export const PANEL_NAV: PanelNavItem[] = [
     anyOf: PANEL_CAPABILITIES.schedules,
   },
   { href: '/panel/archivo', label: 'Archivo', permission: 'documents:manage' },
-  // Galerías de fotos del sitio (RF09, ADR-036): ADMIN y EDITOR por defecto.
+  // Textos, imágenes y secciones de cada página del sitio (RF01/RF02, ADR-041): ADMIN por defecto.
+  { href: '/panel/paginas', label: 'Páginas del sitio', permission: 'content:manage' },
+  // Galerías de fotos del sitio (RF09, ADR-036, ADR-041): ADMIN y EDITOR por defecto.
   { href: '/panel/galerias', label: 'Galerías', permission: 'gallery:manage' },
   // Plantel docente (RF10, ADR-037): ADMIN y EDITOR por defecto.
   { href: '/panel/plantel', label: 'Plantel docente', permission: 'teachers:manage' },

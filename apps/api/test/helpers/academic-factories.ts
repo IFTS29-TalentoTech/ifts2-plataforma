@@ -102,6 +102,8 @@ export function createLinkRow(
     visible: boolean;
     order: number;
     enrollment: boolean;
+    showHome: boolean;
+    showStudents: boolean;
   }> = {},
 ) {
   return testPrisma.externalLink.create({
@@ -111,6 +113,8 @@ export function createLinkRow(
       visible: over.visible ?? true,
       order: over.order ?? 0,
       enrollment: over.enrollment ?? false,
+      showHome: over.showHome ?? true,
+      showStudents: over.showStudents ?? true,
     },
   });
 }

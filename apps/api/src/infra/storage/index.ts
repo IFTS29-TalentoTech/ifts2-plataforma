@@ -6,7 +6,7 @@ import type { StorageProvider } from './types';
 
 export * from './types';
 export { LocalDiskStorage, InMemoryStorage, S3Storage };
-export { storeUpload, sniffMime, sanitizeFilename } from './upload';
+export { storeUpload, sniffMime, sanitizeFilename, looksLikeHtml } from './upload';
 
 /** Fábrica por entorno (STORAGE_PROVIDER). La validación de variables faltantes la hace loadConfig. */
 export function createStorage(config: AppConfig): StorageProvider {

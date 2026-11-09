@@ -5,8 +5,7 @@
  *   GET /public/publications         novedades vigentes (o el histórico del año con ?archived=true)
  *   GET /public/publications/:id     detalle
  *   GET /public/students             ciclo público, horarios, llamados, avisos y enlaces
- *   GET /public/content/:page        secciones de institucional | carrera | ingreso
- *   GET /public/gallery?area=        diapositivas del carrusel de Estudiantes o La carrera (RF09)
+ *   GET /public/content/:page        secciones de texto y de galería (RF09, ADR-041) de cada página
  *   GET /public/teachers             plantel docente visible (RF10)
  *   GET /public/settings             datos institucionales (cabecera y pie, ADR-022)
  *
@@ -25,12 +24,10 @@ import type { Prisma } from '@prisma/client';
 import {
   CONTENT_PAGES,
   idParam,
-  publicGalleryQuery,
   publicPublicationsQuery,
   publicStudentsQuery,
   type ContentPage,
   type PublicContentDto,
-  type PublicGalleryDto,
   type PublicTeachersDto,
   type PublicHomeDto,
   type PublicPublicationDetailDto,
@@ -40,9 +37,14 @@ import {
 import { z } from 'zod';
 import { errors } from '../../infra/errors';
 import { sanitizeMarkdown } from '../../lib/markdown';
-import { readRawSettings, asBool, toPublicSettingsDto } from '../../lib/settings';
+import {
+  readRawSettings,
+  asBool,
+  resolveSettingImages,
+  toPublicSettingsDto,
+} from '../../lib/settings';
 import { valid, validate } from '../../middleware/validate';
-import { listPublicGallery } from '../gallery/gallery.service';
+import { listPublicGallerySections } from '../gallery/gallery.service';
 import { listPublicTeachers } from '../teachers/teachers.service';
 import {
   currentYearBA,
@@ -87,8 +89,8 @@ router.get('/home', async (req, res) => {
   const [settings, links, pubs, notices, term] = await Promise.all([
     readRawSettings(prisma),
     prisma.externalLink.findMany({
-      where: { visible: true },
-      orderBy: [{ group: 'asc' }, { order: 'asc' }, { title: 'asc' }],
+      where: { visible: true, showHome: true }, // ADR-039: solo los marcados «Inicio»
+      orderBy: [{ order: 'asc' }, { title: 'asc' }],
     }),
     prisma.publication.findMany({
       where: {
@@ -251,9 +253,10 @@ router.get('/students', validate({ query: publicStudentsQuery }), async (req, re
   const [term, settings, links, notices] = await Promise.all([
     prisma.academicTerm.findFirst({ where: { publicCurrent: true } }),
     readRawSettings(prisma),
+    // ADR-039: «Estudiantes» e «Inscripciones» se piden juntos y se separan más abajo.
     prisma.externalLink.findMany({
-      where: { visible: true },
-      orderBy: [{ group: 'asc' }, { order: 'asc' }, { title: 'asc' }],
+      where: { visible: true, OR: [{ showStudents: true }, { enrollment: true }] },
+      orderBy: [{ order: 'asc' }, { title: 'asc' }],
     }),
     prisma.notice.findMany({
       where: {
@@ -303,7 +306,8 @@ router.get('/students', validate({ query: publicStudentsQuery }), async (req, re
     notices: await Promise.all(
       stillVisibleNotices(notices, now).map((n) => toPublicNotice(storage, n)),
     ),
-    links: links.map(toQuickLink),
+    links: links.filter((l) => l.showStudents).map(toQuickLink),
+    enrollmentLinks: links.filter((l) => l.enrollment).map(toQuickLink),
   };
   cache(res, CACHE_DYNAMIC).json(body);
 });
@@ -317,7 +321,7 @@ router.get('/content/:page', async (req, res) => {
     throw errors.notFound('La página no existe.');
   }
   const rows = await req.ctx.prisma.contentSection.findMany({
-    where: { page, visible: true },
+    where: { page, visible: true, kind: 'TEXT' },
     orderBy: [{ order: 'asc' }, { slug: 'asc' }],
   });
   const body: PublicContentDto = {
@@ -328,16 +332,9 @@ router.get('/content/:page', async (req, res) => {
       body: sanitizeMarkdown(s.body), // defensa extra: aunque el dato haya entrado por otro camino
       order: s.order,
     })),
+    // Secciones de galería (ADR-041): con sus fotos ya resueltas; las vacías se omiten.
+    galleries: await listPublicGallerySections(req.ctx, page),
   };
-  cache(res, CACHE_STATIC).json(body);
-});
-
-// ---------------------------------------------------------------------------
-// GET /public/gallery?area=STUDENTS|CAREER — diapositivas del carrusel (RF09, ADR-036)
-// ---------------------------------------------------------------------------
-router.get('/gallery', validate({ query: publicGalleryQuery }), async (req, res) => {
-  const { area } = valid<z.infer<typeof publicGalleryQuery>>(req, 'query');
-  const body: PublicGalleryDto = { area, items: await listPublicGallery(req.ctx, area) };
   cache(res, CACHE_STATIC).json(body);
 });
 
@@ -353,5 +350,8 @@ router.get('/teachers', async (req, res) => {
 // GET /public/settings
 // ---------------------------------------------------------------------------
 router.get('/settings', async (req, res) => {
-  cache(res, CACHE_STATIC).json(toPublicSettingsDto(await readRawSettings(req.ctx.prisma)));
+  const raw = await readRawSettings(req.ctx.prisma);
+  cache(res, CACHE_STATIC).json(
+    toPublicSettingsDto(await resolveSettingImages(req.ctx.storage, raw)),
+  );
 });
