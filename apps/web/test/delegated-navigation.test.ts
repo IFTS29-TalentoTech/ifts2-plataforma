@@ -4,7 +4,8 @@ import { PANEL_NAV } from '../src/lib/nav';
 
 const cases: [Action, string][] = [
   ['users:manage', '/panel/configuracion'],
-  ['content:manage', '/panel/configuracion'],
+  ['content:manage', '/panel/paginas'],
+  ['gallery:manage', '/panel/galerias'],
   ['links:manage', '/panel/configuracion'],
   ['integrations:manage', '/panel/configuracion'],
   ['terms:manage', '/panel/horarios'],

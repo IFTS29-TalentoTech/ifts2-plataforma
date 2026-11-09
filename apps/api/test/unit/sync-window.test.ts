@@ -49,6 +49,16 @@ describe('planSync', () => {
     expect(planSync({ state: state(), identity, force: true, now }).fullReason).toBe('forced');
   });
 
+  it('cuenta desconocida (la consulta liviana falló) => completa: no se compara con lo guardado', () => {
+    expect(
+      planSync({ state: state(), identity: { ...identity, accountId: '' }, now }),
+    ).toMatchObject({
+      mode: 'full',
+      since: null,
+      fullReason: 'account',
+    });
+  });
+
   it('cambio de cuenta, de hashtag o de método de conexión => completa, con su motivo', () => {
     expect(
       planSync({ state: state(), identity: { ...identity, accountId: '999' }, now }),

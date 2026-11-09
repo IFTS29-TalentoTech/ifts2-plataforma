@@ -9,8 +9,7 @@ export const metadata: Metadata = { title: 'Plantel docente' };
 
 /**
  * /panel/plantel (RF10, US-29, ADR-037). Permiso `teachers:manage` (ADMIN y EDITOR por defecto). Es una
- * página propia porque el rol EDITOR no tiene `settings:manage` y no entra a Configuración; la misma
- * pantalla también está como pestaña dentro de Configuración.
+ * página propia (menú lateral): ya no está también como pestaña de Configuración (ADR-041).
  */
 export default async function Page() {
   const session = await requireSession();

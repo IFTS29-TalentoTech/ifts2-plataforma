@@ -76,13 +76,23 @@ export class InstagramNotConfiguredError extends Error {
 export class InstagramApiError extends Error {
   constructor(
     message: string,
-    readonly opts: { status?: number; code?: number; tokenInvalid?: boolean } = {},
+    readonly opts: {
+      status?: number;
+      code?: number;
+      tokenInvalid?: boolean;
+      /** Motivo técnico que informó Meta (sin el token), para mostrar al equipo. */
+      detail?: string;
+    } = {},
   ) {
     super(message);
     this.name = 'InstagramApiError';
   }
   get status() {
     return this.opts.status;
+  }
+  /** Motivo técnico de Meta (código, mensaje, rastreo), sin secretos. */
+  get detail() {
+    return this.opts.detail;
   }
   get tokenInvalid() {
     return this.opts.tokenInvalid ?? false;

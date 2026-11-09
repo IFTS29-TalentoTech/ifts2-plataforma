@@ -4,10 +4,11 @@ import {
   GALLERY_MAX_PER_AREA,
   PERMISSION_GROUPS,
   can,
+  contentSectionInput,
   galleryCreateFields,
+  galleryNameInput,
   galleryOrderInput,
   galleryUpdateInput,
-  publicGalleryQuery,
 } from '../src';
 
 describe('permiso gallery:manage (RF09, ADR-036)', () => {
@@ -26,28 +27,33 @@ describe('permiso gallery:manage (RF09, ADR-036)', () => {
   });
 });
 
-describe('esquemas de galería', () => {
-  it('el alta exige un área válida y completa los textos con vacío', () => {
-    const ok = galleryCreateFields.parse({ area: 'CAREER' });
-    expect(ok).toEqual({ area: 'CAREER', title: '', caption: '', alt: '', category: '' });
-    expect(galleryCreateFields.safeParse({ area: 'OTRA' }).success).toBe(false);
-    expect(galleryCreateFields.safeParse({}).success).toBe(false);
+describe('esquemas de galería (ADR-041)', () => {
+  it('el nombre de la galería es obligatorio, se recorta y admite hasta 80 caracteres', () => {
+    expect(galleryNameInput.parse({ name: '  Vida en la cocina ' }).name).toBe('Vida en la cocina');
+    expect(galleryNameInput.safeParse({ name: '   ' }).success).toBe(false);
+    expect(galleryNameInput.safeParse({}).success).toBe(false);
+    expect(galleryNameInput.safeParse({ name: 'x'.repeat(81) }).success).toBe(false);
+  });
+
+  it('el alta de una foto completa los textos con vacío', () => {
+    expect(galleryCreateFields.parse({})).toEqual({
+      title: '',
+      caption: '',
+      alt: '',
+      category: '',
+    });
   });
 
   it('recorta espacios y limita el largo de los textos con mensajes claros', () => {
-    expect(galleryCreateFields.parse({ area: 'STUDENTS', title: '  Cocina  ' }).title).toBe(
-      'Cocina',
-    );
-    const long = galleryCreateFields.safeParse({ area: 'STUDENTS', title: 'x'.repeat(81) });
+    expect(galleryCreateFields.parse({ title: '  Cocina  ' }).title).toBe('Cocina');
+    const long = galleryCreateFields.safeParse({ title: 'x'.repeat(81) });
     expect(long.success).toBe(false);
     if (!long.success) expect(long.error.issues[0]!.message).toMatch(/80 caracteres/);
   });
 
   it('la categoría es opcional, se recorta y admite hasta 40 caracteres (RF09)', () => {
-    expect(galleryCreateFields.parse({ area: 'STUDENTS', category: '  Eventos ' }).category).toBe(
-      'Eventos',
-    );
-    const long = galleryCreateFields.safeParse({ area: 'STUDENTS', category: 'x'.repeat(41) });
+    expect(galleryCreateFields.parse({ category: '  Eventos ' }).category).toBe('Eventos');
+    const long = galleryCreateFields.safeParse({ category: 'x'.repeat(41) });
     expect(long.success).toBe(false);
     if (!long.success) expect(long.error.issues[0]!.message).toMatch(/40 caracteres/);
     expect(galleryUpdateInput.safeParse({ category: '' }).success).toBe(true);
@@ -60,19 +66,32 @@ describe('esquemas de galería', () => {
 
   it('el orden pide ids válidos y no más del máximo por galería', () => {
     const id = '6b0a6a54-3d0c-4a38-8d26-3a8e7f2c1111';
-    expect(galleryOrderInput.safeParse({ area: 'STUDENTS', ids: [id] }).success).toBe(true);
-    expect(galleryOrderInput.safeParse({ area: 'STUDENTS', ids: [] }).success).toBe(false);
-    expect(galleryOrderInput.safeParse({ area: 'STUDENTS', ids: ['x'] }).success).toBe(false);
+    expect(galleryOrderInput.safeParse({ ids: [id] }).success).toBe(true);
+    expect(galleryOrderInput.safeParse({ ids: [] }).success).toBe(false);
+    expect(galleryOrderInput.safeParse({ ids: ['x'] }).success).toBe(false);
     expect(
       galleryOrderInput.safeParse({
-        area: 'STUDENTS',
         ids: Array.from({ length: GALLERY_MAX_PER_AREA + 1 }, () => id),
       }).success,
     ).toBe(false);
   });
+});
 
-  it('la lectura pública exige el área', () => {
-    expect(publicGalleryQuery.safeParse({}).success).toBe(false);
-    expect(publicGalleryQuery.safeParse({ area: 'STUDENTS' }).success).toBe(true);
+describe('secciones de contenido de texto o de galería (ADR-041)', () => {
+  const id = '6b0a6a54-3d0c-4a38-8d26-3a8e7f2c1111';
+
+  it('una sección de texto exige texto y por defecto es de texto', () => {
+    expect(contentSectionInput.parse({ title: 'Hola', body: 'Texto' }).kind).toBe('TEXT');
+    expect(contentSectionInput.safeParse({ title: 'Hola', body: '  ' }).success).toBe(false);
+  });
+
+  it('una sección de galería exige elegir la galería pero no el texto', () => {
+    expect(contentSectionInput.safeParse({ title: 'Fotos', kind: 'GALLERY' }).success).toBe(false);
+    expect(
+      contentSectionInput.safeParse({ title: 'Fotos', kind: 'GALLERY', galleryId: id }).success,
+    ).toBe(true);
+    expect(
+      contentSectionInput.safeParse({ title: 'Fotos', kind: 'OTRO', galleryId: id }).success,
+    ).toBe(false);
   });
 });

@@ -35,6 +35,8 @@ export class InstagramMock {
   pageSize = 2;
   /** Si se define, `/me/media` y `/me` responden este error. */
   mediaError: { status: number; body: unknown } | null = null;
+  /** Si se define, SOLO `/me` responde este error (la lectura de publicaciones sigue andando). */
+  accountError: { status: number; body: unknown } | null = null;
   /** Si se define, `/refresh_access_token` responde este error. */
   refreshError: { status: number; body: unknown } | null = null;
   /** Segundos de vida del token que entrega el refresh / canje. */
@@ -67,6 +69,7 @@ export class InstagramMock {
     this.media = [];
     this.pageSize = 2;
     this.mediaError = null;
+    this.accountError = null;
     this.refreshError = null;
     this.expiresIn = 5_184_000;
     this.shortTokenShape = 'flat';
@@ -134,6 +137,8 @@ export class InstagramMock {
       });
     }
     if (url.pathname === '/me') {
+      if (this.accountError)
+        return this.json(res, this.accountError.status, this.accountError.body);
       if (this.mediaError) return this.json(res, this.mediaError.status, this.mediaError.body);
       return this.json(res, 200, { username: 'cuenta_simulada', id: this.accountId });
     }

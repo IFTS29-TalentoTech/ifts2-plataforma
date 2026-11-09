@@ -126,7 +126,7 @@ describe('fetchRecentMedia', () => {
     mock.mediaError = { status: 429, body: { error: { code: 4, message: 'rate' } } };
     await expect(client().fetchRecentMedia()).rejects.toThrow(/limitó temporalmente/);
     mock.mediaError = { status: 500, body: {} };
-    await expect(client().fetchRecentMedia()).rejects.toThrow(/respondió con un error \(500\)/);
+    await expect(client().fetchRecentMedia()).rejects.toThrow(/problema temporal \(500\)/);
   });
 
   it('falla de red: mensaje claro sin detalles internos ni el token', async () => {
@@ -292,5 +292,150 @@ describe('refreshLongLivedToken (renovación)', () => {
     const err = await refreshLongLivedToken('TOK', mock.fetch).catch((e) => e);
     expect(err).toBeInstanceOf(InstagramApiError);
     expect(err.tokenInvalid).toBe(true);
+  });
+});
+
+describe('clasificación de errores de Graph (el token solo está vencido con 401 / 190 / 102)', () => {
+  /** Cada respuesta de error de Meta, con el estado HTTP y el código con que suele llegar. */
+  const cases: Array<{
+    name: string;
+    status: number;
+    error: Record<string, unknown>;
+    tokenInvalid: boolean;
+    message: RegExp;
+  }> = [
+    {
+      name: 'token vencido (190)',
+      status: 400,
+      error: { message: 'Error validating access token', type: 'OAuthException', code: 190 },
+      tokenInvalid: true,
+      message: /Volvé a conectar la cuenta/,
+    },
+    {
+      name: 'sesión inválida (102)',
+      status: 400,
+      error: { message: 'Session has expired', type: 'OAuthException', code: 102 },
+      tokenInvalid: true,
+      message: /Volvé a conectar la cuenta/,
+    },
+    {
+      name: '401 sin cuerpo útil',
+      status: 401,
+      error: {},
+      tokenInvalid: true,
+      message: /Volvé a conectar la cuenta/,
+    },
+    {
+      // Regresión: antes cualquier OAuthException se trataba como "token vencido".
+      name: 'parámetro o endpoint inválido (100, OAuthException)',
+      status: 400,
+      error: { message: 'Unsupported get request', type: 'OAuthException', code: 100 },
+      tokenInvalid: false,
+      message: /rechazó la consulta/,
+    },
+    {
+      name: 'falta de permiso (10)',
+      status: 400,
+      error: { message: 'Application does not have permission', type: 'OAuthException', code: 10 },
+      tokenInvalid: false,
+      message: /no dio permiso/,
+    },
+    {
+      name: 'permiso de la serie 200',
+      status: 403,
+      error: { message: 'Permissions error', type: 'OAuthException', code: 200 },
+      tokenInvalid: false,
+      message: /no dio permiso/,
+    },
+    {
+      name: 'límite de uso (4)',
+      status: 400,
+      error: { message: 'Application request limit reached', code: 4 },
+      tokenInvalid: false,
+      message: /limitó temporalmente/,
+    },
+    {
+      name: 'límite de uso (17)',
+      status: 400,
+      error: { message: 'User request limit reached', code: 17 },
+      tokenInvalid: false,
+      message: /limitó temporalmente/,
+    },
+    {
+      name: 'caída temporal de Meta (500)',
+      status: 500,
+      error: { message: 'Service unavailable', code: 2 },
+      tokenInvalid: false,
+      message: /problema temporal \(500\)/,
+    },
+  ];
+
+  for (const c of cases) {
+    it(`${c.name}: ${c.tokenInvalid ? 'marca el token como vencido' : 'NO marca el token como vencido'}`, async () => {
+      mock.mediaError = { status: c.status, body: { error: c.error } };
+      const err = (await client()
+        .fetchRecentMedia()
+        .catch((e: unknown) => e)) as InstagramApiError;
+      expect(err).toBeInstanceOf(InstagramApiError);
+      expect(err.tokenInvalid).toBe(c.tokenInvalid);
+      expect(err.message).toMatch(c.message);
+      if (!c.tokenInvalid) expect(err.message).not.toMatch(/venció|revocado/);
+      // El motivo técnico viaja aparte, con el código de Meta y sin el token.
+      expect(err.detail).toContain(`HTTP ${c.status}`);
+      expect(err.detail).not.toContain(TOKEN);
+    });
+  }
+
+  it('el motivo técnico incluye código, subcódigo, mensaje y rastreo de Meta, y redacta tokens', async () => {
+    mock.mediaError = {
+      status: 400,
+      body: {
+        error: {
+          message: `Invalid parameter access_token=${TOKEN}&x=1`,
+          code: 100,
+          error_subcode: 33,
+          fbtrace_id: 'AbC123',
+        },
+      },
+    };
+    const err = (await client()
+      .getAccountId()
+      .catch((e: unknown) => e)) as InstagramApiError;
+    expect(err.detail).toContain('código 100/33');
+    expect(err.detail).toContain('Invalid parameter');
+    expect(err.detail).toContain('AbC123');
+    expect(err.detail).not.toContain(TOKEN);
+  });
+
+  it('un token de Facebook (EAA...) rechazado con 190 explica que hace falta el de Instagram', async () => {
+    mock.mediaError = { status: 400, body: TOKEN_ERROR_BODY };
+    const err = (await client({ accessToken: 'EAAGm0PX4ZCpsBA-token-de-facebook' })
+      .getAccountId()
+      .catch((e: unknown) => e)) as InstagramApiError;
+    expect(err.tokenInvalid).toBe(true);
+    expect(err.message).toMatch(/parece de Facebook/);
+    expect(err.message).not.toContain('EAAGm0');
+  });
+
+  it('testConnection muestra el detalle de Meta para el equipo', async () => {
+    mock.mediaError = {
+      status: 400,
+      body: { error: { message: 'Unsupported get request', type: 'OAuthException', code: 100 } },
+    };
+    const r = await client().testConnection();
+    expect(r.ok).toBe(false);
+    expect(r.error).toMatch(/rechazó la consulta/);
+    expect(r.error).toMatch(/código 100/);
+  });
+
+  it('la falla de red no se confunde con token vencido', async () => {
+    const fetchFn = (async () => {
+      throw new TypeError('fetch failed');
+    }) as unknown as typeof fetch;
+    const err = (await client({ fetchFn })
+      .getAccountId()
+      .catch((e: unknown) => e)) as InstagramApiError;
+    expect(err.tokenInvalid).toBe(false);
+    expect(err.message).toMatch(/No pudimos comunicarnos/);
   });
 });

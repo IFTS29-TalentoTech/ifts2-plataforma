@@ -43,36 +43,43 @@ enum PublicationKind {
   NEWS
   EVENT
 }
+
 enum PublicationStatus {
   DRAFT
   SCHEDULED
   PUBLISHED
   PAUSED
 }
+
 enum PublicationOrigin {
   MANUAL
   INSTAGRAM
 }
+
 enum PublicationSection {
   HOME
   NEWS
   BOTH
 }
+
 enum SocialStatus {
   DETECTED
   LINKED
   DISCARDED
 }
+
 enum NoticeStatus {
   ACTIVE
   PAUSED
 }
+
 enum NoticeAudience {
   ALL
   STUDENTS
   ASPIRANTS
   GRADUATES
 }
+
 enum DocumentKind {
   SCHEDULE
   EXAM_CALENDAR
@@ -81,15 +88,18 @@ enum DocumentKind {
   NOTICE_ATTACHMENT
   OTHER
 }
+
 enum DocumentStatus {
   ACTIVE
   ARCHIVED
 }
+
 enum TermKind {
   FIRST
   SECOND
   EXTRAORDINARY
 }
+
 enum MessageStatus {
   NEW
   READ
@@ -97,19 +107,19 @@ enum MessageStatus {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  name         String
-  passwordHash String
-  roleId       String
-  role         Role      @relation(fields: [roleId], references: [id]) // no se elimina un rol con usuarios
-  active       Boolean   @default(true)
-  mustChangePassword Boolean @default(false) // tras restablecer la clave
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @default(now()) @updatedAt
-  lastLoginAt  DateTime?
-  sessions     Session[]
-  audit        AuditLog[]
+  id                 String     @id @default(uuid())
+  email              String     @unique
+  name               String
+  passwordHash       String
+  roleId             String
+  role               Role       @relation(fields: [roleId], references: [id]) // no se elimina un rol con usuarios
+  active             Boolean    @default(true)
+  mustChangePassword Boolean    @default(false) // tras restablecer la clave
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @default(now()) @updatedAt
+  lastLoginAt        DateTime?
+  sessions           Session[]
+  audit              AuditLog[]
 
   @@index([roleId])
 }
@@ -122,6 +132,7 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
   userAgent String?
+
   @@index([userId])
   @@index([expiresAt])
 }
@@ -129,9 +140,10 @@ model Session {
 model Category {
   id           String        @id @default(uuid())
   name         String
-  kind         String        // 'PUBLICATION' | 'NOTICE' | 'GALLERY'
+  kind         String // 'PUBLICATION' | 'NOTICE' | 'GALLERY'
   publications Publication[]
   notices      Notice[]
+
   @@unique([name, kind])
 }
 
@@ -141,13 +153,14 @@ model SocialPost {
   externalId  String       @unique // id del medio en Instagram: evita duplicados
   permalink   String
   caption     String
-  mediaUrl    String       // temporal: se copia a nuestro almacenamiento al aprobar
+  mediaUrl    String // temporal: se copia a nuestro almacenamiento al aprobar
   postedAt    DateTime
   status      SocialStatus @default(DETECTED)
   detectedAt  DateTime     @default(now())
   moderatedBy String?
   moderatedAt DateTime?
   publication Publication?
+
   @@index([status, postedAt])
 }
 
@@ -173,6 +186,7 @@ model Publication {
   authorId     String
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
+
   @@index([status, visibleFrom, visibleUntil])
   @@index([categoryId])
 }
@@ -195,6 +209,7 @@ model Notice {
   authorId     String
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+
   @@index([status, visibleFrom, visibleUntil])
 }
 
@@ -204,9 +219,9 @@ model Document {
   title          String
   filename       String
   kind           DocumentKind   @default(OTHER)
-  category       String?        // etiqueta mostrada en la tabla (ej. "Mesas Examen", "Cursada")
-  cycleYear      Int?           // ciclo lectivo
-  termLabel      String?        // ej. "2.° Cuat."
+  category       String? // etiqueta mostrada en la tabla (ej. "Mesas Examen", "Cursada")
+  cycleYear      Int? // ciclo lectivo
+  termLabel      String? // ej. "2.° Cuat."
   resolutionCode String?
   storageKey     String         @unique
   mimeType       String
@@ -219,6 +234,7 @@ model Document {
   notices        Notice[]
   schedules      Schedule[]
   examCalls      ExamCall[]
+
   @@index([cycleYear, status])
 }
 
@@ -231,8 +247,9 @@ model AcademicTerm {
   publicCurrent Boolean    @default(false) // ciclo que muestra el sitio público (solo uno)
   schedules     Schedule[]
   examCalls     ExamCall[]
-  @@unique([year, kind])
   // Índice único parcial (solo un ciclo publicCurrent = true): ver la migración inicial (SQL).
+
+  @@unique([year, kind])
 }
 
 // Horarios de cursada por comisión (grilla adjunta)
@@ -240,13 +257,14 @@ model Schedule {
   id             String       @id @default(uuid())
   termId         String
   term           AcademicTerm @relation(fields: [termId], references: [id])
-  commissionName String       // "Comisión A y B", "Comisión Única", "Prácticas Finales"
+  commissionName String // "Comisión A y B", "Comisión Única", "Prácticas Finales"
   documentId     String?
   document       Document?    @relation(fields: [documentId], references: [id], onDelete: Restrict)
   notes          String?
   published      Boolean      @default(false)
   updatedBy      String
   updatedAt      DateTime     @updatedAt
+
   @@index([termId, published])
 }
 
@@ -255,7 +273,7 @@ model ExamCall {
   id             String       @id @default(uuid())
   termId         String
   term           AcademicTerm @relation(fields: [termId], references: [id])
-  name           String       // "Turno extraordinario de Diciembre 2026"
+  name           String // "Turno extraordinario de Diciembre 2026"
   startsOn       DateTime
   endsOn         DateTime
   enrollmentOpen Boolean      @default(false)
@@ -266,6 +284,7 @@ model ExamCall {
   published      Boolean      @default(false)
   updatedBy      String
   updatedAt      DateTime     @updatedAt
+
   @@index([termId, published])
 }
 
@@ -278,27 +297,37 @@ model SiteSetting {
 
 // Texto editable de páginas estancas (Institucional, La carrera, Ingreso)
 model ContentSection {
-  id      String  @id @default(uuid())
-  page    String  // 'institucional' | 'carrera' | 'ingreso'
-  slug    String
-  title   String
-  body    String  // Markdown acotado, sanitizado al renderizar
-  order   Int     @default(0)
-  visible Boolean @default(true)
+  id        String   @id @default(uuid())
+  page      String // 'institucional' | 'carrera' | 'estudiantes' | 'ingreso' | 'inscripciones'
+  slug      String
+  title     String
+  body      String // Markdown acotado, sanitizado al renderizar
+  order     Int      @default(0)
+  visible   Boolean  @default(true)
+  /// 'TEXT' (título + Markdown) o 'GALLERY' (muestra una galería con nombre; el cuerpo es opcional).
+  kind      String   @default("TEXT")
+  galleryId String?
+  gallery   Gallery? @relation(fields: [galleryId], references: [id], onDelete: SetNull)
+
   @@unique([page, slug])
+  @@index([galleryId])
 }
 
 model ExternalLink {
-  id          String  @id @default(uuid())
-  title       String
-  url         String
-  description String?
-  group       String  @default("academico")
-  order       Int     @default(0)
-  visible     Boolean @default(true)
+  id           String  @id @default(uuid())
+  title        String
+  url          String
+  description  String?
+  // Ya no se edita en el panel (ADR-040): el "dónde se muestra" lo definen las casillas de abajo.
+  group        String  @default("academico")
+  order        Int     @default(0)
+  visible      Boolean @default(true)
+  // Lugares donde se muestra el enlace (ADR-040). Por defecto Inicio y Estudiantes, como antes.
+  showHome     Boolean @default(true)
+  showStudents Boolean @default(true)
   // A07: marca explícita del enlace donde los ALUMNOS se inscriben (página /inscripciones).
   // No se deduce del título: "SIU Guaraní" existe para alumnos y para profesores/secretaría.
-  enrollment  Boolean @default(false)
+  enrollment   Boolean @default(false)
 }
 
 // Should (RF08)
@@ -309,40 +338,47 @@ model ContactMessage {
   subject    String
   message    String
   status     MessageStatus @default(NEW)
-  consent    Boolean       // aceptó el aviso de uso de datos (Ley 25.326)
+  consent    Boolean // aceptó el aviso de uso de datos (Ley 25.326)
   receivedAt DateTime      @default(now())
   mailSent   Boolean       @default(false) // el correo puede fallar: el mensaje se guarda siempre
 }
 
 // Una sola fila (id = 1)
-// Galerías editables del sitio público (RF09, ADR-036): carrusel "Vida en la cocina" de Estudiantes y
-// fotos de La carrera. `image` es una ruta propia del sitio (`/img/...`, la deja la semilla) o una CLAVE
-// del almacenamiento (`gallery/<uuid>.webp`, la deja la subida desde el panel); nunca una URL firmada,
-// porque vence (se resuelve al responder, ver apps/api/src/lib/cover.ts).
-enum GalleryArea {
-  STUDENTS
-  CAREER
+// Galerías editables del sitio público (RF09, ADR-036, ADR-041): el administrador crea galerías con nombre
+// y las agrega a cualquier página como una sección (ContentSection kind GALLERY). `GalleryItem.image` es una
+// ruta propia del sitio (`/img/...`, la deja la semilla) o una CLAVE del almacenamiento
+// (`gallery/<uuid>.webp`, la deja la subida desde el panel); nunca una URL firmada, porque vence (se
+// resuelve al responder, ver apps/api/src/lib/cover.ts).
+model Gallery {
+  id        String           @id @default(uuid())
+  name      String
+  order     Int              @default(0)
+  items     GalleryItem[]
+  sections  ContentSection[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 }
 
 model GalleryItem {
-  id        String      @id @default(uuid())
-  area      GalleryArea
-  order     Int         @default(0)
-  title     String      @default("")
-  caption   String      @default("")
-  alt       String      @default("")
+  id        String   @id @default(uuid())
+  galleryId String
+  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  order     Int      @default(0)
+  title     String   @default("")
+  caption   String   @default("")
+  alt       String   @default("")
   /// Categoría libre y corta (RF09, US-30). Vacía = sin categoría. El filtro público agrupa por este texto.
-  category  String      @default("")
+  category  String   @default("")
   image     String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([area, order])
+  @@index([galleryId, order])
 }
 
 model InstagramToken {
   id          Int       @id @default(1)
-  tokenEnc    String    // AES-256-GCM con APP_ENCRYPTION_KEY
+  tokenEnc    String // AES-256-GCM con APP_ENCRYPTION_KEY
   expiresAt   DateTime
   refreshedAt DateTime  @default(now())
   lastSyncAt  DateTime?
@@ -362,11 +398,12 @@ model AuditLog {
   id       String   @id @default(uuid())
   userId   String?
   user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action   String   // 'publication.publish', 'document.archive', ...
+  action   String // 'publication.publish', 'document.archive', ...
   entity   String
   entityId String?
   detail   Json?
   at       DateTime @default(now())
+
   @@index([entity, entityId])
   @@index([at])
 }

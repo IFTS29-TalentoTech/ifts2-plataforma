@@ -22,11 +22,19 @@ const imagesLoaded = (selector: string, min: number) => {
   cy.get(selector).should(($imgs) => {
     expect($imgs.filter(own).length).to.be.at.least(min);
   });
-  cy.get(selector).each(($img) => {
-    if (!own(0, $img[0]!)) return;
-    cy.wrap($img).scrollIntoView();
-    // 20 s: la primera vez que se pide cada imagen next/image la optimiza (sharp) y tarda en frío.
-    cy.wrap($img, { timeout: 20000 }).should(loaded);
+  // Se vuelve a consultar cada imagen por su posición: si la página se hidrata o se vuelve a dibujar, un
+  // elemento guardado queda desprendido del documento y nunca terminaría de cargar.
+  cy.get(selector).then(($all) => {
+    for (let i = 0; i < $all.length; i++) {
+      cy.get(selector)
+        .eq(i)
+        .then(($img) => {
+          if (!own(0, $img[0]!)) return;
+          cy.get(selector).eq(i).scrollIntoView();
+          // 20 s: la primera vez que se pide cada imagen next/image la optimiza (sharp) y tarda en frío.
+          cy.get(selector, { timeout: 20000 }).eq(i).should(loaded);
+        });
+    }
   });
 };
 

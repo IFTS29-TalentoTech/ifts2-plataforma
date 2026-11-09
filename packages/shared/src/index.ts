@@ -8,3 +8,4 @@ export * from './instagram-guide';
 export * from './schemas-social';
 export * from './academic';
 export * from './content';
+export * from './page-blocks';

@@ -18,9 +18,9 @@ const cases: { permissions: Capability[]; path: string; nav: string; marker: str
   },
   {
     permissions: ['content:manage'],
-    path: '/panel/configuracion',
-    nav: 'Configuración',
-    marker: 'Nueva sección',
+    path: '/panel/paginas',
+    nav: 'Páginas del sitio',
+    marker: 'Agregar sección',
   },
   {
     permissions: ['links:manage'],
@@ -60,15 +60,15 @@ const cases: { permissions: Capability[]; path: string; nav: string; marker: str
   },
   {
     permissions: ['content:manage', 'links:manage'],
-    path: '/panel/configuracion',
-    nav: 'Configuración',
-    marker: 'Nueva sección',
+    path: '/panel/paginas',
+    nav: 'Páginas del sitio',
+    marker: 'Agregar sección',
   },
   {
     permissions: ['users:manage', 'content:manage'],
-    path: '/panel/configuracion',
-    nav: 'Configuración',
-    marker: 'Gestionar usuarios',
+    path: '/panel/paginas',
+    nav: 'Páginas del sitio',
+    marker: 'Agregar sección',
   },
 ];
 
@@ -180,6 +180,8 @@ for (const testCase of cases) {
           });
       }
       if (permissions.includes('users:manage')) {
+        // Los usuarios se gestionan en Configuración; Páginas del sitio es otra pantalla (ADR-041).
+        if (testCase.path !== '/panel/configuracion') cy.visit('/panel/configuracion');
         cy.contains('button', 'Gestionar usuarios').click();
         cy.get('[role="dialog"]').within(() => {
           cy.byLabel('Nombre y apellido').type(`Cuenta ficticia ${suffix}`);
@@ -195,22 +197,18 @@ for (const testCase of cases) {
           .its('body.items.0.email')
           .should('eq', `creada-${suffix}@prueba.local`);
       }
-      if (permissions.includes('users:manage') && permissions.includes('content:manage')) {
-        cy.get('[role="dialog"]').contains('button', 'Cerrar').click();
-      }
       if (permissions.includes('content:manage')) {
-        cy.contains('button', 'Nueva sección').click();
+        cy.visit('/panel/paginas');
+        cy.contains('button', 'Agregar sección').click();
         cy.get('[role="dialog"]').within(() => {
-          cy.byLabel('Identificador').type(`delegada-${suffix}`);
-          cy.byLabel('Título').type(`Texto delegado ${suffix}`);
+          cy.byLabel('Título de la sección').type(`Texto delegado ${suffix}`);
           cy.get('textarea').type('Contenido ficticio');
           cy.contains('button', 'Guardar sección').click();
         });
         cy.contains(`Texto delegado ${suffix}`).should('be.visible');
       }
       if (permissions.includes('links:manage')) {
-        if (permissions.includes('content:manage'))
-          cy.contains('[role="tab"]', 'Enlaces de interés').click();
+        cy.visit('/panel/configuracion');
         cy.contains('button', 'Nuevo enlace').click();
         cy.get('[role="dialog"]').within(() => {
           cy.byLabel('Título').type(`Enlace delegado ${suffix}`);
@@ -319,9 +317,10 @@ describe('B01: actualización de una sesión existente y capacidades recíprocas
       .should('eq', 200);
     cy.api('GET', '/auth/me').its('body.permissions').should('deep.eq', ['content:manage']);
     cy.api('GET', '/users').its('status').should('eq', 403);
-    cy.reload();
+    cy.visit('/panel/paginas');
+    cy.contains('button', 'Agregar sección').should('be.visible');
+    cy.visit('/panel/configuracion');
     cy.contains('button', 'Gestionar usuarios').should('not.exist');
-    cy.contains('button', 'Nueva sección').should('be.visible');
   });
   it('publications:manage no concede moderación ni eliminación', () => {
     const suffix = Date.now();

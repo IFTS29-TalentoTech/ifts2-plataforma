@@ -6,14 +6,16 @@
  *   plan por año y correlatividades) se dibuja como bloques en orden. El plan (por área formativa, con
  *   horas y correlatividades) viene de la Res. MEGC 1202/07; la ubicación por año no figura en los
  *   documentos del cliente y queda como [a confirmar] (Q120). No se inventa.
- * - Foto(s) junto al perfil profesional: carrusel editable desde Configuración -> Galerías (RF09,
- *   ADR-036); sin diapositivas se usa `career_image` como respaldo (provisoria del Figma, ADR-035/Q63);
- *   sin ninguna imagen el perfil vuelve a ser una tarjeta más. El plan "por año" del Figma NO se
+ * - Foto(s) junto al perfil profesional: la PRIMERA galería de la página (se agrega desde "Páginas del
+ *   sitio", ADR-041; la semilla trae "Fotos de La carrera"); sin galería se usa `career_image` como
+ *   respaldo (provisoria del Figma, ADR-035/Q63); sin ninguna imagen el perfil vuelve a ser una tarjeta
+ *   más. Las demás galerías van como carruseles propios al final. El plan "por año" del Figma NO se
  *   dibuja: la ubicación de cada materia por año no está confirmada (Q120).
  */
 import type { Metadata } from 'next';
 import { Card, Carousel, EmptyState, Eyebrow } from '@/components/ui';
-import { loadContent, loadSlides } from '@/features/public/data';
+import { loadContent } from '@/features/public/data';
+import { GallerySections } from '@/features/public/gallery-sections';
 import { Markdown } from '@/features/public/markdown';
 import { Cover, PageHero, Section, SectionError } from '@/features/public/parts';
 import { getSiteInfo } from '@/lib/site';
@@ -24,15 +26,13 @@ export const revalidate = 60;
 
 export default async function Page() {
   const site = await getSiteInfo();
-  const [content, photos] = await Promise.all([
-    loadContent('carrera'),
-    loadSlides(
-      'CAREER',
-      site.careerImage
-        ? [{ key: site.careerImage, src: site.careerImage, title: '', caption: '', alt: '' }]
-        : [],
-    ),
-  ]);
+  const content = await loadContent('carrera');
+  const [firstGallery, ...moreGalleries] = content.ok ? (content.data.galleries ?? []) : [];
+  const photos = firstGallery
+    ? firstGallery.items.map((i) => ({ key: i.id, src: i.src, alt: i.alt }))
+    : site.careerImage
+      ? [{ key: site.careerImage, src: site.careerImage, alt: '' }]
+      : [];
   const sections = content.ok ? [...content.data.sections].sort((a, b) => a.order - b.order) : [];
   const [intro, ...others] = sections;
   // El perfil profesional va a dos columnas (texto + foto) cuando hay foto; si no, queda en la grilla.
@@ -101,6 +101,7 @@ export default async function Page() {
           </div>
         )}
       </Section>
+      <GallerySections galleries={moreGalleries} />
     </>
   );
 }
