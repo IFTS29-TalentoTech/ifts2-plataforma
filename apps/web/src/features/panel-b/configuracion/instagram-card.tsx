@@ -561,17 +561,17 @@ function SetupGuide({ method }: { method: 'oauth' | 'token' }) {
       data-testid="ig-guide"
       data-method={method}
     >
-      <summary className="cursor-pointer text-lg font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus">
+      <summary className="cursor-pointer text-sm font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus">
         {isToken
           ? 'Ayuda: cómo conseguir el token de acceso'
           : 'Ayuda: cómo conseguir el App ID y el App Secret'}
       </summary>
       <div className="mt-3">
-        <h4 className="font-display text-xl font-bold text-accent-3">{guide.title}</h4>
-        <p className="mt-1 text-lg leading-relaxed text-font-strong">{guide.intro}</p>
+        <h4 className="font-display text-lg font-bold text-accent-3">{guide.title}</h4>
+        <p className="mt-1 text-sm leading-relaxed text-font-strong">{guide.intro}</p>
         <GuideSteps steps={guide.steps} />
         {isToken ? (
-          <p className="mt-4 text-lg leading-relaxed text-font-strong">
+          <p className="mt-4 text-sm leading-relaxed text-font-strong">
             {INSTAGRAM_TOKEN_GUIDE.note}{' '}
             <a
               href={INSTAGRAM_TOKEN_GUIDE.officialUrl}
@@ -583,7 +583,7 @@ function SetupGuide({ method }: { method: 'oauth' | 'token' }) {
             </a>
           </p>
         ) : (
-          <p className="mt-4 text-lg leading-relaxed text-font-strong">
+          <p className="mt-4 text-sm leading-relaxed text-font-strong">
             {INSTAGRAM_SETUP_GUIDE.manualTokenNote}
           </p>
         )}
@@ -599,7 +599,7 @@ function GuideSteps({ steps }: { steps: SetupStep[] }) {
         <li key={s.title} className="flex gap-3">
           <span
             aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-primary-strong text-lg font-bold text-surface"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-primary-strong text-sm font-bold text-surface"
           >
             {i + 1}
           </span>

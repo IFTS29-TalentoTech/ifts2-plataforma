@@ -27,7 +27,7 @@ export function IntegrationsPanel({
   return (
     <section aria-labelledby="integrations-title" className="flex flex-col gap-6">
       <div>
-        <h2 id="integrations-title" className="font-display text-xl font-bold text-accent-3">
+        <h2 id="integrations-title" className="font-display text-lg font-bold text-accent-3">
           Integraciones
         </h2>
         <p className="text-sm text-font-strong">

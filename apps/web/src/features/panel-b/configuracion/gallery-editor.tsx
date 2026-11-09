@@ -84,7 +84,7 @@ export function GalleryEditor({ canPages = false }: { canPages?: boolean }) {
     <section aria-labelledby="gallery-title" className="flex flex-col gap-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
-          <h2 id="gallery-title" className="font-display text-2xl font-bold text-accent-3">
+          <h2 id="gallery-title" className="font-display text-lg font-bold text-accent-3">
             Mis galerías de fotos
           </h2>
           <p className="text-sm text-font-strong">
@@ -127,7 +127,7 @@ export function GalleryEditor({ canPages = false }: { canPages?: boolean }) {
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h3 className="font-display text-xl font-bold text-accent-3">{gallery.name}</h3>
+                <h3 className="font-display text-lg font-bold text-accent-3">{gallery.name}</h3>
                 <p className="text-sm text-font-strong">
                   {items.length} de {max} fotos
                 </p>
