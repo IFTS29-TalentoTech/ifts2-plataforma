@@ -48,3 +48,45 @@ export const INSTAGRAM_SETUP_GUIDE: {
   manualTokenNote:
     'Alternativa: si preferís no usar el botón de conexión, podés generar un token de acceso de larga duración en el panel de la app de Meta y pegarlo en el campo "Token de acceso".',
 };
+
+/**
+ * Guía de la OTRA forma de conectar: pegar un token de acceso (sin App ID ni App Secret). Se muestra solo
+ * cuando en la pantalla está elegido "Token de acceso"; la de arriba corresponde al inicio de sesión de Meta.
+ * Los nombres de los botones de Meta cambian con el tiempo: por eso se indica el enlace oficial.
+ */
+export const INSTAGRAM_TOKEN_GUIDE: {
+  title: string;
+  intro: string;
+  steps: SetupStep[];
+  officialUrl: string;
+  note: string;
+} = {
+  title: 'Cómo conseguir el token de acceso',
+  intro:
+    'El token es una clave larga que Meta genera para la cuenta de Instagram del instituto. Se pega una sola vez y la plataforma la guarda cifrada.',
+  steps: [
+    {
+      title: 'Verificá que la cuenta sea profesional',
+      body: 'La cuenta de Instagram del instituto tiene que ser profesional (Empresa o Creador). Se cambia desde Configuración y privacidad de Instagram, sin costo.',
+    },
+    {
+      title: 'Entrá a Meta for Developers',
+      body: 'Desde el navegador, ingresá a developers.facebook.com con la cuenta de Facebook que administra la app del instituto y abrí esa app (si todavía no existe, creala con "Crear app").',
+    },
+    {
+      title: 'Buscá la configuración de Instagram',
+      body: 'En el menú de la izquierda de la app, elegí "Instagram" y después la opción de configuración de la API con inicio de sesión de Instagram.',
+    },
+    {
+      title: 'Generá el token',
+      body: 'Agregá la cuenta del instituto si Meta te lo pide y tocá el botón "Generar token" que aparece al lado de la cuenta. Iniciá sesión con la cuenta y aceptá los permisos.',
+    },
+    {
+      title: 'Copiá el token y pegalo acá',
+      body: 'Copiá todo el texto del token (es muy largo: no dejes nada afuera), volvé a esta pantalla, pegalo en "Token de acceso" y tocá "Guardar y conectar". Después usá "Probar conexión".',
+    },
+  ],
+  officialUrl:
+    'https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login',
+  note: 'Si algún botón de Meta se llama distinto, seguí la guía oficial de Meta (enlace de arriba). Para pedir ayuda al equipo, no mandes el token por mensaje: es como una contraseña.',
+};

@@ -162,6 +162,7 @@ describe('GET /public/content/:page', () => {
         { slug: 'a', title: 'A', body: 'Uno x', order: 1 },
         { slug: 'b', title: 'B', body: 'Dos', order: 2 },
       ],
+      galleries: [],
     });
     expect((await get('/content/inventada')).status).toBe(404);
     expect((await get('/content/institucional')).body.sections).toEqual([]);
@@ -947,6 +948,22 @@ describe('GET /public/students', () => {
       'SIU Guaraní — Gestión académica': false,
       'Sistema de alumnos': true,
     });
+  });
+
+  it('ADR-039: cada enlace se ve solo en los lugares marcados (Inicio, Estudiantes, Inscripciones)', async () => {
+    await createLinkRow({ title: 'Solo inicio', showStudents: false });
+    await createLinkRow({ title: 'Solo estudiantes', showHome: false });
+    await createLinkRow({
+      title: 'Solo inscripción',
+      showHome: false,
+      showStudents: false,
+      enrollment: true,
+    });
+    const home = (await get('/home')).body.quickLinks;
+    expect(titles(home).sort()).toEqual(['Solo inicio']);
+    const st = (await get('/students')).body;
+    expect(titles(st.links)).toEqual(['Solo estudiantes']);
+    expect(titles(st.enrollmentLinks)).toEqual(['Solo inscripción']);
   });
 
   it('si el almacenamiento falla la página carga igual (downloadUrl=null) — RNF03', async () => {

@@ -12,7 +12,6 @@ describe('toSiteInfo: presentación del sitio público', () => {
       hero_image_2: 'https://cdn.example.org/b.webp',
       career_image: '/img/c.webp',
       ingreso_image: '/img/d.webp',
-      student_gallery: '/img/g1.webp | Uno | Primera\n/img/g2.webp | Dos',
     });
     expect(s).toMatchObject({
       heroTitle: 'Titular corto',
@@ -23,10 +22,6 @@ describe('toSiteInfo: presentación del sitio público', () => {
       careerImage: '/img/c.webp',
       ingresoImage: '/img/d.webp',
     });
-    expect(s.gallery).toEqual([
-      { src: '/img/g1.webp', title: 'Uno', description: 'Primera' },
-      { src: '/img/g2.webp', title: 'Dos', description: '' },
-    ]);
   });
 
   it('sin configuración no hay imágenes ni titular (las pantallas no se rompen)', () => {
@@ -34,6 +29,5 @@ describe('toSiteInfo: presentación del sitio público', () => {
     expect(s.heroTitle).toBe('');
     expect(s.logoUrl).toBe('');
     expect(s.heroImage1).toBe('');
-    expect(s.gallery).toEqual([]);
   });
 });

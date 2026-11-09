@@ -18,7 +18,12 @@
  */
 'use client';
 
-import { INSTAGRAM_SETUP_GUIDE, formatDateTimeAR } from '@ifts2/shared';
+import {
+  INSTAGRAM_SETUP_GUIDE,
+  INSTAGRAM_TOKEN_GUIDE,
+  formatDateTimeAR,
+  type SetupStep,
+} from '@ifts2/shared';
 import { Copy, Camera, Link2, PlugZap, Unplug } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import {
@@ -283,17 +288,20 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
           )}
 
           <dl className="grid gap-3 text-sm sm:grid-cols-4">
-            <Info label="Cuenta conectada" value={v.username ? `@${v.username}` : '—'} />
+            <Info
+              label="Cuenta conectada"
+              value={v.username ? `@${v.username}` : 'Ninguna todavía'}
+            />
             <Info
               label="El token vence"
-              value={v.tokenExpiresAt ? formatDateTimeAR(v.tokenExpiresAt) : '—'}
+              value={v.tokenExpiresAt ? formatDateTimeAR(v.tokenExpiresAt) : 'Sin datos todavía'}
             />
             <Info
               label="Última sincronización"
               value={
                 v.lastSyncAt
                   ? `${formatDateTimeAR(v.lastSyncAt)}${v.lastSyncOk === false ? ' (con error)' : ''}`
-                  : '—'
+                  : 'Sin datos todavía'
               }
             />
             <Info
@@ -301,7 +309,7 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
               value={
                 v.lastFetchAt
                   ? `${formatDateTimeAR(v.lastFetchAt)} (${v.lastSyncMode === 'full' ? 'completo' : 'incremental'})`
-                  : '—'
+                  : 'Sin datos todavía'
               }
             />
           </dl>
@@ -459,7 +467,10 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
               noValidate
               aria-label="Token de acceso de Instagram"
             >
-              <p className="text-sm text-font-strong">{INSTAGRAM_SETUP_GUIDE.manualTokenNote}</p>
+              <p className="text-sm text-font-strong">
+                Pegá acá el token que generaste en Meta. Si todavía no lo tenés, abrí la ayuda de
+                más abajo: explica cada paso.
+              </p>
               {savedMethod === 'token' && v.hasAccessToken && (
                 <p className="text-xs text-font-strong">
                   Token guardado: {v.accessTokenMasked}. Pegá uno nuevo solo si querés reemplazarlo.
@@ -513,36 +524,7 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
             </form>
           )}
 
-          <details className="rounded-lg border border-accent-2 p-4" data-testid="ig-guide">
-            <summary className="cursor-pointer text-sm font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus">
-              Cómo obtener estas credenciales
-            </summary>
-            <div className="mt-3">
-              <h4 className="font-display text-lg font-bold text-accent-3">
-                {INSTAGRAM_SETUP_GUIDE.title}
-              </h4>
-              <p className="mt-1 text-sm text-font-strong">{INSTAGRAM_SETUP_GUIDE.intro}</p>
-              <ol className="mt-3 flex flex-col gap-3">
-                {INSTAGRAM_SETUP_GUIDE.steps.map((s, i) => (
-                  <li key={s.title} className="flex gap-3">
-                    <span
-                      aria-hidden="true"
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-pill bg-primary-strong text-sm font-bold text-surface"
-                    >
-                      {i + 1}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-accent-3">{s.title}</p>
-                      <p className="text-sm text-font-strong">{s.body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              <p className="mt-3 text-sm text-font-strong">
-                {INSTAGRAM_SETUP_GUIDE.manualTokenNote}
-              </p>
-            </div>
-          </details>
+          <SetupGuide key={method} method={method} />
         </>
       )}
 
@@ -564,11 +546,78 @@ export function InstagramCard({ result }: { result?: 'connected' | 'error' }) {
   );
 }
 
+/**
+ * Guía desplegable de la forma de conexión ELEGIDA: la del inicio de sesión de Meta (App ID y App Secret)
+ * o la del token de acceso. Cada opción muestra solo sus pasos (antes se veía siempre la de OAuth).
+ * Se remonta al cambiar de opción (`key`), así arranca cerrada. Letra grande y pasos numerados: la usan
+ * personas mayores.
+ */
+function SetupGuide({ method }: { method: 'oauth' | 'token' }) {
+  const isToken = method === 'token';
+  const guide = isToken ? INSTAGRAM_TOKEN_GUIDE : INSTAGRAM_SETUP_GUIDE;
+  return (
+    <details
+      className="rounded-lg border-2 border-accent-2 p-4"
+      data-testid="ig-guide"
+      data-method={method}
+    >
+      <summary className="cursor-pointer text-lg font-semibold text-accent-3 focus-visible:outline-none focus-visible:shadow-focus">
+        {isToken
+          ? 'Ayuda: cómo conseguir el token de acceso'
+          : 'Ayuda: cómo conseguir el App ID y el App Secret'}
+      </summary>
+      <div className="mt-3">
+        <h4 className="font-display text-xl font-bold text-accent-3">{guide.title}</h4>
+        <p className="mt-1 text-lg leading-relaxed text-font-strong">{guide.intro}</p>
+        <GuideSteps steps={guide.steps} />
+        {isToken ? (
+          <p className="mt-4 text-lg leading-relaxed text-font-strong">
+            {INSTAGRAM_TOKEN_GUIDE.note}{' '}
+            <a
+              href={INSTAGRAM_TOKEN_GUIDE.officialUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-accent underline focus-visible:outline-none focus-visible:shadow-focus"
+            >
+              Guía oficial de Meta (se abre en otra pestaña)
+            </a>
+          </p>
+        ) : (
+          <p className="mt-4 text-lg leading-relaxed text-font-strong">
+            {INSTAGRAM_SETUP_GUIDE.manualTokenNote}
+          </p>
+        )}
+      </div>
+    </details>
+  );
+}
+
+function GuideSteps({ steps }: { steps: SetupStep[] }) {
+  return (
+    <ol className="mt-4 flex flex-col gap-4">
+      {steps.map((s, i) => (
+        <li key={s.title} className="flex gap-3">
+          <span
+            aria-hidden="true"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-primary-strong text-lg font-bold text-surface"
+          >
+            {i + 1}
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-accent-3">{s.title}</p>
+            <p className="text-sm leading-relaxed text-font-strong">{s.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className="text-xs font-semibold uppercase tracking-wide text-font-strong">{label}</dt>
-      <dd className="text-accent-3">{value}</dd>
+      <dd className="text-sm text-accent-3">{value}</dd>
     </div>
   );
 }

@@ -4,14 +4,17 @@
  * Arriba, las tres tarjetas del Figma:
  *  - Período académico: ciclo público vigente (solo lectura: se cambia en Horarios, con confirmación)
  *    e "Inscripciones a mesas SIU habilitadas" (`exam_enrollment_open`).
- *  - Datos institucionales (`GET/PUT /settings`): nombre, sigla, dirección, correos, teléfono, redes y pie.
+ *  - Datos institucionales (`GET/PUT /settings`): nombre, sigla, dirección, correos, teléfono, redes, pie
+ *    y logo (se sube como archivo). Los textos e imágenes de cada página (titular y fotos de Inicio, La
+ *    carrera, Ingreso) se editan en "Contenido de páginas" > "Ajustes de la página".
  *    Nada institucional está escrito en el código (ADR-022): todo sale de estos ajustes.
  *  - Seguridad y accesos: "Usuarios del panel". Cada persona se toca y abre su menú (cambiar rol,
  *    restablecer contraseña, desactivar); "Gestionar usuarios" abre la ventana con el alta y la
  *    lista completa. Las acciones y sus reglas viven en `user-actions.tsx`.
  * "Guardar cambios" valida con los esquemas compartidos (zod) y pide confirmación porque los cambios
  * son GLOBALES: impactan en el encabezado y el pie del sitio. Solo se envían los campos modificados.
- * Abajo, pestañas: Contenido de páginas, Enlaces de interés e Integraciones (Instagram y correo).
+ * Abajo, dos pestañas: Integraciones (Instagram y correo) y Enlaces de interés. Un botón lleva a "Páginas
+ * del sitio" (textos, imágenes y galerías de cada página).
  */
 'use client';
 
@@ -24,7 +27,7 @@ import {
   type SettingsDto,
   type TermDto,
 } from '@ifts2/shared';
-import { ChevronDown, ShieldCheck, Users } from 'lucide-react';
+import { ChevronDown, FileText, ShieldCheck, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
@@ -48,18 +51,15 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  Textarea,
   useToast,
 } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorText } from '../lib/format';
 import { useResetOn } from '../lib/use-reset-on';
 import { useResource } from '../lib/use-resource';
-import { ContentEditor } from './content-editor';
-import { GalleryEditor } from './gallery-editor';
+import { ImageSettingField } from './image-setting-field';
 import { IntegrationsPanel } from './integrations-panel';
 import { LinksEditor } from './links-editor';
-import { TeachersEditor } from './teachers-editor';
 import { useUserActions, type PanelUser } from './user-actions';
 import { UsersDialog } from './users-dialog';
 
@@ -94,43 +94,8 @@ const TEXT_FIELDS: { key: TextKey; label: string; hint?: string }[] = [
   { key: 'footer_text', label: 'Texto del pie de página' },
 ];
 
-/** Encabezado de Inicio (titular corto + frase institucional como subtítulo; resuelve Q64). */
-const HOME_FIELDS: { key: TextKey; label: string; hint?: string }[] = [
-  {
-    key: 'hero_eyebrow',
-    label: 'Rótulo sobre el titular de Inicio',
-    hint: 'Ejemplo: Educación pública · Formación técnica. Vacío = se usa el subtítulo institucional.',
-  },
-  {
-    key: 'hero_title',
-    label: 'Titular de Inicio',
-    hint: 'Título corto y destacado. Vacío = se usa la frase institucional como titular.',
-  },
-  {
-    key: 'tagline',
-    label: 'Frase institucional',
-    hint: 'Se muestra debajo del titular de Inicio.',
-  },
-];
-
-/** Imágenes del sitio público: ruta del sitio (/img/...) o dirección https. Vacío = sin imagen. */
-const IMAGE_FIELDS: { key: TextKey; label: string; hint?: string }[] = [
-  { key: 'logo_url', label: 'Logo del encabezado' },
-  { key: 'hero_image_1', label: 'Inicio: imagen principal' },
-  { key: 'hero_image_2', label: 'Inicio: imagen secundaria' },
-  { key: 'career_image', label: 'La carrera: imagen del perfil' },
-  { key: 'ingreso_image', label: 'Ingreso: imagen del encabezado' },
-];
-
-/** Galería "Vida en la cocina" de Estudiantes: una tarjeta por línea (ruta | título | descripción). */
-const GALLERY_FIELD: { key: TextKey; label: string; hint: string } = {
-  key: 'student_gallery',
-  label: 'Galería de Estudiantes',
-  hint: 'Una tarjeta por línea con este formato: /img/foto.webp | Título | Descripción. Hasta 6.',
-};
-
 /** Todos los campos de texto de la pantalla (para cargar, comparar y rotular). */
-const ALL_FIELDS = [...TEXT_FIELDS, ...HOME_FIELDS, ...IMAGE_FIELDS, GALLERY_FIELD];
+const ALL_FIELDS = TEXT_FIELDS;
 
 const LABELS: Record<string, string> = {
   ...Object.fromEntries(ALL_FIELDS.map((f) => [f.key, f.label])),
@@ -205,12 +170,11 @@ export function ConfiguracionScreen({
   const publicTerm = terms.data?.items.find((t) => t.publicCurrent);
   const canUsers = can(perms, 'users:manage');
   const canIntegrations = can(perms, 'integrations:manage');
+  // Solo dos pestañas, en este orden (ADR-041): los textos de las páginas, las galerías y el plantel
+  // tienen su propia pantalla en el menú lateral y no se repiten acá.
   const tabs = [
-    { value: 'contenido', label: 'Contenido de páginas', allowed: can(perms, 'content:manage') },
-    { value: 'enlaces', label: 'Enlaces de interés', allowed: can(perms, 'links:manage') },
-    { value: 'galerias', label: 'Galerías', allowed: can(perms, 'gallery:manage') },
-    { value: 'plantel', label: 'Plantel docente', allowed: can(perms, 'teachers:manage') },
     { value: 'integraciones', label: 'Integraciones', allowed: canIntegrations },
+    { value: 'enlaces', label: 'Enlaces de interés', allowed: can(perms, 'links:manage') },
   ].filter((tab) => tab.allowed);
 
   return (
@@ -229,10 +193,24 @@ export function ConfiguracionScreen({
 
       {canSettings && settings.status === 'loading' && (
         <LoadingRegion label="Cargando configuración">
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Skeleton className="h-64" />
-            <Skeleton className="h-64" />
-            <Skeleton className="h-64" />
+          {/* Imita la forma real de las tarjetas (rótulo, título y renglones) en vez de bloques lisos. */}
+          <div className="mb-4 grid gap-4 lg:grid-cols-3">
+            <Card className="flex flex-col gap-3">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-6 w-2/3" />
+              <Skeleton className="mt-2 h-10" />
+              <Skeleton className="h-10" />
+            </Card>
+            <Card className="flex flex-col gap-3 lg:col-span-2">
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-6 w-1/2" />
+              <div className="mt-2 grid gap-3 md:grid-cols-2">
+                <Skeleton className="h-11" />
+                <Skeleton className="h-11" />
+                <Skeleton className="h-11" />
+                <Skeleton className="h-11" />
+              </div>
+            </Card>
           </div>
         </LoadingRegion>
       )}
@@ -300,48 +278,15 @@ export function ConfiguracionScreen({
                       className={f.key === 'footer_text' ? 'md:col-span-2' : undefined}
                     />
                   ))}
-                </div>
-              </Card>
-
-              <Card
-                className="flex flex-col gap-4 lg:col-span-3"
-                role="region"
-                aria-labelledby="card-sitio"
-              >
-                <div>
-                  <Eyebrow>Sitio público</Eyebrow>
-                  <h2 id="card-sitio" className="font-display text-lg font-bold text-accent-3">
-                    Encabezado de Inicio e imágenes
-                  </h2>
-                  <p className="text-sm text-font-strong">
-                    Las imágenes son una ruta del sitio (por ejemplo /img/foto.webp) o una dirección
-                    https completa. Las que vienen cargadas son provisorias hasta tener las del
-                    instituto.
-                  </p>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {[...HOME_FIELDS, ...IMAGE_FIELDS].map((f) => (
-                    <Input
-                      key={f.key}
-                      label={f.label}
-                      hint={f.hint}
-                      value={form[f.key] ?? ''}
-                      onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
-                      error={errors[f.key]}
-                      className={f.key === 'tagline' ? 'md:col-span-2' : undefined}
+                  <div className="md:col-span-2">
+                    <ImageSettingField
+                      settingKey="logo_url"
+                      label="Logo del encabezado"
+                      hint="Se ve en el encabezado del sitio y del panel. Sin logo se muestran las iniciales de la sigla."
+                      value={settings.data.logo_url}
+                      onChanged={settings.reload}
                     />
-                  ))}
-                  <Textarea
-                    label={GALLERY_FIELD.label}
-                    hint={GALLERY_FIELD.hint}
-                    rows={4}
-                    value={form[GALLERY_FIELD.key] ?? ''}
-                    onChange={(e) =>
-                      setForm((s) => ({ ...s, [GALLERY_FIELD.key]: e.target.value }))
-                    }
-                    error={errors[GALLERY_FIELD.key]}
-                    className="md:col-span-2"
-                  />
+                  </div>
                 </div>
               </Card>
             </>
@@ -413,6 +358,24 @@ export function ConfiguracionScreen({
         </div>
       )}
 
+      {can(perms, 'content:manage') && (
+        <Card className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-2xl">
+            <h2 className="font-display text-xl font-bold text-accent-3">Páginas del sitio</h2>
+            <p className="text-sm text-font-strong">
+              Cambiá los textos, las imágenes y las galerías de Inicio, Institucional, La carrera,
+              Estudiantes, Ingreso e Inscripciones.
+            </p>
+          </div>
+          <Button asChild size="lg">
+            <Link href="/panel/paginas">
+              <FileText className="h-5 w-5" aria-hidden="true" />
+              Editar páginas del sitio
+            </Link>
+          </Button>
+        </Card>
+      )}
+
       {tabs.length > 0 && (
         <Tabs
           key={tabs.map((tab) => tab.value).join(':')}
@@ -426,22 +389,9 @@ export function ConfiguracionScreen({
               </TabsTrigger>
             ))}
           </TabsList>
-          <TabsContent value="contenido">
-            {can(perms, 'content:manage') && <ContentEditor perms={perms} />}
-          </TabsContent>
           <TabsContent value="enlaces">
             {can(perms, 'links:manage') && <LinksEditor perms={perms} />}
           </TabsContent>
-          {can(perms, 'gallery:manage') && (
-            <TabsContent value="galerias">
-              <GalleryEditor />
-            </TabsContent>
-          )}
-          {can(perms, 'teachers:manage') && (
-            <TabsContent value="plantel">
-              <TeachersEditor />
-            </TabsContent>
-          )}
           {canIntegrations && (
             <TabsContent value="integraciones">
               <IntegrationsPanel instagramResult={instagramResult} />

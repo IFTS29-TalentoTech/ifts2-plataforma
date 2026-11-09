@@ -123,5 +123,14 @@ for (const vp of viewports) {
       imagesLoaded();
       shot('plantel');
     });
+
+    it('Páginas del sitio', () => {
+      cy.visit('/panel/paginas');
+      cy.contains('h1', 'Páginas del sitio').should('be.visible');
+      cy.contains('button', 'Estudiantes').click();
+      cy.contains('[data-testid="content-row"]', 'Vida en la cocina').should('be.visible');
+      loaded();
+      shot('paginas');
+    });
   });
 }

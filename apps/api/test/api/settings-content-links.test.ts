@@ -48,7 +48,6 @@ describe('/settings', () => {
       hero_title: 'Titular corto',
       hero_image_1: '/img/provisorio/inicio-plato.webp',
       logo_url: 'https://cdn.example.org/logo.webp',
-      student_gallery: '/img/a.webp | Cocina | Equipo\n/img/b.webp | Solo título',
     });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
@@ -75,11 +74,11 @@ describe('/settings', () => {
   it('PUT rechaza imágenes que no son una ruta del sitio ni una dirección web (400)', async () => {
     const res = await as(admin.cookie).put('/api/v1/settings', {
       career_image: 'javascript:alert(1)',
-      student_gallery: 'sin ruta | Título',
+      hero_image_1: 'foto.jpg',
     });
     expect(res.status).toBe(400);
     expect(Object.keys(res.body.errors ?? {})).toEqual(
-      expect.arrayContaining(['career_image', 'student_gallery']),
+      expect.arrayContaining(['career_image', 'hero_image_1']),
     );
   });
 
@@ -158,6 +157,8 @@ describe('/content', () => {
       title: expect.any(String),
       body: expect.any(String),
       order: 1,
+      kind: 'TEXT',
+      galleryId: null,
       visible: true,
     });
     expect((await as(admin.cookie).get('/api/v1/content/inventada')).status).toBe(400);
@@ -245,6 +246,8 @@ describe('/links', () => {
       group: 'academico',
       order: 2,
       visible: true,
+      showHome: true,
+      showStudents: true,
       enrollment: false,
     });
     await createLinkRow({ title: 'Primero', order: 1 });
@@ -273,6 +276,23 @@ describe('/links', () => {
     });
     expect(off.body.enrollment).toBe(false);
     expect((await as(admin.cookie).post('/api/v1/links', { enrollment: 'si' })).status).toBe(400);
+  });
+
+  it('ADR-039: lugares de visualización y orden con PUT /links/order', async () => {
+    const a = await createLinkRow({ title: 'A', order: 0 });
+    const b = await createLinkRow({ title: 'B', order: 1 });
+    const patch = await as(admin.cookie).patch(`/api/v1/links/${a.id}`, {
+      showHome: false,
+      showStudents: false,
+      enrollment: true,
+    });
+    expect(patch.body).toMatchObject({ showHome: false, showStudents: false, enrollment: true });
+    const ord = await as(admin.cookie).put('/api/v1/links/order', { ids: [b.id, a.id] });
+    expect(ord.status).toBe(200);
+    expect(ord.body.items.map((l: { title: string }) => l.title)).toEqual(['B', 'A']);
+    expect(await testPrisma.auditLog.count({ where: { action: 'link.order' } })).toBe(1);
+    // Lista incompleta: 409 (alguien más cambió los enlaces)
+    expect((await as(admin.cookie).put('/api/v1/links/order', { ids: [a.id] })).status).toBe(409);
   });
 
   it('valida: título/URL obligatorios y bien formados; título duplicado => 409', async () => {

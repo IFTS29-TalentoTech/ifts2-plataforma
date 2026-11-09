@@ -49,7 +49,15 @@ const document = entity.extend({
 const schedule = entity.extend({ termId: id, documentId: id.nullable(), published: z.boolean() });
 const notice = entity.extend({ title: text, status: z.enum(NOTICE_STATUSES) });
 const teacher = named.extend({ visible: z.boolean(), order: z.number() });
-const gallery = entity.extend({ area: text, image: text, order: z.number() });
+/** Una foto de una galería (ADR-041): pertenece a una galería con nombre, ya no a un "área". */
+const galleryItem = entity.extend({ galleryId: id, image: text, order: z.number() });
+/** Una galería con nombre, sus fotos y las páginas donde se muestra. */
+const gallery = entity.extend({
+  name: text,
+  order: z.number(),
+  items: z.array(galleryItem),
+  pages: z.array(text),
+});
 const social = entity.extend({
   status: z.enum(SOCIAL_STATUSES),
   permalink: text,
@@ -74,6 +82,9 @@ export function mutationContract(method: string, path: string): ResponseContract
   }
   if (method === 'DELETE') {
     if (resource === 'teachers' && action === 'photo') return json(teacher);
+    // Quitar una imagen del sitio devuelve los ajustes completos (no es un 204).
+    if (resource === 'settings' && key === 'image')
+      return json(record({ institution_name: nullableText }));
     if (
       [
         'publications',
@@ -138,22 +149,36 @@ export function mutationContract(method: string, path: string): ResponseContract
       ),
       key ? 200 : 201,
     );
+  // Reordenar enlaces (ADR-039): devuelve la lista completa, no un enlace.
+  if (resource === 'links' && key === 'order')
+    return json(record({ items: z.array(entity.extend({ title: text, url: text })) }));
   if (resource === 'links')
     return json(entity.extend({ title: text, url: text, visible: z.boolean() }), key ? 200 : 201);
-  if (resource === 'content')
+  if (resource === 'content') {
+    // Interruptor de un bloque fijo (ADR-042): devuelve la lista completa de bloques ocultos.
+    if (key === 'blocks') return json(record({ hidden: z.array(text) }));
+    // Reordenar las secciones de una página: sin cuerpo.
+    if (action === 'order') return { status: 204 };
     return {
       ...json(
         entity.extend({ page: text, slug: text, title: text, body: text, visible: z.boolean() }),
       ),
       alsoStatuses: [201],
     };
+  }
   if (resource === 'contact-messages')
     return json(entity.extend({ status: z.enum(MESSAGE_STATUSES) }));
-  if (resource === 'teachers' || resource === 'gallery') {
-    const schema = resource === 'teachers' ? teacher : gallery;
+  if (resource === 'gallery') {
+    // Fotos: /gallery/:id/items (alta), /gallery/items/:itemId (edición) y /gallery/items/:itemId/image.
+    if (action === 'items') return json(galleryItem, 201);
+    if (key === 'items') return json(galleryItem);
+    // Galería: alta, renombrar y /gallery/:id/order (devuelve la galería completa).
+    return json(gallery, key ? 200 : 201);
+  }
+  if (resource === 'teachers') {
     return key === 'order'
-      ? json(record({ items: z.array(schema) }))
-      : json(schema, key ? 200 : 201);
+      ? json(record({ items: z.array(teacher) }))
+      : json(teacher, key ? 200 : 201);
   }
   if (resource === 'settings') return json(record({ institution_name: nullableText }));
   if (resource === 'integrations') {

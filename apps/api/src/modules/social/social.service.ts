@@ -21,7 +21,7 @@ import type { SocialApproveInput, SocialManualInput, SocialStatus } from '@ifts2
 import type { AppContext } from '../../context';
 import { AppError, errors } from '../../infra/errors';
 import { MediaDownloadError } from '../../infra/media-download';
-import { storeUpload } from '../../infra/storage';
+import { looksLikeHtml, storeUpload } from '../../infra/storage';
 import { resolveCoverSrc } from '../../lib/cover';
 import { audit } from '../audit/audit.service';
 import {
@@ -129,10 +129,30 @@ async function demoPlaceholder(): Promise<Buffer> {
     .toBuffer();
 }
 
+/** Causa por la que no se pudo usar la imagen: la interfaz ofrece "Publicar sin imagen" ante cualquiera. */
+export type ImageProblem = 'download' | 'page' | 'format' | 'size';
+
+/** Error 422/502 con `imageProblem`: la interfaz lo reconoce y propone subir otra imagen o publicar sin ella. */
+function imageError(kind: ImageProblem, status: 'unprocessable' | 'bad-gateway', detail: string) {
+  return new AppError(
+    status,
+    status === 'unprocessable'
+      ? 'No se puede realizar la acción'
+      : 'Servicio externo no disponible',
+    detail,
+    undefined,
+    { imageProblem: kind },
+  );
+}
+
 /**
  * Copia la imagen de la publicación al almacenamiento propio y devuelve su clave. Las direcciones
  * `.invalid` (modo demostración) usan una imagen neutra generada, así el flujo completo se puede probar
  * sin cuenta real.
+ *
+ * Cada causa de fallo tiene su mensaje y su `imageProblem` (descarga, página web en vez de imagen,
+ * formato, peso): quien modera sabe qué hacer y puede publicar sin imagen (RNF03: Instagram o el
+ * almacenamiento no bloquean la publicación).
  */
 async function copyImageToStorage(ctx: AppContext, post: SocialPost): Promise<string> {
   const isManual = post.externalId.startsWith(MANUAL_PREFIX);
@@ -144,13 +164,25 @@ async function copyImageToStorage(ctx: AppContext, post: SocialPost): Promise<st
       : await ctx.downloadImage(post.mediaUrl);
   } catch (e) {
     const detail = e instanceof MediaDownloadError ? e.message : 'No pudimos descargar la imagen.';
-    const hint = isManual
-      ? ' Revisá la dirección de la imagen de la publicación.'
-      : ' Sincronizá de nuevo para renovar la dirección o cargá la publicación a mano.';
+    const tooBig = e instanceof MediaDownloadError && /pesa demasiado/.test(e.message);
+    const hint = tooBig
+      ? ' Subí una imagen más liviana o publicá sin imagen.'
+      : isManual
+        ? ' Revisá la dirección de la imagen o publicá sin imagen.'
+        : ' Sincronizá de nuevo para renovar la dirección, cargá la publicación a mano o publicá sin imagen.';
     // Manual: error de datos del usuario (422). Instagram: falla del servicio externo (502).
-    throw isManual
-      ? errors.unprocessable(`${detail}${hint}`)
-      : errors.badGateway(`${detail}${hint}`);
+    throw imageError(
+      tooBig ? 'size' : 'download',
+      isManual || tooBig ? 'unprocessable' : 'bad-gateway',
+      `${detail}${hint}`,
+    );
+  }
+  if (looksLikeHtml(buffer)) {
+    throw imageError(
+      'page',
+      'unprocessable',
+      'La dirección que cargaste es una página web, no una imagen. Hacé clic derecho sobre la foto, elegí «Copiar dirección de la imagen» y pegala. También podés publicar sin imagen.',
+    );
   }
   try {
     const stored = await storeUpload(
@@ -160,12 +192,18 @@ async function copyImageToStorage(ctx: AppContext, post: SocialPost): Promise<st
     );
     return stored.key;
   } catch (e) {
-    if (
-      e instanceof AppError &&
-      (e.code === 'unsupported-media-type' || e.code === 'payload-too-large')
-    ) {
-      throw errors.unprocessable(
-        'La imagen de la publicación no se puede usar (formato no admitido o demasiado pesada).',
+    if (e instanceof AppError && e.code === 'unsupported-media-type') {
+      throw imageError(
+        'format',
+        'unprocessable',
+        'La imagen de la publicación no se puede usar: no es un formato admitido (JPG, PNG o WebP) o está dañada. Subí otra imagen o publicá sin imagen.',
+      );
+    }
+    if (e instanceof AppError && e.code === 'payload-too-large') {
+      throw imageError(
+        'size',
+        'unprocessable',
+        'La imagen de la publicación pesa demasiado (máximo 5 MB). Subí una más liviana o publicá sin imagen.',
       );
     }
     throw e;
@@ -215,7 +253,8 @@ export async function approvePost(
   }
 
   // Primero la imagen: si falla, no queda nada a medias (ni publicación ni cambio de estado).
-  const coverKey = await copyImageToStorage(ctx, post);
+  // `withoutImage`: decisión explícita de quien modera cuando la imagen no se pudo usar (RNF03).
+  const coverKey = input.withoutImage ? null : await copyImageToStorage(ctx, post);
 
   let created: PublicationRow;
   try {
@@ -251,7 +290,12 @@ export async function approvePost(
         entity: 'SocialPost',
         entityId: id,
         // consentConfirmed queda registrado: es la constancia del consentimiento (RNF08).
-        detail: { publicationId: publication.id, section: input.section, consentConfirmed: true },
+        detail: {
+          publicationId: publication.id,
+          section: input.section,
+          consentConfirmed: true,
+          ...(input.withoutImage ? { withoutImage: true } : {}),
+        },
       });
       await audit.log(tx, {
         userId,
@@ -265,10 +309,12 @@ export async function approvePost(
   } catch (e) {
     // La transacción falló (p. ej. 409 por carrera): no dejar una imagen huérfana... salvo que la
     // publicación haya quedado guardada igual (confirmación ambigua). Ante la duda, no se borra.
-    const saved = await ctx.prisma.publication
-      .count({ where: { coverUrl: coverKey } })
-      .catch(() => 1);
-    if (saved === 0) await ctx.storage.remove(coverKey).catch(() => undefined);
+    if (coverKey) {
+      const saved = await ctx.prisma.publication
+        .count({ where: { coverUrl: coverKey } })
+        .catch(() => 1);
+      if (saved === 0) await ctx.storage.remove(coverKey).catch(() => undefined);
+    }
     throw e;
   }
 

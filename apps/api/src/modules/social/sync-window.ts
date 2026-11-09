@@ -23,6 +23,10 @@ export const PENDING_REFRESH_MAX_MS = 14 * 24 * 3_600_000;
 
 /** Con qué cuenta, hashtag y método se sincroniza ahora. Nada de esto es secreto. */
 export interface SyncIdentity {
+  /**
+   * Id de la cuenta; cadena vacía si no se pudo consultar (la llamada liviana falló por un motivo que no es el
+   * token): no se puede comparar, así que la carga es completa y no se confía en lo guardado.
+   */
   accountId: string;
   /** Hashtag normalizado (minúsculas, con `#`). */
   hashtag: string;
@@ -54,7 +58,7 @@ export function planSync(p: {
   if (p.force) return full('forced');
   const covered = state ? Date.parse(state.coveredUntil) : NaN;
   if (!state || Number.isNaN(covered)) return full('first');
-  if (state.accountId !== identity.accountId) return full('account');
+  if (!identity.accountId || state.accountId !== identity.accountId) return full('account');
   if (state.hashtag !== identity.hashtag) return full('hashtag');
   if (state.connection !== identity.connection) return full('connection');
 

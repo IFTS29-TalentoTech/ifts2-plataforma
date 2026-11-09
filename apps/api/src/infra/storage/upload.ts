@@ -25,6 +25,29 @@ export function sniffMime(buf: Buffer): AllowedMime | null {
   return null;
 }
 
+/**
+ * Formatos de imagen que sharp puede leer aunque `sniffMime` no los reconozca por firma (GIF, TIFF,
+ * AVIF/HEIC; los dos últimos dependen del build de sharp). Se aceptan porque siempre se reconvierten a
+ * WebP. NO se acepta SVG (puede referenciar recursos externos) ni PDF.
+ */
+const SHARP_EXTRA_FORMATS: ReadonlySet<string> = new Set(['gif', 'tiff', 'heif', 'jp2']);
+
+/** true si sharp abre el archivo y es uno de los formatos de imagen extra tolerados. */
+export async function sharpCanReadImage(buf: Buffer): Promise<boolean> {
+  try {
+    const meta = await sharp(buf, { failOn: 'error' }).metadata();
+    return !!meta.format && SHARP_EXTRA_FORMATS.has(meta.format);
+  } catch {
+    return false;
+  }
+}
+
+/** ¿Parece una página web (HTML) en vez de una imagen? Pasa cuando se pega el enlace de la publicación. */
+export function looksLikeHtml(buf: Buffer): boolean {
+  const head = buf.subarray(0, 512).toString('utf8').trimStart().toLowerCase();
+  return head.startsWith('<!doctype html') || head.startsWith('<html') || head.startsWith('<head');
+}
+
 /** Nombre mostrable saneado (nunca se usa como clave de almacenamiento). */
 export function sanitizeFilename(name: string): string {
   const base = name.split(/[\\/]/).pop() ?? 'archivo';
@@ -54,7 +77,10 @@ export async function storeUpload(
   file: { buffer: Buffer; originalName: string },
   prefix = 'files',
 ): Promise<StoredFile> {
-  const mime = sniffMime(file.buffer);
+  let mime: string | null = sniffMime(file.buffer);
+  // Sin firma conocida: si es un formato de imagen que sharp lee (GIF, TIFF, AVIF, HEIC), se acepta y
+  // se reconvierte a WebP como cualquier otra imagen.
+  if (!mime && (await sharpCanReadImage(file.buffer))) mime = 'image/webp';
   if (!mime) {
     throw errors.unsupported('El archivo no es válido. Subí un PDF, JPG, PNG o WebP.');
   }

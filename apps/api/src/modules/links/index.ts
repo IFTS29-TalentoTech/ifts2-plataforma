@@ -12,10 +12,12 @@ import { Router, type Request } from 'express';
 import {
   idParam,
   linkInput,
+  linkOrderInput,
   linkListQuery,
   linkUpdateInput,
   type LinkDto,
   type LinkInput,
+  type LinkOrderInput,
 } from '@ifts2/shared';
 import { z } from 'zod';
 import { errors } from '../../infra/errors';
@@ -34,6 +36,8 @@ const toDto = (l: LinkDto): LinkDto => ({
   group: l.group,
   order: l.order,
   visible: l.visible,
+  showHome: l.showHome,
+  showStudents: l.showStudents,
   enrollment: l.enrollment,
 });
 
@@ -81,7 +85,37 @@ router.get(
     const q = valid<z.infer<typeof linkListQuery>>(req, 'query');
     const rows = await req.ctx.prisma.externalLink.findMany({
       where: q.visible !== undefined ? { visible: q.visible } : {},
-      orderBy: [{ group: 'asc' }, { order: 'asc' }, { title: 'asc' }],
+      orderBy: [{ order: 'asc' }, { title: 'asc' }],
+    });
+    res.json({ items: rows.map(toDto), total: rows.length });
+  },
+);
+
+/** PUT /links/order — nuevo orden (ids de TODOS los enlaces). Botones Subir/Bajar del panel (ADR-039). */
+router.put(
+  '/order',
+  requirePermission('links:manage'),
+  validate({ body: linkOrderInput }),
+  async (req, res) => {
+    const { ids } = valid<LinkOrderInput>(req, 'body');
+    await req.ctx.prisma.$transaction(async (tx) => {
+      const current = await tx.externalLink.findMany({ select: { id: true } });
+      const same =
+        current.length === ids.length &&
+        new Set(ids).size === ids.length &&
+        current.every((c) => ids.includes(c.id));
+      if (!same) {
+        throw errors.conflict(
+          'La lista cambió mientras la ordenabas. Recargá la pantalla e intentá de nuevo.',
+        );
+      }
+      await Promise.all(
+        ids.map((id, order) => tx.externalLink.update({ where: { id }, data: { order } })),
+      );
+      await audit.fromReq(req, { action: 'link.order', entity: 'ExternalLink' }, tx);
+    });
+    const rows = await req.ctx.prisma.externalLink.findMany({
+      orderBy: [{ order: 'asc' }, { title: 'asc' }],
     });
     res.json({ items: rows.map(toDto), total: rows.length });
   },

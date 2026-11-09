@@ -63,14 +63,23 @@ export type NoticeViewStatus = (typeof NOTICE_VIEW_STATUSES)[number];
 export const CATEGORY_KINDS = ['PUBLICATION', 'NOTICE', 'GALLERY'] as const;
 export type CategoryKind = (typeof CATEGORY_KINDS)[number];
 
-/** Galerías editables del sitio (RF09, ADR-036): carrusel de Estudiantes y fotos de La carrera. */
-export const GALLERY_AREAS = ['STUDENTS', 'CAREER'] as const;
-export type GalleryArea = (typeof GALLERY_AREAS)[number];
-/** Máximo de diapositivas por galería (Q10: imágenes acotadas y livianas). */
+/** Máximo de fotos por galería (Q10: imágenes acotadas y livianas). Las galerías tienen nombre (ADR-041). */
 export const GALLERY_MAX_PER_AREA = 10;
 
-export const CONTENT_PAGES = ['institucional', 'carrera', 'ingreso'] as const;
+/** Páginas del sitio con secciones editables (todas, ADR-042: en cualquiera se puede agregar una sección). */
+export const CONTENT_PAGES = [
+  'inicio',
+  'institucional',
+  'carrera',
+  'estudiantes',
+  'ingreso',
+  'inscripciones',
+] as const;
 export type ContentPage = (typeof CONTENT_PAGES)[number];
+
+/** Tipo de sección: texto (título + Markdown) o una galería de fotos con nombre (ADR-041). */
+export const CONTENT_SECTION_KINDS = ['TEXT', 'GALLERY'] as const;
+export type ContentSectionKind = (typeof CONTENT_SECTION_KINDS)[number];
 
 /** Claves conocidas de SiteSetting. */
 export const SETTING_KEYS = [
@@ -98,9 +107,23 @@ export const SETTING_KEYS = [
   'hero_image_2',
   'career_image',
   'ingreso_image',
-  'student_gallery',
+  // Bloques fijos de las páginas que se ocultaron desde "Páginas del sitio" (lista JSON, ADR-042).
+  'hidden_blocks',
 ] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
+
+/**
+ * Ajustes que son una imagen del sitio. Se cargan como archivo (`POST /settings/image/:key`) o, como
+ * respaldo de la semilla, son una ruta propia (`/img/...`) o una dirección https.
+ */
+export const SETTING_IMAGE_KEYS = [
+  'logo_url',
+  'hero_image_1',
+  'hero_image_2',
+  'career_image',
+  'ingreso_image',
+] as const;
+export type SettingImageKey = (typeof SETTING_IMAGE_KEYS)[number];
 
 /** Límites de archivos (ADR-08). */
 export const FILE_LIMITS = {

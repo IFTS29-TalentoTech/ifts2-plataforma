@@ -6,11 +6,26 @@ import { CORRELATIVIDADES, PLAN } from './seed-plan';
 export const PLACEHOLDER_URL = 'https://pendiente.invalid/a-confirmar';
 
 /**
- * Diapositivas iniciales de las galerías editables (RF09, ADR-036). Son las imágenes PROVISORIAS del
- * Figma (ADR-035, Q63); el instituto las cambia desde Configuración -> Galerías.
+ * Galerías iniciales (RF09, ADR-036, ADR-041): cada una con su nombre, la página donde se muestra y sus
+ * fotos. Son las imágenes PROVISORIAS del Figma (ADR-035, Q63); el instituto las cambia desde el panel
+ * (Galerías y Páginas del sitio).
  */
+export interface GalleryDef {
+  name: string;
+  /** Página donde se agrega como sección, y datos de esa sección. */
+  section: { page: 'estudiantes' | 'carrera'; slug: string; order: number };
+}
+export const GALLERIES: GalleryDef[] = [
+  {
+    name: 'Vida en la cocina',
+    section: { page: 'estudiantes', slug: 'vida-en-la-cocina', order: 10 },
+  },
+  { name: 'Fotos de La carrera', section: { page: 'carrera', slug: 'fotos', order: 90 } },
+];
+
 export interface GallerySeed {
-  area: 'STUDENTS' | 'CAREER';
+  /** Nombre de la galería (de `GALLERIES`). */
+  gallery: string;
   image: string;
   title: string;
   caption: string;
@@ -21,7 +36,7 @@ export interface GallerySeed {
 
 const STUDENT_GALLERY: GallerySeed[] = [
   {
-    area: 'STUDENTS',
+    gallery: 'Vida en la cocina',
     image: '/img/provisorio/vida-cocina-1.webp',
     title: 'Cocina compartida',
     category: 'Prácticas',
@@ -29,7 +44,7 @@ const STUDENT_GALLERY: GallerySeed[] = [
     alt: '',
   },
   {
-    area: 'STUDENTS',
+    gallery: 'Vida en la cocina',
     image: '/img/provisorio/vida-cocina-2.webp',
     title: 'Ingredientes frescos',
     category: 'Ingredientes',
@@ -37,7 +52,7 @@ const STUDENT_GALLERY: GallerySeed[] = [
     alt: '',
   },
   {
-    area: 'STUDENTS',
+    gallery: 'Vida en la cocina',
     image: '/img/provisorio/vida-cocina-3.webp',
     title: 'Presentación final',
     category: 'Platos',
@@ -49,7 +64,7 @@ const STUDENT_GALLERY: GallerySeed[] = [
 export const GALLERY: GallerySeed[] = [
   ...STUDENT_GALLERY,
   {
-    area: 'CAREER',
+    gallery: 'Fotos de La carrera',
     image: '/img/provisorio/la-carrera-perfil.webp',
     title: '',
     category: 'Perfil',
@@ -83,9 +98,6 @@ export const SETTINGS: Record<string, string> = {
   hero_image_2: '/img/provisorio/inicio-sarten.webp',
   career_image: '/img/provisorio/la-carrera-perfil.webp',
   ingreso_image: '/img/provisorio/ingreso-hero.webp',
-  // Respaldo (ADR-036): se usa solo si no hay diapositivas cargadas en la galería editable.
-  // Una tarjeta por línea: ruta | título | descripción.
-  student_gallery: STUDENT_GALLERY.map((g) => `${g.image} | ${g.title} | ${g.caption}`).join('\n'),
   // instagram_hashtag: [definir con el cliente] (Q1). Solo se carga en la semilla demo.
 };
 
@@ -98,6 +110,9 @@ export interface LinkSeed {
   visible: boolean;
   /** A07: enlace donde se inscriben los alumnos (página /inscripciones). */
   enrollment?: boolean;
+  /** ADR-039: lugares donde se muestra además de Inscripciones (por defecto, Inicio y Estudiantes). */
+  showHome?: boolean;
+  showStudents?: boolean;
 }
 
 /** Los enlaces "a confirmar" quedan visible=false hasta tener la URL oficial (Q6). */

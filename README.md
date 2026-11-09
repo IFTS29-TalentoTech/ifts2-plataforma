@@ -241,14 +241,16 @@ Estados posibles: sin configurar (modo demostración) · credenciales guardadas,
 
 Todo está en `docs/entrega/`:
 
-| Archivo                           | Contenido                                                                                                                                                                     |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Manual-Tecnico.md`               | Instalación y puesta en marcha, arquitectura, estructura, base de datos (DER, tablas, relaciones), configuración, componentes, errores y validaciones, pruebas y limitaciones |
-| `Manual-de-Usuario.md`            | Uso del sitio y del panel paso a paso con capturas, CRUD demostrable y mensajes frecuentes (incluye la guía de Instagram para el cliente)                                     |
-| `Evidencias-de-pruebas.md`        | 3 pruebas unitarias y 2 de integración con salida real, resumen de todas las suites y matriz de CRUD                                                                          |
-| `Enlaces.md`                      | Repositorio y Figma                                                                                                                                                           |
-| `IFTS2-Etapa-3-Documentacion.pdf` | PDF único con todo lo anterior (portada, índice, manuales y evidencias)                                                                                                       |
-| `diagramas/`                      | DER por áreas (`.mmd` fuente generado desde `prisma/schema.prisma` + `.png`/`.svg`)                                                                                           |
+| Archivo                                       | Contenido                                                                                                                                                                     |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Manual-Tecnico.md`                           | Instalación y puesta en marcha, arquitectura, estructura, base de datos (DER, tablas, relaciones), configuración, componentes, errores y validaciones, pruebas y limitaciones |
+| `Manual-de-Usuario.md`                        | Uso del sitio y del panel paso a paso con capturas, CRUD demostrable y mensajes frecuentes (incluye la guía de Instagram para el cliente)                                     |
+| `Evidencias-de-pruebas.md`                    | 3 pruebas unitarias y 2 de integración con salida real, resumen de todas las suites y matriz de CRUD                                                                          |
+| `Enlaces.md`                                  | Repositorio y Figma                                                                                                                                                           |
+| `IFTS2-Etapa-3-Documentacion.pdf`             | PDF único con todo lo anterior (portada, índice, manuales y evidencias)                                                                                                       |
+| `Manual-Tecnico.pdf`, `Manual-de-Usuario.pdf` | Cada manual en un PDF aparte, más cómodo de leer                                                                                                                              |
+| `Caratula-Entrega.pdf`                        | Hoja de entrega de una página (equipo, descripción, enlaces a Drive y repositorio); se genera con `pnpm docs:caratula`                                                        |
+| `diagramas/`                                  | DER por áreas (`.mmd` fuente generado desde `prisma/schema.prisma` + `.png`/`.svg`)                                                                                           |
 
 - **Regenerar el PDF:** `pnpm docs:pdf` (Markdown → HTML con la paleta del proyecto → PDF con Chrome headless; el DER y las tablas de campos se vuelven a derivar del schema). Para volver a dibujar las imágenes del DER hace falta `@mermaid-js/mermaid-cli` (ver `docs/entrega/diagramas/README.md`).
 - **Empaquetar el proyecto:** hacer commit y `pnpm package` → `dist-entrega/ifts2-plataforma-<fecha>.zip` (desde `HEAD`, sin `node_modules`, `.env` ni secretos).

@@ -28,7 +28,11 @@ for (const vp of viewports) {
       cy.get('[data-testid="ig-status"]').should('contain', 'Sin configurar');
       cy.get('[data-testid="redirect-uri"]').should('contain', '/integrations/instagram/callback');
       cy.contains('Permisos requeridos').should('contain', 'instagram_business_basic');
-      cy.get('[data-testid="ig-guide"] summary').click();
+      // Con "Inicio de sesión de Meta" la ayuda es la de App ID / App Secret (6 pasos).
+      cy.get('[data-testid="ig-guide"]').should('have.attr', 'data-method', 'oauth');
+      cy.get('[data-testid="ig-guide"] summary')
+        .should('contain', 'App ID y el App Secret')
+        .click();
       cy.get('[data-testid="ig-guide"] ol li').should('have.length', 6);
 
       cy.byLabel('App ID').type('1234567890');
@@ -66,6 +70,12 @@ for (const vp of viewports) {
         cy.get('#ig-method-oauth').should('be.checked');
         cy.contains('label', 'Token de acceso').click();
       });
+      // La ayuda cambia con la opción: ahora es la del token (5 pasos, enlace oficial), no la de OAuth.
+      cy.get('[data-testid="ig-guide"]').should('have.attr', 'data-method', 'token');
+      cy.get('[data-testid="ig-guide"] summary').should('contain', 'token de acceso').click();
+      cy.get('[data-testid="ig-guide"] ol li').should('have.length', 5);
+      cy.get('[data-testid="ig-guide"]').should('not.contain', 'redirección');
+      cy.get('[data-testid="ig-guide"] a[href*="developers.facebook.com"]').should('exist');
       // Con el método token desaparece el formulario de App ID / Secret.
       cy.get('form[aria-label="Credenciales de Instagram"]').should('not.exist');
       cy.get('form[aria-label="Token de acceso de Instagram"]').within(() => {

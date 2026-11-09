@@ -19,7 +19,15 @@ import { encryptJson } from '../apps/api/src/infra/crypto';
 import { FAKE_MEDIA } from '../apps/api/src/infra/instagram/fake';
 import { userTransaction } from '../apps/api/src/modules/users/transaction';
 import { DEFAULT_ROLE_PERMISSIONS } from '../packages/shared/src/permissions';
-import { CONTENT, DEMO_TEACHERS, GALLERY, LINKS, SETTINGS, SYSTEM_ROLES } from './seed-data';
+import {
+  CONTENT,
+  DEMO_TEACHERS,
+  GALLERIES,
+  GALLERY,
+  LINKS,
+  SETTINGS,
+  SYSTEM_ROLES,
+} from './seed-data';
 
 export const DEMO_PASSWORD = 'Demo-2026-ifts2';
 
@@ -138,23 +146,41 @@ async function seedSettingsAndLinks() {
  * [provisorio]), que se reemplazan por el contenido real.
  */
 /**
- * Galerías editables (RF09, ADR-036). Idempotente y respetuosa: solo carga las diapositivas iniciales
- * (imágenes provisorias, ADR-035) si el área NO tiene ninguna; nunca pisa lo que el instituto editó.
+ * Galerías editables (RF09, ADR-036, ADR-041). Idempotente y respetuosa: crea cada galería con nombre y
+ * su sección en la página (si no existen) y carga las fotos iniciales (imágenes provisorias, ADR-035)
+ * solo si la galería NO tiene ninguna; nunca pisa lo que el instituto editó.
  */
 async function seedGallery() {
-  // US-30: las bases que ya tenían las diapositivas provisorias reciben su categoría provisoria, pero
-  // solo las que siguen sin categoría (no se pisa lo que el instituto ya clasificó).
-  for (const g of GALLERY.filter((x) => x.category)) {
-    await prisma.galleryItem.updateMany({
-      where: { area: g.area, image: g.image, category: '' },
-      data: { category: g.category },
+  for (const [order, def] of GALLERIES.entries()) {
+    let gallery = await prisma.gallery.findFirst({ where: { name: def.name } });
+    if (!gallery) gallery = await prisma.gallery.create({ data: { name: def.name, order } });
+    const { page, slug, order: sectionOrder } = def.section;
+    await prisma.contentSection.upsert({
+      where: { page_slug: { page, slug } },
+      create: {
+        page,
+        slug,
+        title: def.name,
+        body: '',
+        order: sectionOrder,
+        kind: 'GALLERY',
+        galleryId: gallery.id,
+      },
+      update: {},
     });
-  }
-  for (const area of ['STUDENTS', 'CAREER'] as const) {
-    if ((await prisma.galleryItem.count({ where: { area } })) > 0) continue;
-    const items = GALLERY.filter((g) => g.area === area);
-    await prisma.galleryItem.createMany({ data: items.map((g, order) => ({ ...g, order })) });
-    log(`galería ${area}: ${items.length} diapositivas provisorias`);
+    const seeds = GALLERY.filter((g) => g.gallery === def.name);
+    // US-30: las diapositivas provisorias que siguen sin categoría reciben la suya (no se pisa lo clasificado).
+    for (const g of seeds.filter((x) => x.category)) {
+      await prisma.galleryItem.updateMany({
+        where: { galleryId: gallery.id, image: g.image, category: '' },
+        data: { category: g.category },
+      });
+    }
+    if ((await prisma.galleryItem.count({ where: { galleryId: gallery.id } })) > 0) continue;
+    await prisma.galleryItem.createMany({
+      data: seeds.map(({ gallery: _name, ...g }, i) => ({ ...g, galleryId: gallery.id, order: i })),
+    });
+    log(`galería "${def.name}": ${seeds.length} fotos provisorias`);
   }
 }
 
