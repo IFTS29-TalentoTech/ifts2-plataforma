@@ -52,6 +52,8 @@ export interface SyncResult {
   lastFetchAt: string;
   /** Resultado de la renovación del token hecha antes de sincronizar (para el cron). */
   token: TokenRenewal;
+  /** Partes opcionales que fallaron sin impedir la sincronización (p. ej. la búsqueda pública del hashtag). */
+  warnings: string[];
 }
 
 /** Hashtag configurado (con `#`) o `null` si falta. */
@@ -110,6 +112,7 @@ export async function syncInstagram(
   let media: InstagramMedia[];
   let plan: ReturnType<typeof planSync>;
   let coverage = null as FetchCoverage | null;
+  const warnings: string[] = [];
   let identity: SyncIdentity;
   const startedAt = new Date(); // la marca nueva es el inicio del fetch: lo publicado durante él se verá después
   try {
@@ -146,6 +149,7 @@ export async function syncInstagram(
       onCoverage: (c) => {
         coverage = c;
       },
+      onWarning: (w) => warnings.push(w),
     });
   } catch (e) {
     if (e instanceof InstagramNotConfiguredError) {
@@ -245,6 +249,7 @@ export async function syncInstagram(
       demo: client.kind === 'fake',
       mode: plan.mode,
       ...(plan.fullReason ? { fullReason: plan.fullReason } : {}),
+      ...(warnings.length ? { warnings } : {}),
     },
   });
 
@@ -259,5 +264,6 @@ export async function syncInstagram(
     since: plan.since ? plan.since.toISOString() : null,
     lastFetchAt: lastFetchAt.toISOString(),
     token,
+    warnings,
   };
 }

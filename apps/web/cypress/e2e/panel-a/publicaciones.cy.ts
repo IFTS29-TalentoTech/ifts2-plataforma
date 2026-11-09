@@ -114,7 +114,6 @@ for (const vp of VIEWPORTS) {
       cy.contains('El enlace a la publicación').should('exist'); // validación de campos vacíos
       cy.get('input[type="url"]').first().type(`https://www.instagram.com/p/manual-${Date.now()}/`);
       cy.get('textarea').type(`${title}. Texto cargado a mano. #ifts2web`);
-      cy.get('input[type="url"]').last().type('https://example.invalid/manual.jpg');
       cy.get('[role="dialog"] button[type="submit"]').click();
       cy.contains('Publicación cargada').should('be.visible');
       cy.visit('/panel/publicaciones');

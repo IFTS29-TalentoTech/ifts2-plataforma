@@ -1,3 +1,5 @@
+> **Nota (ADR-045):** Instagram no deja copiar la dirección de la imagen, solo la de la publicación; la carga manual por enlace se rediseñó en ADR-045 (un solo campo; se resuelve con la API oficial o se sube la imagen). Lo de abajo sobre «copiar la dirección de la imagen» ya no es el camino principal.
+
 # ADR-043 · Errores de imagen al publicar y "Publicar sin imagen"
 
 - **Estado:** aceptada (2026-11-08)

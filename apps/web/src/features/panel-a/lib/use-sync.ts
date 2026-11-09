@@ -32,9 +32,11 @@ export function useInstagramSync(onFinished: () => void) {
             (r.mode === 'full' ? 'Sincronización completa lista' : 'Sincronización lista') +
             (r.created > 0 ? `: ${r.created} nueva(s)` : ''),
           description:
-            r.created > 0
+            (r.created > 0
               ? 'Quedaron pendientes de moderación.'
-              : 'No hay publicaciones nuevas con el hashtag configurado.',
+              : 'No hay publicaciones nuevas con el hashtag configurado.') +
+            // Partes opcionales que fallaron sin impedir la sincronización (p. ej. la búsqueda pública del hashtag).
+            (r.warnings?.length ? ` Aviso: ${r.warnings.join(' ')}` : ''),
           tone: 'success',
         });
       } catch (e) {

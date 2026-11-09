@@ -18,6 +18,7 @@ import { requirePermission } from '../../middleware/auth';
 import { valid, validate } from '../../middleware/validate';
 import { audit } from '../audit/audit.service';
 import { instagramView, signState, verifyState } from './instagram.service';
+import { getConfiguredHashtag } from '../social/sync.service';
 
 export const mountPath = '/integrations';
 export const router = Router();
@@ -202,16 +203,24 @@ router.get('/instagram/callback', validate({ query: callbackQuery }), async (req
   }
 });
 
+/**
+ * POST /integrations/instagram/test — "Probar conexión" paso a paso (ADR-045): token, cuenta, lectura de
+ * publicaciones y hashtag. Responde `steps` con el resultado de cada paso (y el código y mensaje de Meta
+ * cuando falla, sin el token) para encontrar el error de fondo sin mirar los logs.
+ */
 router.post('/instagram/test', async (req, res) => {
   const client = await req.ctx.getInstagramClient();
-  const result = await client.testConnection();
+  const hashtag = await getConfiguredHashtag(req.ctx);
+  const diag = await client.diagnose(hashtag);
+  const failed = diag.steps.find((st) => st.status === 'fail');
+  const error = failed ? `${failed.label}: ${failed.detail ?? 'falló'}` : null;
   const stored = await req.ctx.integrations.get('instagram');
   if (stored && client.kind === 'graph') {
     await req.ctx.integrations.patch(
       'instagram',
       {
-        lastError: result.ok ? null : (result.error ?? 'Error desconocido'),
-        ...(result.username ? { username: result.username } : {}),
+        lastError: diag.ok ? null : (error ?? 'Error desconocido'),
+        ...(diag.username ? { username: diag.username } : {}),
       },
       req.auth!.user.id,
     );
@@ -220,13 +229,18 @@ router.post('/instagram/test', async (req, res) => {
     action: 'integration.instagram.test',
     entity: 'IntegrationConfig',
     entityId: 'instagram',
-    detail: { ok: result.ok, client: client.kind },
+    detail: {
+      ok: diag.ok,
+      client: client.kind,
+      steps: diag.steps.map((st) => ({ id: st.id, status: st.status })),
+    },
   });
   res.json({
-    ok: result.ok,
+    ok: diag.ok,
     demo: client.kind === 'fake',
-    username: result.username ?? null,
-    error: result.error ?? null,
+    username: diag.username ?? null,
+    error,
+    steps: diag.steps,
   });
 });
 

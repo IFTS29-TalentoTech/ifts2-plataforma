@@ -15,7 +15,9 @@
 import { DAY_MS } from '@ifts2/shared';
 import type { AppContext } from '../../context';
 import {
+  detectTokenFlavor,
   InstagramApiError,
+  refreshFacebookToken,
   refreshLongLivedToken,
   TOKEN_INVALID_MESSAGE,
 } from '../../infra/instagram';
@@ -25,7 +27,10 @@ import { audit } from '../audit/audit.service';
 export const REFRESH_WHEN_DAYS_LEFT = 10;
 
 export type TokenRenewal =
-  | { status: 'skipped'; reason: 'not-real-mode' | 'no-token' | 'not-needed' }
+  | {
+      status: 'skipped';
+      reason: 'not-real-mode' | 'no-token' | 'not-needed' | 'needs-app-credentials';
+    }
   | { status: 'renewed'; expiresAt: Date }
   | { status: 'expired'; error: string }
   | { status: 'failed'; error: string };
@@ -81,8 +86,20 @@ export async function renewInstagramTokenIfNeeded(
     return { status: 'skipped', reason: 'not-needed' };
   }
 
+  // Token de Facebook Login (EAA…, ADR-045): se renueva con `fb_exchange_token`, que exige el App ID y el App
+  // Secret. Sin ellos (token pegado a mano) no se puede renovar solo: hay que generar otro antes de que venza.
+  const facebook = detectTokenFlavor(stored.accessToken) === 'facebook';
+  if (facebook && (!stored.appId || !stored.appSecret)) {
+    return { status: 'skipped', reason: 'needs-app-credentials' };
+  }
   try {
-    const grant = await refreshLongLivedToken(stored.accessToken, ctx.fetch, () => now.getTime());
+    const grant = facebook
+      ? await refreshFacebookToken(
+          { appId: stored.appId!, appSecret: stored.appSecret!, accessToken: stored.accessToken },
+          ctx.fetch,
+          () => now.getTime(),
+        )
+      : await refreshLongLivedToken(stored.accessToken, ctx.fetch, () => now.getTime());
     await ctx.integrations.patch('instagram', {
       accessToken: grant.accessToken,
       tokenExpiresAt: grant.expiresAt.toISOString(),

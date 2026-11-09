@@ -407,14 +407,10 @@ describe('clasificación de errores de Graph (el token solo está vencido con 40
     expect(err.detail).not.toContain(TOKEN);
   });
 
-  it('un token de Facebook (EAA...) rechazado con 190 explica que hace falta el de Instagram', async () => {
-    mock.mediaError = { status: 400, body: TOKEN_ERROR_BODY };
-    const err = (await client({ accessToken: 'EAAGm0PX4ZCpsBA-token-de-facebook' })
-      .getAccountId()
-      .catch((e: unknown) => e)) as InstagramApiError;
-    expect(err.tokenInvalid).toBe(true);
-    expect(err.message).toMatch(/parece de Facebook/);
-    expect(err.message).not.toContain('EAAGm0');
+  it('un token de Facebook (EAA...) ya no se rechaza por su prefijo: se consulta en graph.facebook.com (ADR-045)', async () => {
+    const c = client({ accessToken: 'EAAGm0PX4ZCpsBA-token-de-facebook' });
+    expect(await c.getAccountId()).toBe('ig1');
+    expect(mock.calls.every((x) => x.host === 'graph.facebook.com')).toBe(true);
   });
 
   it('testConnection muestra el detalle de Meta para el equipo', async () => {

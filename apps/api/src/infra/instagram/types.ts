@@ -15,6 +15,22 @@ export interface ConnectionTest {
   error?: string;
 }
 
+/** Un paso del diagnóstico de la conexión ("Probar conexión"): qué se probó y qué respondió Meta. */
+export interface DiagnosticStep {
+  id: 'token' | 'identity' | 'media' | 'hashtag';
+  label: string;
+  /** `ok`: pasó; `warn`: pasó con una advertencia; `fail`: falló (con motivo); `skipped`: no se probó por un paso anterior. */
+  status: 'ok' | 'warn' | 'fail' | 'skipped';
+  /** Qué se vio (o, si falló, el motivo con el código y el mensaje de Meta; nunca el token). */
+  detail?: string;
+}
+
+export interface ConnectionDiagnosis {
+  ok: boolean;
+  username?: string;
+  steps: DiagnosticStep[];
+}
+
 export interface FetchMediaOptions {
   /** Máximo de publicaciones a devolver (después de filtrar por hashtag). Por defecto 50. */
   limit?: number;
@@ -31,6 +47,11 @@ export interface FetchMediaOptions {
    * no cambiar el tipo de retorno (un arreglo). Ver `FetchCoverage`.
    */
   onCoverage?: (coverage: FetchCoverage) => void;
+  /**
+   * Avisos de una parte opcional que falló sin impedir la sincronización de la cuenta (por ejemplo la
+   * búsqueda pública de hashtags de Facebook Login sin el permiso de contenido público).
+   */
+  onWarning?: (message: string) => void;
 }
 
 /** Hasta dónde llegó un recorrido de `fetchRecentMedia`. Lo usa el servicio para decidir la próxima cota. */
@@ -57,6 +78,17 @@ export interface InstagramClient {
    * para detectar que se cambió de cuenta y entonces hacer una carga completa (ADR-038).
    */
   getAccountId(): Promise<string>;
+  /**
+   * Busca una publicación de la cuenta conectada por su enlace (comparando el código corto) y devuelve sus
+   * datos, con la imagen. `null` si no está entre las publicaciones recientes. Lo usa la carga manual
+   * por enlace (ADR-045): Instagram no deja copiar la dirección de la imagen, solo la de la publicación.
+   */
+  findMediaByPermalink(permalink: string): Promise<InstagramMedia | null>;
+  /**
+   * Prueba la conexión paso a paso (token, identidad, lectura de una publicación y hashtag) e informa en
+   * cuál falló y con qué respuesta de Meta ("Probar conexión", ADR-045).
+   */
+  diagnose(hashtag?: string | null): Promise<ConnectionDiagnosis>;
 }
 
 /** Se lanza cuando faltan credenciales o la cuenta no está conectada. La API lo traduce a 422 claro. */

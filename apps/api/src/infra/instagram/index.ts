@@ -11,14 +11,21 @@ export {
   buildAuthorizationUrl,
   exchangeCodeForToken,
   refreshLongLivedToken,
+  refreshFacebookToken,
+  detectTokenFlavor,
+  type GraphFlavor,
+  FB_BASE,
   TOKEN_INVALID_MESSAGE,
   type TokenGrant,
 } from './graph';
 export { captionHasHashtag, normalizeHashtag } from './hashtag';
+export { instagramShortcode, normalizeInstagramPermalink, samePermalink } from './permalink';
 
 /**
  * Resuelve el cliente de Instagram EN CADA USO (no se cachea), para que los cambios hechos desde el
  * panel se apliquen de inmediato. Orden:
+ *  0. Tipo de token (ADR-045): `EAA…` = Facebook Login (graph.facebook.com), `IG…` = inicio de sesión de Instagram
+ *     (graph.instagram.com); si el prefijo no es concluyente se prueba uno y luego el otro.
  *  1. Configuración guardada desde el panel (base, cifrada): modo `real` con token pegado, o con
  *     App ID/Secret -> Graph; modo `demo` -> Fake.
  *  2. Variables de entorno (INSTAGRAM_PROVIDER=graph con App ID/Secret) como valor por defecto.

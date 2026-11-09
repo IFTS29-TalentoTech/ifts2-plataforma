@@ -34,6 +34,7 @@ import {
   Textarea,
   useToast,
 } from '@/components/ui';
+import { FileField, validateFile } from '../../panel-b/components/file-field';
 import { ApiError, api } from '@/lib/api';
 import { formatDateTimeAR } from '@/lib/dates';
 import { deriveSummary, deriveTitle } from '../lib/caption';
@@ -118,6 +119,10 @@ function ReviewForm({
   /** Mensaje de la API cuando la imagen no se pudo usar; habilita "Publicar sin imagen". */
   const [imageProblem, setImageProblem] = useState<string | null>(null);
   const [withoutImage, setWithoutImage] = useState(false);
+  /** Imagen subida desde el equipo cuando la de Instagram no está disponible (ADR-045). */
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  /** Sin imagen que copiar (carga manual por enlace sin cuenta conectada) o la que había falló. */
+  const imageNeeded = !post.mediaUrl || imageProblem !== null;
 
   /** Validación previa al diálogo de confirmación (la API repite las mismas reglas). */
   function validate(): boolean {
@@ -134,17 +139,23 @@ function ReviewForm({
   }
 
   async function approve() {
+    let publicationId: string;
     try {
-      await api.post(`/social/posts/${post.id}/approve`, {
-        title: title.trim() || null,
-        summary: summary.trim() || null,
-        section: toNews && toHome ? 'BOTH' : toHome ? 'HOME' : 'NEWS',
-        categoryId: categoryId === NO_CATEGORY ? null : categoryId,
-        visibleFrom: orNull(visibleFrom),
-        visibleUntil: orNull(visibleUntil),
-        consentConfirmed: true,
-        ...(withoutImage ? { withoutImage: true } : {}),
-      });
+      const out = await api.post<{ publication: { id: string } }>(
+        `/social/posts/${post.id}/approve`,
+        {
+          title: title.trim() || null,
+          summary: summary.trim() || null,
+          section: toNews && toHome ? 'BOTH' : toHome ? 'HOME' : 'NEWS',
+          categoryId: categoryId === NO_CATEGORY ? null : categoryId,
+          visibleFrom: orNull(visibleFrom),
+          visibleUntil: orNull(visibleUntil),
+          consentConfirmed: true,
+          // Con una imagen subida desde el equipo, primero se aprueba sin portada y después se sube (un paso para la persona).
+          ...(withoutImage || coverFile ? { withoutImage: true } : {}),
+        },
+      );
+      publicationId = out.publication.id;
     } catch (e) {
       if (e instanceof ApiError && typeof e.problem.imageProblem === 'string') {
         // La foto no se pudo usar: se explica la causa y se ofrece publicar sin imagen.
@@ -163,6 +174,23 @@ function ReviewForm({
       }
       if (e instanceof ApiError && e.status === 409) onChanged(); // otra persona la resolvió: refrescar
       throw toDisplayError(e);
+    }
+    if (coverFile && publicationId) {
+      try {
+        const fd = new FormData();
+        fd.set('file', coverFile);
+        await api.post(`/publications/${publicationId}/cover`, fd);
+      } catch (e) {
+        // La publicación ya está aprobada: se avisa y se puede cargar la imagen desde «Propias del sitio».
+        toast({
+          title: 'Publicación aprobada, pero sin imagen',
+          description: `No pudimos subir la imagen (${humanError(e)}). Podés agregarla desde «Propias del sitio».`,
+          tone: 'info',
+        });
+        onChanged();
+        onClose();
+        return;
+      }
     }
     toast({
       title: 'Publicación aprobada',
@@ -229,28 +257,50 @@ function ReviewForm({
               {formError}
             </p>
           )}
-          {imageProblem && !withoutImage && (
+          {imageNeeded && !withoutImage && (
             <div
               role="alert"
-              className="flex flex-col gap-3 rounded-md bg-danger-back px-4 py-3 text-base text-danger-text"
+              className="flex flex-col gap-3 rounded-md bg-danger-back px-4 py-3 text-sm text-danger-text"
             >
-              <p className="font-semibold">No se pudo usar la imagen</p>
-              <p>{imageProblem}</p>
-              <p>
-                Si es una publicación de Instagram, cargala de nuevo a mano con otra imagen. O
-                publicala igual, sin foto: después podés editarla en «Propias del sitio».
+              <p className="font-semibold">
+                {imageProblem ? 'No se pudo usar la imagen' : 'Esta publicación no tiene imagen'}
               </p>
-              <Button
-                variant="secondary"
-                className="self-start"
-                onClick={() => {
-                  setWithoutImage(true);
-                  setImageProblem(null);
-                  if (validate()) setConfirmPublish(true);
+              <p>
+                {imageProblem ??
+                  'Instagram no dejó traerla sola (la cuenta no está conectada o la publicación no se encontró).'}
+              </p>
+              <FileField
+                label="Subir la imagen desde tu equipo"
+                file={coverFile}
+                onChange={(f) => {
+                  setCoverFile(f);
+                  if (f && validateFile(f, true)) setCoverFile(null);
                 }}
-              >
-                Publicar sin imagen
-              </Button>
+                imagesOnly
+              />
+              <div className="flex flex-wrap gap-2">
+                {coverFile && (
+                  <Button
+                    onClick={() => {
+                      setImageProblem(null);
+                      if (validate()) setConfirmPublish(true);
+                    }}
+                  >
+                    Publicar con esta imagen
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setCoverFile(null);
+                    setWithoutImage(true);
+                    setImageProblem(null);
+                    if (validate()) setConfirmPublish(true);
+                  }}
+                >
+                  Publicar sin imagen
+                </Button>
+              </div>
             </div>
           )}
           {withoutImage && (

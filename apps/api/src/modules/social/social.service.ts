@@ -20,6 +20,12 @@ import type { Prisma, SocialPost } from '@prisma/client';
 import type { SocialApproveInput, SocialManualInput, SocialStatus } from '@ifts2/shared';
 import type { AppContext } from '../../context';
 import { AppError, errors } from '../../infra/errors';
+import {
+  InstagramApiError,
+  instagramShortcode,
+  normalizeInstagramPermalink,
+  type InstagramMedia,
+} from '../../infra/instagram';
 import { MediaDownloadError } from '../../infra/media-download';
 import { looksLikeHtml, storeUpload } from '../../infra/storage';
 import { resolveCoverSrc } from '../../lib/cover';
@@ -130,7 +136,7 @@ async function demoPlaceholder(): Promise<Buffer> {
 }
 
 /** Causa por la que no se pudo usar la imagen: la interfaz ofrece "Publicar sin imagen" ante cualquiera. */
-export type ImageProblem = 'download' | 'page' | 'format' | 'size';
+export type ImageProblem = 'download' | 'page' | 'format' | 'size' | 'missing';
 
 /** Error 422/502 con `imageProblem`: la interfaz lo reconoce y propone subir otra imagen o publicar sin ella. */
 function imageError(kind: ImageProblem, status: 'unprocessable' | 'bad-gateway', detail: string) {
@@ -156,6 +162,14 @@ function imageError(kind: ImageProblem, status: 'unprocessable' | 'bad-gateway',
  */
 async function copyImageToStorage(ctx: AppContext, post: SocialPost): Promise<string> {
   const isManual = post.externalId.startsWith(MANUAL_PREFIX);
+  if (!post.mediaUrl) {
+    // Carga manual por enlace sin cuenta conectada (ADR-045): no hay imagen que copiar.
+    throw imageError(
+      'missing',
+      'unprocessable',
+      'Esta publicación no tiene imagen. Subí una desde tu equipo o publicala sin imagen.',
+    );
+  }
   let buffer: Buffer;
   try {
     const host = new URL(post.mediaUrl).hostname;
@@ -168,7 +182,7 @@ async function copyImageToStorage(ctx: AppContext, post: SocialPost): Promise<st
     const hint = tooBig
       ? ' Subí una imagen más liviana o publicá sin imagen.'
       : isManual
-        ? ' Revisá la dirección de la imagen o publicá sin imagen.'
+        ? ' Subí la imagen desde tu equipo o publicá sin imagen.'
         : ' Sincronizá de nuevo para renovar la dirección, cargá la publicación a mano o publicá sin imagen.';
     // Manual: error de datos del usuario (422). Instagram: falla del servicio externo (502).
     throw imageError(
@@ -181,7 +195,7 @@ async function copyImageToStorage(ctx: AppContext, post: SocialPost): Promise<st
     throw imageError(
       'page',
       'unprocessable',
-      'La dirección que cargaste es una página web, no una imagen. Hacé clic derecho sobre la foto, elegí «Copiar dirección de la imagen» y pegala. También podés publicar sin imagen.',
+      'La dirección que cargaste es una página web, no una imagen. Subí la imagen desde tu equipo o publicá sin imagen.',
     );
   }
   try {
@@ -376,9 +390,88 @@ export function restorePost(ctx: AppContext, userId: string, id: string) {
   );
 }
 
-/** Contingencia (ADR-09): carga manual de una publicación de redes; entra como pendiente, mismo flujo. */
+/** Cómo se resolvieron los datos de una carga manual (lo muestra la interfaz). */
+export interface ManualResolution {
+  /** `instagram`: la API encontró la publicación y trajo los datos; `none`: se usó lo que se cargó a mano. */
+  source: 'instagram' | 'none';
+  /** ¿La publicación quedó con imagen? Si no, al aprobar se sube una desde el equipo o se publica sin imagen. */
+  imageFound: boolean;
+  /** Por qué no se pudo resolver sola (cuenta sin conectar, no encontrada entre las recientes, Meta falló). */
+  reason?: string;
+}
+
+/**
+ * Busca la publicación en la cuenta conectada (ADR-045). Nunca falla: si no se puede (sin cuenta, no está entre
+ * las recientes, Meta respondió un error), devuelve el motivo y la carga sigue con lo escrito a mano.
+ */
+async function resolveFromInstagram(
+  ctx: AppContext,
+  permalink: string,
+): Promise<{ media: InstagramMedia | null; reason?: string }> {
+  const client = await ctx.getInstagramClient();
+  if (client.kind !== 'graph') {
+    return {
+      media: null,
+      reason: 'La cuenta de Instagram no está conectada, así que la imagen no se pudo traer sola.',
+    };
+  }
+  try {
+    const media = await client.findMediaByPermalink(permalink);
+    return media
+      ? { media }
+      : {
+          media: null,
+          reason:
+            'No encontramos esa publicación entre las últimas de la cuenta conectada (puede ser de otra cuenta o muy antigua).',
+        };
+  } catch (e) {
+    ctx.logger.warn(
+      { detail: e instanceof InstagramApiError ? (e.detail ?? e.message) : 'error desconocido' },
+      'no se pudo buscar la publicación por enlace en Instagram',
+    );
+    return {
+      media: null,
+      reason: e instanceof InstagramApiError ? e.message : 'No pudimos consultar Instagram.',
+    };
+  }
+}
+
+/**
+ * Contingencia (ADR-09, ADR-45): carga manual de una publicación de redes; entra como pendiente, mismo flujo.
+ * Alcanza con el enlace de la publicación: se normaliza (sin `?igsh=`, `/reel/` o `/p/`) y, si la cuenta está
+ * conectada, se resuelve la leyenda, la fecha y la imagen con la API oficial (nunca raspando instagram.com).
+ * Lo escrito a mano manda sobre lo resuelto.
+ */
 export async function createManualPost(ctx: AppContext, userId: string, input: SocialManualInput) {
-  if (await ctx.prisma.socialPost.findFirst({ where: { permalink: input.permalink } })) {
+  const permalink = normalizeInstagramPermalink(input.permalink);
+  const code = instagramShortcode(permalink);
+  // Misma publicación aunque la hayan cargado con otra forma del enlace (o ya la haya traído la sincronización).
+  const candidates = await ctx.prisma.socialPost.findMany({
+    where: code ? { permalink: { contains: code } } : { permalink },
+    select: { permalink: true },
+  });
+  if (candidates.some((c) => (code ? instagramShortcode(c.permalink) === code : true))) {
+    throw errors.conflict('Esa publicación ya está cargada.', {
+      permalink: ['Ya existe una publicación con ese enlace.'],
+    });
+  }
+
+  const found = code
+    ? await resolveFromInstagram(ctx, permalink)
+    : { media: null as InstagramMedia | null };
+  const media = found.media;
+  const caption = input.caption || media?.caption || '';
+  if (!caption && !media) {
+    throw errors.validation('Escribí la leyenda de la publicación.', {
+      caption: ['La leyenda es obligatoria cuando no se puede traer sola desde Instagram.'],
+    });
+  }
+  // Un solo campo (ADR-045): si NO es un enlace de publicación de Instagram, se toma como la dirección directa de
+  // una imagen de otro sitio (con los mensajes por causa del ADR-043 al aprobar si no resulta ser una imagen).
+  const mediaUrl = input.mediaUrl || media?.mediaUrl || (code ? '' : permalink);
+  // Si la API la encontró, se usa su id: así la sincronización no la duplica después.
+  const externalId = media ? media.id : `${MANUAL_PREFIX}${randomUUID()}`;
+  if (media && (await ctx.prisma.socialPost.findUnique({ where: { externalId } }))) {
     throw errors.conflict('Esa publicación ya está cargada.', {
       permalink: ['Ya existe una publicación con ese enlace.'],
     });
@@ -387,11 +480,11 @@ export async function createManualPost(ctx: AppContext, userId: string, input: S
     const created = await tx.socialPost.create({
       data: {
         platform: 'INSTAGRAM',
-        externalId: `${MANUAL_PREFIX}${randomUUID()}`,
-        permalink: input.permalink,
-        caption: input.caption,
-        mediaUrl: input.mediaUrl,
-        postedAt: input.postedAt,
+        externalId,
+        permalink: media?.permalink ?? permalink,
+        caption,
+        mediaUrl,
+        postedAt: input.postedAt ?? (media ? new Date(media.timestamp) : new Date()),
       },
       include: postInclude,
     });
@@ -400,10 +493,16 @@ export async function createManualPost(ctx: AppContext, userId: string, input: S
       action: 'social.manual',
       entity: 'SocialPost',
       entityId: created.id,
+      detail: { resolved: media ? 'instagram' : 'none', withImage: !!mediaUrl },
     });
     return created;
   });
-  return toPostView(ctx, post, new Map());
+  const resolution: ManualResolution = {
+    source: media ? 'instagram' : 'none',
+    imageFound: !!mediaUrl,
+    ...(media ? {} : found.reason ? { reason: found.reason } : {}),
+  };
+  return { ...(await toPostView(ctx, post, new Map())), resolution };
 }
 
 /**
